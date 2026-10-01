@@ -6,6 +6,7 @@ public struct ApplicationsPopoverView: View {
     @ObservedObject var discoveryService = AppDiscoveryService.shared
 
     @State private var searchText: String = ""
+    @FocusState private var isSearchFocused: Bool
 
     private let appIconSize: CGFloat = 52.0
     private let columns = [
@@ -59,6 +60,12 @@ public struct ApplicationsPopoverView: View {
                         .textFieldStyle(.plain)
                         .font(.system(size: 12))
                         .foregroundStyle(.white)
+                        .focused($isSearchFocused)
+                        .onSubmit {
+                            if let firstApp = filteredApps.first {
+                                viewModel.launchInstalledApp(firstApp)
+                            }
+                        }
 
                     if !searchText.isEmpty {
                         Button(action: { searchText = "" }) {
@@ -76,6 +83,10 @@ public struct ApplicationsPopoverView: View {
                         .fill(Color.white.opacity(0.12))
                 )
                 .frame(width: 140)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isSearchFocused = true
+                }
 
                 // Open Applications folder in Finder
                 Button(action: {
@@ -165,8 +176,19 @@ public struct ApplicationsPopoverView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: Color.black.opacity(0.4), radius: 16, x: 0, y: 8)
+        .background(FirstResponderFocusHelper())
         .onAppear {
             discoveryService.refreshApps(force: false)
+            NSApp.activate(ignoringOtherApps: true)
+            DispatchQueue.main.async {
+                isSearchFocused = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                isSearchFocused = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                isSearchFocused = true
+            }
         }
     }
 
@@ -260,6 +282,46 @@ private struct AppGridItemCell: View {
                 onPin()
             } label: {
                 Label("Épingler à FoldyDock", systemImage: "pin")
+            }
+        }
+    }
+}
+
+
+// MARK: - Auto-Focus AppKit Helper
+private struct FirstResponderFocusHelper: NSViewRepresentable {
+    func makeNSView(context: Context) -> FocusTriggerView {
+        FocusTriggerView()
+    }
+
+    func updateNSView(_ nsView: FocusTriggerView, context: Context) {}
+
+    final class FocusTriggerView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard let window = self.window else { return }
+
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKey()
+
+            for delay in [0.02, 0.08, 0.2] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak window] in
+                    guard let self = self, let window = window else { return }
+                    NSApp.activate(ignoringOtherApps: true)
+                    window.makeKey()
+                    self.focusSearchField(in: window.contentView)
+                }
+            }
+        }
+
+        private func focusSearchField(in view: NSView?) {
+            guard let view = view else { return }
+            if let textField = view as? NSTextField, textField.isEditable {
+                self.window?.makeFirstResponder(textField)
+                return
+            }
+            for subview in view.subviews {
+                focusSearchField(in: subview)
             }
         }
     }

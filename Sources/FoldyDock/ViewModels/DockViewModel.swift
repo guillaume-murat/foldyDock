@@ -385,6 +385,7 @@ public final class DockViewModel: ObservableObject {
             closeFolderPopover()
             isApplicationsLauncherOpen = true
             AppDiscoveryService.shared.refreshApps(force: false)
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 
