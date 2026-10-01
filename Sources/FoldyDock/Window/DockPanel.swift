@@ -17,6 +17,8 @@ public final class DockPanel: NSPanel {
     public let hotspotManager: HotspotManager
     public var onMiddleClickEvent: ((NSEvent) -> Void)?
     private var globalMouseMonitor: Any?
+    private var spaceObserver: NSObjectProtocol?
+    private var edgePollingTimer: Timer?
 
     public var currentScreen: NSScreen {
         didSet {
@@ -41,10 +43,12 @@ public final class DockPanel: NSPanel {
             defer: false
         )
 
-        self.level = .floating
+        self.level = .statusBar
         self.isOpaque = false
         self.backgroundColor = .clear
         self.hasShadow = false
+        self.hidesOnDeactivate = false
+        self.isReleasedWhenClosed = false
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
 
         let trackingContainer = DockTrackingView(dockPanel: self)
@@ -68,11 +72,29 @@ public final class DockPanel: NSPanel {
             self.cancelPendingShow()
         }
 
+        spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self = self else { return }
+                if self.isHiddenState {
+                    self.hotspotManager.handleSpaceChange()
+                } else {
+                    self.orderFrontRegardless()
+                }
+            }
+        }
+
         reposition()
         startEdgeMonitoring()
     }
 
     deinit {
+        if let observer = spaceObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+        }
         stopEdgeMonitoring()
     }
 
@@ -362,8 +384,8 @@ public final class DockPanel: NSPanel {
         for screen in NSScreen.screens {
             let f = screen.frame
             // Check if cursor is within 8pt of the bottom edge of this screen
-            let isAtBottom = loc.y >= f.origin.y && loc.y <= (f.origin.y + 8.0)
-                && loc.x >= f.origin.x && loc.x <= (f.origin.x + f.width)
+            let isAtBottom = loc.y >= (f.origin.y - 1.0) && loc.y <= (f.origin.y + 8.0)
+                && loc.x >= (f.origin.x - 1.0) && loc.x <= (f.origin.x + f.width + 1.0)
             if isAtBottom {
                 return screen
             }
@@ -372,28 +394,21 @@ public final class DockPanel: NSPanel {
     }
 
     public func startEdgeMonitoring() {
-        guard globalMouseMonitor == nil else { return }
-        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self = self else { return }
-                let loc = NSEvent.mouseLocation
+        if globalMouseMonitor == nil {
+            globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self = self else { return }
+                    self.handleCursorMovement()
+                }
+            }
+        }
 
-                if self.isHiddenState {
-                    if let targetScreen = self.screenForBottomEdge(at: loc) {
-                        self.requestShowDock(on: targetScreen)
-                    } else {
-                        self.cancelPendingShow()
-                    }
-                } else {
-                    if self.isMouseInDockZone(at: loc) {
-                        if self.hideTimer != nil {
-                            self.hideTimer?.invalidate()
-                            self.hideTimer = nil
-                        }
-                    } else {
-                        if self.autohideEnabled && self.hideTimer == nil && self.shouldPreventAutoHide?() != true {
-                            self.scheduleHideTimer()
-                        }
+        if edgePollingTimer == nil {
+            edgePollingTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    if self.isHiddenState {
+                        self.handleCursorMovement()
                     }
                 }
             }
@@ -404,6 +419,31 @@ public final class DockPanel: NSPanel {
         if let monitor = globalMouseMonitor {
             NSEvent.removeMonitor(monitor)
             globalMouseMonitor = nil
+        }
+        edgePollingTimer?.invalidate()
+        edgePollingTimer = nil
+    }
+
+    private func handleCursorMovement() {
+        let loc = NSEvent.mouseLocation
+
+        if self.isHiddenState {
+            if let targetScreen = self.screenForBottomEdge(at: loc) {
+                self.requestShowDock(on: targetScreen)
+            } else {
+                self.cancelPendingShow()
+            }
+        } else {
+            if self.isMouseInDockZone(at: loc) {
+                if self.hideTimer != nil {
+                    self.hideTimer?.invalidate()
+                    self.hideTimer = nil
+                }
+            } else {
+                if self.autohideEnabled && self.hideTimer == nil && self.shouldPreventAutoHide?() != true {
+                    self.scheduleHideTimer()
+                }
+            }
         }
     }
 }

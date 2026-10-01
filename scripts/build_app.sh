@@ -72,6 +72,12 @@ elif [ -f "logoFoldyDock.png" ]; then
     cp "logoFoldyDock.png" "$RESOURCES/logoFoldyDock.png"
 fi
 
+if [ -f "$PROJECT_DIR/menuBarIcon.png" ]; then
+    cp "$PROJECT_DIR/menuBarIcon.png" "$RESOURCES/menuBarIcon.png"
+elif [ -f "menuBarIcon.png" ]; then
+    cp "menuBarIcon.png" "$RESOURCES/menuBarIcon.png"
+fi
+
 if [ -f "$PROJECT_DIR/AppIcon.icns" ]; then
     cp "$PROJECT_DIR/AppIcon.icns" "$RESOURCES/AppIcon.icns"
 elif [ -f "AppIcon.icns" ]; then
@@ -107,10 +113,6 @@ cat <<EOF > "$CONTENTS/Info.plist"
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
-    <key>NSSupportsAutomaticGraphicsSwitching</key>
-    <true/>
-    <key>NSPrincipalClass</key>
-    <string>NSApplication</string>
 </dict>
 </plist>
 EOF
@@ -119,7 +121,6 @@ echo "✅ $APP_NAME assembled successfully in $DIST_DIR!"
 
 if [ "$ACTION" = "run" ]; then
     echo "🌟 Launching $APP_NAME..."
-    killall FoldyDock 2>/dev/null || true
-    sleep 0.2
+    killall -9 FoldyDock 2>/dev/null || true
     open "$APP_BUNDLE"
 fi

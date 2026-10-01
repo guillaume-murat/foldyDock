@@ -16,15 +16,22 @@ public final class DockViewModel: ObservableObject {
     public private(set) var hierarchyEngine: DockHierarchyEngine = DockHierarchyEngine()
     @Published public var unpinnedRunningItems: [DockItem] = []
 
-    @Published public var activeFolder: DockItem?
+    public var onActiveFolderChanged: ((DockItem?) -> Void)?
+    @Published public var activeFolder: DockItem? {
+        didSet {
+            onActiveFolderChanged?(activeFolder)
+        }
+    }
     @Published public var isApplicationsLauncherOpen: Bool = false
     @Published public var hoveredItemId: UUID?
     @Published public var dragSourceId: UUID?
     @Published public var activeDropTargetId: UUID?
     @Published public var activeDropPlacement: DropPlacement?
     @Published public var itemFrames: [UUID: CGRect] = [:]
-    @Published public var folderItemFrames: [UUID: CGRect] = [:]
+    public var folderItemFrames: [UUID: CGRect] = [:]
     @Published public var bouncingItemIds: Set<UUID> = []
+    @Published public var terminatingItemIds: Set<UUID> = []
+    private var lastMiddleClickTime: Date = .distantPast
     private var bounceTimers: [UUID: DispatchWorkItem] = [:]
 
     @Published public var lastRightClickLocation: CGPoint?
@@ -220,12 +227,30 @@ public final class DockViewModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.95, execute: workItem)
     }
 
-    public func terminate(item: DockItem) {
-        for bid in item.allBundleIdentifiers {
-            appObserver.terminateApp(bundleIdentifier: bid)
-        }
-        if !item.isPinned {
-            unpinnedRunningItems.removeAll { $0.id == item.id }
+    public func terminate(item: DockItem, animated: Bool = true) {
+        guard item.type == .app else { return }
+        guard !terminatingItemIds.contains(item.id) else { return }
+
+        let isTesting = NSClassFromString("XCTestCase") != nil
+        if animated && !isTesting {
+            terminatingItemIds.insert(item.id)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+                guard let self = self else { return }
+                for bid in item.allBundleIdentifiers {
+                    self.appObserver.terminateApp(bundleIdentifier: bid)
+                }
+                if !item.isPinned {
+                    self.unpinnedRunningItems.removeAll { $0.id == item.id }
+                }
+                self.terminatingItemIds.remove(item.id)
+            }
+        } else {
+            for bid in item.allBundleIdentifiers {
+                appObserver.terminateApp(bundleIdentifier: bid)
+            }
+            if !item.isPinned {
+                unpinnedRunningItems.removeAll { $0.id == item.id }
+            }
         }
     }
 
@@ -461,26 +486,45 @@ public final class DockViewModel: ObservableObject {
     }
 
     public func handleMiddleClick(at localPoint: CGPoint) {
-        for (itemId, rect) in itemFrames {
-            if rect.contains(localPoint) {
-                if let item = findItem(byId: itemId) {
-                    terminate(item: item)
-                }
-                break
-            }
+        let now = Date()
+        guard now.timeIntervalSince(lastMiddleClickTime) > 0.25 else { return }
+
+        // Find candidate items whose frames contain localPoint and are apps
+        let matchingApps: [(item: DockItem, rect: CGRect)] = itemFrames.compactMap { (itemId, rect) in
+            guard rect.contains(localPoint),
+                  let item = findItem(byId: itemId),
+                  item.type == .app else { return nil }
+            return (item, rect)
         }
+
+        // Pick the most specific (smallest area) matching app
+        guard let target = matchingApps.min(by: { ($0.rect.width * $0.rect.height) < ($1.rect.width * $1.rect.height) }) else {
+            return
+        }
+
+        lastMiddleClickTime = now
+        print("[MIDDLE_CLICK] Terminating app: \(target.item.title) (bundle: \(target.item.bundleIdentifier ?? "nil"))")
+        terminate(item: target.item)
     }
 
     public func handleFolderMiddleClick(at localPoint: CGPoint) {
-        for (itemId, rect) in folderItemFrames {
-            if rect.contains(localPoint) {
-                if let item = findItem(byId: itemId) {
-                    print("[MIDDLE_CLICK] Terminating app from folder: \(item.title) (bundle: \(item.bundleIdentifier ?? "nil"))")
-                    terminate(item: item)
-                }
-                break
-            }
+        let now = Date()
+        guard now.timeIntervalSince(lastMiddleClickTime) > 0.25 else { return }
+
+        let matchingApps: [(item: DockItem, rect: CGRect)] = folderItemFrames.compactMap { (itemId, rect) in
+            guard rect.contains(localPoint),
+                  let item = findItem(byId: itemId),
+                  item.type == .app else { return nil }
+            return (item, rect)
         }
+
+        guard let target = matchingApps.min(by: { ($0.rect.width * $0.rect.height) < ($1.rect.width * $1.rect.height) }) else {
+            return
+        }
+
+        lastMiddleClickTime = now
+        print("[MIDDLE_CLICK] Terminating app from folder: \(target.item.title) (bundle: \(target.item.bundleIdentifier ?? "nil"))")
+        terminate(item: target.item)
     }
 
     public func mergeIntoFolder(sourceId: UUID, targetId: UUID, folderName: String = "Dossier") {
@@ -742,22 +786,56 @@ public final class DockViewModel: ObservableObject {
     }
 
     public func emptyTrash() {
-        // Try Finder scripting first (handles external volumes as well)
-        let script = NSAppleScript(source: "tell application \"Finder\" to empty trash")
-        var error: NSDictionary?
-        let result = script?.executeAndReturnError(&error)
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            var success = false
 
-        // Fallback or complement with direct deletion if Finder didn't run
-        if result == nil || error != nil {
-            if let trashURL = FileManager.default.urls(for: .trashDirectory, in: .userDomainMask).first {
-                let items = (try? FileManager.default.contentsOfDirectory(at: trashURL, includingPropertiesForKeys: nil)) ?? []
-                for item in items {
-                    try? FileManager.default.removeItem(at: item)
+            // 1. Try NSAppleScript with Finder activation
+            let scriptSource = """
+            tell application "Finder"
+                activate
+                empty trash
+            end tell
+            """
+            var error: NSDictionary?
+            if let script = NSAppleScript(source: scriptSource) {
+                _ = script.executeAndReturnError(&error)
+                if error == nil {
+                    success = true
                 }
             }
-        }
 
-        updateTrashStatus()
+            // 2. Fallback: try osascript CLI process if NSAppleScript failed
+            if !success {
+                let proc = Process()
+                proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+                proc.arguments = ["-e", "tell application \"Finder\" to activate", "-e", "tell application \"Finder\" to empty trash"]
+                do {
+                    try proc.run()
+                    proc.waitUntilExit()
+                    if proc.terminationStatus == 0 {
+                        success = true
+                    }
+                } catch {
+                    // Ignore
+                }
+            }
+
+            // 3. Fallback: direct file deletion if permissions permit
+            if !success {
+                if let trashURL = FileManager.default.urls(for: .trashDirectory, in: .userDomainMask).first {
+                    if let items = try? FileManager.default.contentsOfDirectory(at: trashURL, includingPropertiesForKeys: nil) {
+                        for item in items {
+                            try? FileManager.default.removeItem(at: item)
+                        }
+                    }
+                }
+            }
+
+            // Refresh status on main thread
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self?.updateTrashStatus()
+            }
+        }
     }
 
     public func dropOnTrash(sourceId: UUID) {

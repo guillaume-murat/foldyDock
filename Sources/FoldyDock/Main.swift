@@ -7,6 +7,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var dockPanel: DockPanel?
     private var viewModel: DockViewModel?
     private var statusItem: NSStatusItem?
+    private var hostingView: NSView?
+    private var folderPopover: NSPopover?
 
     static func main() {
         let app = NSApplication.shared
@@ -37,6 +39,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingView = ClickThroughHostingView(rootView: containerView)
         hostingView.wantsLayer = true
         hostingView.layer?.backgroundColor = .clear
+        self.hostingView = hostingView
+
+        vm.onActiveFolderChanged = { [weak self, weak vm] folder in
+            guard let self = self, let vm = vm else { return }
+            if let folder = folder {
+                self.showFolderPopover(for: folder, viewModel: vm)
+            } else {
+                self.closeFolderPopover()
+            }
+        }
 
         let panel = DockPanel(contentView: hostingView, initialDockHeight: initialDockHeight)
         panel.autohideEnabled = vm.config.autohideEnabled
@@ -81,6 +93,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupMenuBarStatusItem()
         setupScreenChangeObserver()
         NSApp.applicationIconImage = LogoProvider.shared.logoImage(size: 512)
+    }
+
+    private func showFolderPopover(for folder: DockItem, viewModel: DockViewModel) {
+        closeFolderPopover()
+        guard let panel = self.dockPanel, let anchorView = panel.contentView else { return }
+
+        let dockHeight = panel.frame.height
+        let itemRect: CGRect
+        if let frame = viewModel.itemFrames[folder.id] {
+            let runningSubItems = viewModel.runningSubItems(for: folder)
+            let folderX: CGFloat
+            let folderWidth: CGFloat
+            if !runningSubItems.isEmpty {
+                folderWidth = max(32.0, viewModel.config.iconSize * 0.72)
+                folderX = frame.origin.x + 8.0
+            } else {
+                folderWidth = frame.width
+                folderX = frame.origin.x
+            }
+            itemRect = CGRect(x: folderX, y: dockHeight - 2, width: folderWidth, height: 1)
+        } else {
+            itemRect = CGRect(x: anchorView.bounds.midX - 40, y: dockHeight - 2, width: 80, height: 1)
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = true
+        let popoverView = FolderPopoverView(viewModel: viewModel, folder: folder)
+        let hostingController = NSHostingController(rootView: popoverView)
+        popover.contentViewController = hostingController
+        popover.delegate = self
+        popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .maxY)
+        self.folderPopover = popover
+
+        // Ensure popover window never overlaps the dock bar vertically
+        DispatchQueue.main.async {
+            for w in NSApp.windows where NSStringFromClass(type(of: w)).contains("Popover") {
+                let targetMinY = panel.frame.maxY
+                if w.frame.minY < targetMinY {
+                    var f = w.frame
+                    f.origin.y = targetMinY
+                    w.setFrame(f, display: true)
+                }
+            }
+        }
+    }
+
+    private func closeFolderPopover() {
+        if let popover = folderPopover {
+            popover.close()
+            folderPopover = nil
+        }
     }
 
     private func setupMenuBarStatusItem() {
@@ -214,6 +278,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             MainActor.assumeIsolated {
                 self?.dockPanel?.updateScreens()
             }
+        }
+    }
+}
+
+extension AppDelegate: NSPopoverDelegate {
+    public func popoverDidClose(_ notification: Notification) {
+        if let popover = notification.object as? NSPopover, popover == self.folderPopover {
+            self.folderPopover = nil
+            self.viewModel?.closeFolderPopover()
         }
     }
 }

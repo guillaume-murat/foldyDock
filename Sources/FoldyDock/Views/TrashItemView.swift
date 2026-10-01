@@ -121,6 +121,7 @@ public struct TrashItemView: View {
             Button("Vider la corbeille") {
                 viewModel.emptyTrash()
             }
+            .disabled(viewModel.isTrashEmpty)
 
             Divider()
 

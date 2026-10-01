@@ -1,130 +1,189 @@
-# 📂 FoldyDock
+<p align="center">
+  <img src="logoFoldyDock.png" width="140" alt="FoldyDock Logo" />
+</p>
 
-**FoldyDock** est une application macOS native offrant un dock flottant alternatif élégant doté d'un système de dossiers d'applications inspiré d'iOS, d'interactions avancées à la souris et d'un masquage automatique fluide.
+<h1 align="center">FoldyDock</h1>
 
----
+<p align="center">
+  <strong>A sleek, native floating dock for macOS with iOS-style folders, smart window tracking, and real-time frosted glass.</strong>
+</p>
 
-## ✨ Fonctionnalités Clés
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-14.0%2B%20Sonoma%20%7C%20Sequoia-black?style=flat-square&logo=apple" alt="macOS 14+" />
+  <img src="https://img.shields.io/badge/Swift-5.9%2B-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 5.9+" />
+  <img src="https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-blue?style=flat-square" alt="SwiftUI + AppKit" />
+  <img src="https://img.shields.io/badge/Architecture-Apple%20Silicon%20%26%20Intel-green?style=flat-square" alt="Universal" />
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT" />
+</p>
 
-1. **Dock Flottant Élégant en Verre Dépoli (`NSVisualEffectView`)**
-   - Barre centrée au bas de l'écran principal.
-   - Floutage natif temps réel de l'arrière-plan via `NSVisualEffectView` (`.hudWindow` en mode `.behindWindow`) assurant un contraste optimal et une intégration élégante avec le fond d'écran et les fenêtres.
-   - Bordure translucide raffinée avec dégradé subtil et ombre portée douce.
-   - Fenêtre `NSPanel` de niveau `.floating` non-intrusive (ne vole pas le focus des applications actives).
-
-2. **Masquage Automatique Réactif (Autohide)**
-   - Détection de la sortie du curseur via `NSTrackingArea`.
-   - Rétraction animée vers le bas après un délai de masquage configurable (*hide delay*, 0,3 s par défaut).
-   - Panneau déclencheur invisible au ras du bord inférieur (`HotspotPanel`) et détection multi-écrans avec délai d'apparition réglable (*show delay*, 0,0 s par défaut).
-
-3. **Dossiers d'Applications style iOS**
-   - **Miniatures Dynamiques & Évolutives :** Les dossiers affichent toutes les applications qu'ils renferment sans aucune limite de nombre. La grille s'adapte automatiquement (2x2 jusqu'à 4 apps, 3x3, 4x4, etc.) et réduit la taille des icônes au fur et à mesure que le dossier s'enrichit.
-   - **Titres et Noms au-dessus des Éléments :** Les noms des dossiers, des applications et de la corbeille sont affichés de manière harmonieuse au-dessus de chaque icône dans la marge supérieure du dock, avec une typographie arrondie lisible et une ombre douce. Pour distinguer instantanément les dossiers des applications, le titre des dossiers est forcé en **MAJUSCULES** (sans gras), tandis que celui des applications et de la corbeille conserve sa casse normale.
-   - **Popover & Réorganisation par Drag & Drop :** Cliquer sur un dossier déploie une vue modale élégante au-dessus du dock avec la grille d'applications agrandie (icônes 52 pt, disposition centrée pour 2 apps, espacement optimisé pour 6 apps). Les noms des applications sont affichés au-dessus de chaque icône pour une cohérence visuelle parfaite. Les applications au sein d'un dossier peuvent être réorganisées directement par glisser-déposer (Drag & Drop).
-   - **Renommage direct :** Modification du nom du dossier par double-clic sur le titre ou via le bouton d'édition.
-   - **Création instantanée par Drag & Drop :** Glisser une application au centre d'une autre déclenche la création d'un nouveau dossier ou son insertion dans un dossier existant.
-
-4. **Design Épuré & Marges Personnalisables**
-   - **Bords lisses sans poignées :** Suppression des poignées latérales pour un rendu minimaliste, moderne et sans distraction.
-   - **Floutage d'arrière-plan natif élégant :** Matériau translucide `NSVisualEffectView` qui floute harmonieusement tout ce qui est situé derrière le dock, avec une bordure fine et une ombre douce.
-   - **Marges intérieures ajustables (Padding) :** Réglage en temps réel du padding horizontal (0 à 32 pt) et du padding vertical (4 à 48 pt) du dock via des curseurs précis.
-   - **Distance constante des titres & pastilles :** Les titres d'éléments et les pastilles d'activité conservent une distance fixe par rapport aux icônes (10 px par défaut, réglable de 2 à 24 px), quel que soit le padding vertical choisi.
-   - **Hauteur dynamique & Centrage :** La hauteur totale du dock s'ajuste dynamiquement en fonction de la taille des icônes et du padding vertical (`iconSize + verticalPadding * 2`), avec un centrage vertical et horizontal parfait des applications et dossiers.
-   - **Persistance immédiate :** Toutes les modifications de dimensions et de marges sont sauvegardées atomiquement dans `config.json`.
-
-5. **Interactions Souris & Contrôles Avancés**
-   - **Clic gauche :** Lance l'application ou l'amène au premier plan via `NSWorkspace`, avec animation de saut/rebond (`BouncingModifier`). Si l'application se trouve dans un dossier fermé, le dossier rebondit pour signaler le lancement.
-   - **Clic milieu (`otherMouseDown` avec `buttonNumber == 2`) :** Ferme immédiatement l'application ciblée via `NSRunningApplication.terminate()`. Fonctionne également directement sur une sous-application depuis l'icône du dossier.
-   - **Clic droit sur un élément :** Menu contextuel complet (« Ouvrir », « Quitter l'application », « Conserver dans le dock », « Renommer », « Dissocier le dossier », « Supprimer le séparateur »).
-   - **Clic droit sur le fond du dock :** Ouvre le menu contextuel permettant d'accéder directement à la fenêtre dédiée des réglages (« Paramètres FoldyDock… »), d'ajouter un séparateur visuel ou de créer un dossier vide.
-   - **Glisser-déposer (Drag & Drop) :**
-     - Survol central (anneau de fusion bleu) : Fusionne en dossier.
-     - Déplacement latéral : Réorganise l'ordre des éléments sur l'axe horizontal.
-
-6. **Surveillance des Processus, Épinglage, Corbeille & Éléments Spéciaux**
-   - Suivi en temps réel des applications actives (`NSWorkspace.shared.notificationCenter`).
-   - Séparateur vertical visuel distinguant les applications épinglées des applications ouvertes temporaires.
-   - Possibilité d'insérer des séparateurs manuels (`.separator`) pour organiser son dock en sections.
-   - **Lanceur Foldy avec Logo Officiel (`AppLauncherView` & `ApplicationsPopoverView`) :** Positionné à l'extrême gauche du dock avec le logo officiel FoldyDock, il se comporte visuellement comme une application ("Foldy" avec son titre et animation de survol) et déploie un tiroir popover complet des applications installées sur le Mac avec champ de recherche en direct, indicateur d'applications ouvertes, lancement en un clic, ouverture Finder et menu contextuel pour épingler au dock.
-   - **Opacité des applications cachées & réduites :** Détection native des applications masquées (via ⌘H ou menu « Masquer ») et des fenêtres minimisées via le bouton jaune (`-`) de macOS. L'icône s'atténue à 50% d'opacité (ou selon la valeur personnalisée de 10% à 100%), s'illumine subtilement au survol pour signaler son interactivité, et reprend sa pleine opacité dès sa réactivation ou son rappel au premier plan.
-   - **Indicateur d'activité multi-fenêtres :** Pastilles lumineuses sous l'icône de chaque application active reflétant le nombre de fenêtres ouvertes :
-      - 1 fenêtre ou application en arrière-plan : 1 pastille centrale.
-      - 2 fenêtres ouvertes : 2 pastilles côte à côte.
-      - 3 fenêtres ouvertes : 3 pastilles côte à côte.
-      - 4 fenêtres ou plus (au-delà de 3) : 2 pastilles côte à côte accompagnées d'une petite icône `+` géométrique dédiée (`MiniPlusShape`).
-      - **Dossiers et sous-applications :** Sur le dock, le dossier affiche une unique pastille simple signalant la présence d'au moins une application active. À l'intérieur du dossier (vue popover et aperçu de grille), chaque sous-application affiche ses propres multi-pastilles en fonction de ses fenêtres ouvertes et reflète l'opacité de ses applications masquées.
-
-7. **Fenêtre Dédiée de Paramètres, Persistance JSON & Menu Bar**
-   - **Identité Visuelle & Logo Officiel (`logoFoldyDock.png`) :** Intégration du logo officiel FoldyDock haute résolution dans la barre des menus macOS (icône Retina 18×18 pt avec infobulle native) et au sommet de la fenêtre de réglages (48×48 pt). L'icône de l'application (`AppIcon.icns`) est également générée et intégrée au bundle `FoldyDock.app`.
-   - **Fenêtre Dédiée de Réglages (`FoldyDockSettingsView` & `SettingsWindowController`) :** Accessible depuis le menu de la barre de menus macOS (« Paramètres FoldyDock… ») ou via un clic droit sur un espace vide du dock.
-     - **Dimensions & Marges :** Taille des icônes (32 à 96 pt avec raccourcis presets), padding horizontal (0 à 32 pt), padding vertical (4 à 48 pt) et distance fixe des titres & pastilles (2 à 24 px, défaut 10 px) avec valeur en direct.
-     - **Affichage & Titres :** Interrupteurs dédiés pour afficher ou masquer les titres des applications (y compris la corbeille), les titres des dossiers, le lanceur d'applications, ainsi qu'un curseur de réglage de l'**opacité des applications cachées/réduites** (10% à 100%, défaut 50%).
-     - **Comportement & Actions :** Masquage automatique (Autohide) avec réglage indépendant du délai d'apparition (*show delay*, 0,0 à 1,5 s) et du délai de masquage (*hide delay*, 0,1 à 1,5 s), activation/désactivation de la corbeille, insertion de séparateurs ou dossiers, réinitialisation de la disposition d'origine ou fermeture de l'application.
-   - Configuration sauvegardée de manière atomique dans `~/Library/Application Support/FoldyDock/config.json` (avec migration automatique depuis `FolderDock` si présent).
-   - Icône dans la barre des menus macOS : un clic déploie le menu complet intégrant l'accès aux « Paramètres FoldyDock… » (raccourci ⌘,), l'affichage forcé du Dock, le basculement rapide de l'autohide, la réinitialisation et l'arrêt de l'application.
+<p align="center">
+  <a href="#-key-features">Key Features</a> •
+  <a href="#-mouse--shortcuts-controls">Shortcuts</a> •
+  <a href="#-building--running">Building & Running</a> •
+  <a href="#-codebase-architecture">Architecture</a> •
+  <a href="#-contributing">Contributing</a> •
+  <a href="#-license">License</a>
+</p>
 
 ---
 
-## 🛠 Compilation & Lancement
+## 📖 Overview / Présentation
 
-### Prérequis
-- macOS 14.0 Sonoma ou supérieur
-- Xcode 15+ ou Swift 5.9+
+**FoldyDock** is a modern, lightweight, native macOS dock alternative designed to replace or complement the default macOS Dock with powerful productivity features:
 
-### Lancer la suite de tests
-```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
-```
+- 📂 **iOS-Style App Folders** with real-time responsive miniatures, popover management, and drag-and-drop merging.
+- 🪟 **Floating Frosted Glass Bar** powered by native `NSVisualEffectView` blur and unobtrusive floating window level.
+- 🌐 **Full Multi-Space Support** (`.canJoinAllSpaces`), appearing seamlessly across all virtual desktops.
+- ⚡ **Smart Window Tracking & Multi-Dot Indicators** showing exact running instances and open window counts.
+- 🖱️ **Rapid Middle-Click App Quit** with smooth exit animations.
+- 🚀 **Built-in App Launcher & Instant Search** to quickly find and launch any application on your Mac.
+- ⚙️ **Comprehensive Settings Window (`⌘,`)** with real-time adjustments for sizes, paddings, autohide delays, and start at login.
 
-### Compiler et empaqueter le bundle `FoldyDock.app`
+---
+
+## ✨ Key Features
+
+### 1. 🪟 Native Frosted Glass Floating Dock
+- Positioned horizontally and centered at the bottom of your screen.
+- Real-time hardware-accelerated background blur (`NSVisualEffectView` with `.hudWindow` vibrancy) integrating gracefully with wallpapers and windows.
+- Non-activating `NSPanel` (`.floating` level), ensuring clicks and hover animations never steal keyboard focus from your foreground application.
+- Active across **all virtual desktops (Spaces)** and full-screen environments.
+
+### 2. 📁 iOS-Style App Folders
+- **Dynamic Miniatures Grid:** Folders display live thumbnails of contained apps without item count limits. The preview grid automatically scales down icon sizes (2×2, 3×3, 4×4...) with clean cell alignment.
+- **Folder Capsule & Running Preview:** When applications inside a closed folder are running, the folder displays a compact horizontal capsule preview for 1-click focus.
+- **Folder Popover:** Clicking a folder deploys a full popover with large icons (52 pt), drag-and-drop reordering, and direct double-click inline renaming.
+- **Drag-to-Merge:** Simply drag an application onto another to instantly group them into a new folder.
+
+### 3. ⚡ Multi-Window Tracking & Dimmed Hidden Apps
+- **Window Count Indicators:** Custom indicator dots reflect how many windows each running app has open:
+  - 1 window: 1 centered dot.
+  - 2 windows: 2 side-by-side dots.
+  - 3 windows: 3 dots.
+  - 4+ windows: 2 dots accompanied by a clean `+` badge (`MiniPlusShape`).
+- **Dimmed Hidden/Minimized Apps:** When an app is hidden (`⌘H`) or minimized, its dock icon dims automatically (customizable opacity between 10% and 100%, default 50%) and subtly brightens on hover.
+
+### 4. 🖱️ Advanced Mouse & Gesture Controls
+- **Left-Click:** Launch or bring application to the foreground with an authentic bouncing animation (`BouncingModifier`).
+- **Middle-Click (Scroll Wheel):** Instantly closes/terminates the targeted application (`NSRunningApplication.terminate()`) with an immediate exit animation. Works on dock items and sub-apps inside folders.
+- **Right-Click Context Menus:** Full options to open, quit, keep in dock, rename folders, separate sections, or open settings.
+- **Trash Can Integration:** Dedicated macOS trash item on the right supporting direct click to open, right-click to empty, and drag-and-drop to move files to trash.
+
+### 5. 🚀 Foldy App Launcher (`AppLauncherView`)
+- Anchored on the left of the dock with the official Foldy mascot logo.
+- Opens an ultra-fast searchable drawer indexing all apps in `/Applications`, `/System/Applications`, and `~/Applications`.
+- 1-click launch, Finder reveal (`⌘`-click or context menu), and quick pin to dock.
+
+### 6. 🔄 Launch at Login (`SMAppService`)
+- Modern, reliable macOS startup integration using Apple's official `SMAppService` API (no legacy launch daemons).
+- Can be toggled on/off at any time in Settings.
+
+### 7. 🎨 Foldy Mascot & Adaptive Menu Bar Icon
+- Crisp high-resolution mascot branding.
+- Dedicated macOS menu bar status item: built as a native Apple template image (`isTemplate = true`), it automatically adapts to **Dark Mode** (clean white monochrome) and **Light Mode** (clean black monochrome).
+
+---
+
+## 🖱️ Mouse & Shortcuts Controls
+
+| Interaction | Target | Action |
+| :--- | :--- | :--- |
+| **Left Click** | Application | Launch or switch to application (with bounce animation) |
+| **Left Click** | Folder | Open folder popover drawer |
+| **Left Click** | Launcher (Foldy) | Open installed applications search popover |
+| **Middle Click** | Application | Force-close application immediately (with exit animation) |
+| **Middle Click** | App in Folder | Close specific sub-application from closed folder |
+| **Right Click** | Any Item | Context menu (Keep in Dock, Quit, Rename, Remove) |
+| **Right Click** | Dock Background | Open FoldyDock Settings, Add Separator, Add Folder |
+| **Drag & Drop** | App over App | Merge applications into a folder |
+| **Drag & Drop** | App horizontally | Reorder dock items or intra-folder items |
+| **Drag & Drop** | File to Trash | Move dragged file to macOS Trash |
+| **`⌘ ,`** | Shortcut | Open FoldyDock Settings window |
+
+---
+
+## 🛠️ Building & Running
+
+### Prerequisites
+- **macOS 14.0 Sonoma** or later (tested on macOS 14 & 15 Sequoia)
+- **Swift 5.9+** toolchain or **Xcode 15+**
+
+### Compile & Assemble the App Bundle
+Use the automated build script to compile in Release mode and assemble `build/FoldyDock.app`:
+
 ```bash
 ./scripts/build_app.sh
 ```
 
-### Compiler et lancer directement
+### Compile & Launch Directly
+To compile and automatically run FoldyDock:
+
 ```bash
 ./scripts/build_app.sh run
 ```
 
+### Running Unit Tests
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+```
+
 ---
 
-## 📁 Architecture du Code
+## 🗂️ Codebase Architecture
 
-- **`Sources/FoldyDock/`**
-  - `Main.swift` : Point d'entrée `@main`, cycle de vie `NSApplicationDelegate`, gestion de la barre des menus.
-  - `Models/` :
-    - `DockItem.swift` : Structure arborescente unifiée (`.app`, `.folder`, `.separator`).
-    - `DockConfig.swift` : Configuration globale, presets d'applications par défaut et options (autohide, taille, affichage de la corbeille).
-  - `Services/` :
-    - `AppObserverService.swift` : Surveillance des lancements et fermetures de processus, et comptage précis des fenêtres ouvertes via l'API Accessibility (AXUIElement).
-    - `DockPersistenceService.swift` : Sérialisation / désérialisation JSON atomique et migration automatique.
-    - `IconProvider.swift` : Extraction d'icônes macOS et composition de grille pour les dossiers.
-    - `AppDiscoveryService.swift` : Découverte et indexation asynchrone ultra-rapide des applications installées sur le Mac (`/Applications`, `/System/Applications`, `~/Applications`).
-    - `LogoProvider.swift` : Gestion, mise à l'échelle Retina et résolution dynamique de l'icône et du logo officiel FoldyDock.
-  - `ViewModels/` :
-    - `DockViewModel.swift` : Logique d'état MVVM, drag-and-drop, réorganisation (principale et intra-dossier), fusion, animations de rebond, lanceur d'applications, gestion de la corbeille, filtrage automatique et déclenchement de la fenêtre de paramètres.
-  - `Window/` :
-    - `DockPanel.swift` : `NSPanel` flottant gérant la position, les animations et l'autohide.
-    - `HotspotPanel.swift` : Déclencheur tactile au bord inférieur de l'écran.
-    - `SettingsWindowController.swift` : Contrôleur singleton de la fenêtre dédiée de paramètres native macOS.
-    - `VisualEffectBackground.swift` : Wrapper AppKit pour le flou d'arrière-plan natif en verre dépoli.
-  - `Views/` :
-    - `DockContainerView.swift` : Vue racine du Dock, conteneur horizontal centré, lanceur d'applications à l'extrême gauche, séparateurs, corbeille et marges configurables.
-    - `AppLauncherView.swift` : Icône de l'application à l'extrême gauche avec logo FoldyDock officiel, animation de survol et déclenchement du popover Applications.
-    - `ApplicationsPopoverView.swift` : Grille popover des applications installées sur le Mac avec champ de recherche instantanée, compteur, lancement direct, ouverture dans le Finder et épinglage au dock.
-    - `DockItemView.swift` : Rendu des éléments (app, dossier, séparateur), titres au-dessus des icônes, animations de survol, drag-and-drop et menus contextuels.
-    - `TrashItemView.swift` : Vue de la corbeille native macOS à droite du dock avec interactions de clic, menu contextuel et zone de dépôt (drop-to-trash).
-    - `ResizeHandleView.swift` : Composant de redimensionnement conservé en ressource interne modulaire.
-    - `FolderIconGrid.swift` : Rendu dynamique et évolutif de la grille d'icônes miniatures avec alignement strict des cellules.
-    - `ExpandedFolderBubbleView.swift` : Rendu de la capsule horizontale élargie du dossier avec miniature à gauche, séparateur subtil et applications actives à droite prêtes pour le focus direct en un clic.
-    - `FolderPopoverView.swift` : Popover étendu d'un dossier avec grille complète d'applications agrandies, titres au-dessus, réorganisation par drag-and-drop et renommage direct.
-    - `MultiWindowIndicatorView.swift` : Composant d'affichage des pastilles d'activité multi-fenêtres avec forme géométrique dédiée MiniPlusShape pour un alignement sans distorsion.
-    - `FoldyDockSettingsView.swift` : Vue complète de la fenêtre de paramètres avec logo haute résolution, réglages de comportement, taille, marges, corbeille, séparateurs et réinitialisation.
-    - `VisualEffectBackground.swift` : Fond du dock en verre dépoli avec floutage matériel de l'arrière-plan via `NSVisualEffectView`.
-    - `BouncingModifier.swift` : Animation fluide de rebond/saut d'icône lors du lancement d'application.
-    - `MouseInteractionModifier.swift` : Gestion unifiée des clics gauche, milieu et droit.
-- **`Tests/FoldyDockTests/`**
-  - `DockItemTests.swift` : Tests de sérialisation, détection d'apps et modèles.
-  - `DockViewModelTests.swift` : 51 tests couvrant la logique métier (création/fusion/dissolution de dossiers, redimensionnement, réorganisation intra-dossier, rebonds, lanceur d'applications, découverte système, corbeille, multi-fenêtres, marges jusqu'à 48 pt, distance fixe titres/pastilles, délais show/hide, visibilité des titres et badges, persistance, filtrage des anciens items de réglages).
-  - `DockPanelTests.swift` : Tests du panneau flottant `DockPanel` (dimensions exactes, positionnement flottant à `screenOrigin.y + 18`, détection de zone `isMouseInDockZone` et maintien sous le dock).
+```
+foldyDock/
+├── Package.swift                    # SPM manifest (macOS 14 target)
+├── scripts/
+│   └── build_app.sh                 # Compilation, resource bundler & app launcher
+├── Sources/FoldyDock/
+│   ├── Main.swift                   # @main entry point, NSApplicationDelegate, menu bar item
+│   ├── Models/
+│   │   ├── DockItem.swift           # Unified model (.app, .folder, .separator)
+│   │   ├── DockConfig.swift         # User configuration, size, autohide, paddings
+│   │   └── DockHierarchyEngine.swift# Deterministic folder merge/dissolve & reorder logic
+│   ├── Services/
+│   │   ├── AppObserverService.swift # Running applications & window count tracking via AXUIElement
+│   │   ├── AppDiscoveryService.swift# Fast async discovery of installed Mac applications
+│   │   ├── DockPersistenceService.swift # Atomic JSON persistence in Application Support
+│   │   ├── LaunchAtLoginService.swift   # macOS SMAppService startup manager
+│   │   ├── LogoProvider.swift       # Mascot scaling & adaptive menu bar template provider
+│   │   └── IconProvider.swift       # System app icon extraction & folder mini-grid rendering
+│   ├── ViewModels/
+│   │   └── DockViewModel.swift      # Central MVVM observable state & UI event dispatcher
+│   ├── Views/
+│   │   ├── DockContainerView.swift  # Main dock horizontal stack & padding layout
+│   │   ├── DockItemView.swift       # Single dock item view with titles and badges
+│   │   ├── FolderPopoverView.swift  # Expanded folder popover grid
+│   │   ├── FolderIconGrid.swift     # Closed folder miniature icon grid
+│   │   ├── ExpandedFolderBubbleView.swift # Capsule for folder running applications
+│   │   ├── MultiWindowIndicatorView.swift # Dynamic multi-window dot indicators & plus shape
+│   │   ├── AppLauncherView.swift    # Foldy icon launcher
+│   │   ├── ApplicationsPopoverView.swift  # Searchable installed apps popover
+│   │   ├── TrashItemView.swift      # Interactive Trash item with drop-to-delete
+│   │   ├── FoldyDockSettingsView.swift    # Full settings control panel
+│   │   ├── BouncingModifier.swift   # Spring physics launch bounce animation
+│   │   └── MouseInteractionModifier.swift # Left, middle, and right click gesture handler
+│   └── Window/
+│       ├── DockPanel.swift          # Non-activating floating NSPanel (.canJoinAllSpaces)
+│       ├── HotspotPanel.swift       # Edge hover detection panel for autohide trigger
+│       ├── SettingsWindowController.swift # Singleton settings window manager
+│       └── VisualEffectBackground.swift   # Frosted glass blur AppKit view wrapper
+├── Tests/FoldyDockTests/            # Comprehensive unit test suite
+└── logoFoldyDock.png, menuBarIcon.png, AppIcon.icns
+```
 
+---
+
+## 🤝 Contributing
+
+Contributions, bug reports, and feature requests are very welcome!
+Please check out **[`CONTRIBUTING.md`](CONTRIBUTING.md)** and review our ubiquitous domain vocabulary in **[`CONTEXT.md`](CONTEXT.md)** before opening a Pull Request.
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2026 Guillaume Murat.

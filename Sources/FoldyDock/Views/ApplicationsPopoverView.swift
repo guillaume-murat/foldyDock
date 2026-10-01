@@ -140,6 +140,7 @@ public struct ApplicationsPopoverView: View {
         }
         .padding(16)
         .frame(minWidth: 480, maxWidth: 540)
+        .fixedSize(horizontal: false, vertical: true)
         .background(
             ZStack {
                 VisualEffectBackground(

@@ -119,6 +119,7 @@ public struct FolderPopoverView: View {
         }
         .padding(18)
         .frame(minWidth: 320, maxWidth: 480)
+        .fixedSize(horizontal: false, vertical: true)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(white: 0.14).opacity(0.35))
@@ -145,6 +146,10 @@ private struct FolderSubItemView: View {
 
     @State private var isHovered: Bool = false
 
+    private var isTerminating: Bool {
+        viewModel.terminatingItemIds.contains(item.id)
+    }
+
     var body: some View {
         let isRunning = viewModel.isItemRunning(item)
         let windowCount = viewModel.windowCount(for: item)
@@ -152,7 +157,7 @@ private struct FolderSubItemView: View {
         let placement = viewModel.activeDropPlacement
         let labelDistance = viewModel.config.labelDistance
         let isAppHidden = isRunning && viewModel.isItemHidden(item)
-        let effectiveOpacity = isAppHidden ? (isHovered ? min(1.0, viewModel.config.hiddenAppOpacity + 0.25) : viewModel.config.hiddenAppOpacity) : 1.0
+        let effectiveOpacity = isTerminating ? 0.0 : (isAppHidden ? (isHovered ? min(1.0, viewModel.config.hiddenAppOpacity + 0.25) : viewModel.config.hiddenAppOpacity) : 1.0)
 
         ZStack(alignment: .center) {
             // Drop insertion indicator on the left
@@ -197,7 +202,8 @@ private struct FolderSubItemView: View {
                     x: 0,
                     y: isHovered ? 3.5 : 2.5
                 )
-                .scaleEffect(isTargeted ? 1.08 : (isHovered ? 1.08 : 1.0))
+                .scaleEffect(isTerminating ? 0.05 : (isTargeted ? 1.08 : (isHovered ? 1.08 : 1.0)))
+                .animation(.spring(response: 0.18, dampingFraction: 0.7), value: isTerminating)
                 .animation(.spring(response: 0.25, dampingFraction: 0.65), value: isHovered)
                 .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isTargeted)
                 .dockBounce(isBouncing: viewModel.isItemBouncing(item))
@@ -212,29 +218,33 @@ private struct FolderSubItemView: View {
                     .truncationMode(.tail)
                     .frame(maxWidth: itemWidth)
                     .offset(y: -(appIconSize / 2 + labelDistance))
+                    .opacity(isTerminating ? 0.0 : 1.0)
+                    .animation(.spring(response: 0.18, dampingFraction: 0.7), value: isTerminating)
             }
 
             // Active multi-window indicator positioned below the icon at fixed distance (identical to Dock)
-            if isRunning {
+            if isRunning && !isTerminating {
                 MultiWindowIndicatorView(windowCount: windowCount, dotSize: 4.5, spacing: 3.5)
                     .offset(y: appIconSize / 2 + labelDistance)
             }
         }
         .frame(width: itemWidth, height: cellHeight, alignment: .center)
         .contentShape(Rectangle())
-        .help(item.title)
+        .help(isTerminating ? "" : item.title)
         .onHover { hovering in
+            guard !isTerminating else { return }
             isHovered = hovering
         }
         .background(
             GeometryReader { geo in
                 Color.clear.preference(
                     key: FolderItemFramesPreferenceKey.self,
-                    value: [item.id: geo.frame(in: .named("folderPopover"))]
+                    value: isTerminating ? [:] : [item.id: geo.frame(in: .named("folderPopover"))]
                 )
             }
         )
         .onTapGesture {
+            guard !isTerminating else { return }
             viewModel.launch(item: item)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
                 viewModel.closeFolderPopover()

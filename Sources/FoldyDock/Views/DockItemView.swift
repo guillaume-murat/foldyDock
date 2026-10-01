@@ -49,7 +49,12 @@ public struct DockItemView: View {
             let folderSize = iconSize
             let subAppSlotWidth = max(48.0, iconSize * 0.92)
             let dividerAndPadding: CGFloat = 8.0 + 1.2 + 8.0 + 14.0
-            let totalRunningWidth = CGFloat(runningSubItems.count) * subAppSlotWidth + CGFloat(max(0, runningSubItems.count - 1)) * 6.0
+            let terminatingCount = runningSubItems.filter { viewModel.terminatingItemIds.contains($0.id) }.count
+            let activeCount = max(0, runningSubItems.count - terminatingCount)
+            if activeCount == 0 {
+                return baseWidth
+            }
+            let totalRunningWidth = CGFloat(activeCount) * subAppSlotWidth + CGFloat(max(0, activeCount - 1)) * 6.0
             return max(baseWidth, folderSize + dividerAndPadding + totalRunningWidth)
         }
         return baseWidth
@@ -57,6 +62,10 @@ public struct DockItemView: View {
 
     private var folderFontSize: CGFloat {
         max(9.0, min(11.5, iconSize * 0.17))
+    }
+
+    private var isTerminating: Bool {
+        viewModel.terminatingItemIds.contains(item.id)
     }
 
     public var body: some View {
@@ -157,12 +166,14 @@ public struct DockItemView: View {
                     case .app:
                         let appIconScale: CGFloat = 1.22
                         let isAppHidden = isRunning && viewModel.isItemHidden(item)
-                        let effectiveOpacity = isAppHidden ? (isHovered ? min(1.0, viewModel.config.hiddenAppOpacity + 0.25) : viewModel.config.hiddenAppOpacity) : 1.0
+                        let effectiveOpacity = isTerminating ? 0.0 : (isAppHidden ? (isHovered ? min(1.0, viewModel.config.hiddenAppOpacity + 0.25) : viewModel.config.hiddenAppOpacity) : 1.0)
                         Image(nsImage: IconProvider.shared.icon(for: item, size: iconSize * appIconScale))
                             .resizable()
                             .scaledToFit()
                             .frame(width: iconSize * appIconScale, height: iconSize * appIconScale)
                             .opacity(effectiveOpacity)
+                            .scaleEffect(isTerminating ? 0.05 : 1.0)
+                            .animation(.spring(response: 0.18, dampingFraction: 0.7), value: isTerminating)
                             .animation(.easeInOut(duration: 0.25), value: isAppHidden)
                             .overlay(
                                 Group {
@@ -229,20 +240,23 @@ public struct DockItemView: View {
             }
 
             // 3. Running indicator dot(s) positioned below the icon in the bottom margin
-            if isRunning {
+            if isRunning && !isTerminating {
                 runningIndicatorView
             }
             }
         }
-        .frame(width: itemWidth, height: dockHeight, alignment: .center)
+        .frame(width: isTerminating && !item.isPinned ? 0 : itemWidth, height: dockHeight, alignment: .center)
+        .clipped()
+        .animation(.spring(response: 0.20, dampingFraction: 0.75), value: isTerminating)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: isExpandedFolder)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: runningSubItems.count)
-        .help(item.title)
+        .animation(.spring(response: 0.22, dampingFraction: 0.78), value: viewModel.terminatingItemIds)
+        .help(isTerminating ? "" : item.title)
         .background(
             GeometryReader { geo in
                 Color.clear.preference(
                     key: ItemFramesPreferenceKey.self,
-                    value: [item.id: geo.frame(in: .named("dockContainer"))]
+                    value: isTerminating ? [:] : [item.id: geo.frame(in: .named("dockContainer"))]
                 )
             }
         )
@@ -258,24 +272,7 @@ public struct DockItemView: View {
             viewModel: viewModel,
             itemWidth: itemWidth
         ))
-        .popover(
-            isPresented: Binding(
-                get: {
-                    item.type == .folder && viewModel.activeFolder?.id == item.id
-                },
-                set: { isPresented in
-                    if !isPresented && item.type == .folder {
-                        viewModel.closeFolderPopover()
-                    }
-                }
-            ),
-            attachmentAnchor: .point(.top),
-            arrowEdge: .bottom
-        ) {
-            if item.type == .folder {
-                FolderPopoverView(viewModel: viewModel, folder: item)
-            }
-        }
+
     }
 
     @ViewBuilder

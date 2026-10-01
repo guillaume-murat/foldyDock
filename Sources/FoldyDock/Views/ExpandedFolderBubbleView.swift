@@ -57,8 +57,16 @@ public struct ExpandedFolderBubbleView: View {
         max(48.0, iconSize * 0.92)
     }
 
+    private var activeCount: Int {
+        let terminatingCount = runningSubItems.filter { viewModel.terminatingItemIds.contains($0.id) }.count
+        return max(0, runningSubItems.count - terminatingCount)
+    }
+
     private var capsuleWidth: CGFloat {
-        let totalRunningWidth = CGFloat(runningSubItems.count) * subAppSlotWidth + CGFloat(max(0, runningSubItems.count - 1)) * 6.0
+        if activeCount == 0 {
+            return folderSize + 14.0
+        }
+        let totalRunningWidth = CGFloat(activeCount) * subAppSlotWidth + CGFloat(max(0, activeCount - 1)) * 6.0
         let dividerAndPadding: CGFloat = 8.0 + 1.2 + 8.0 + 14.0
         return folderSize + dividerAndPadding + totalRunningWidth
     }
@@ -126,19 +134,22 @@ public struct ExpandedFolderBubbleView: View {
                 }
 
                 // 2. Subtle Vertical Divider
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.06),
-                                Color.white.opacity(0.24),
-                                Color.white.opacity(0.06)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
+                if activeCount > 0 {
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.06),
+                                    Color.white.opacity(0.24),
+                                    Color.white.opacity(0.06)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
-                    )
-                    .frame(width: 1.2, height: bubbleHeight * 0.70)
+                        .frame(width: 1.2, height: bubbleHeight * 0.70)
+                        .transition(.opacity)
+                }
 
                 // 3. Running Sub-Applications
                 HStack(spacing: 6) {
@@ -251,11 +262,18 @@ private struct RunningSubAppItemView: View {
         max(7.5, min(8.8, iconSize * 0.125))
     }
 
+    private var isTerminating: Bool {
+        viewModel.terminatingItemIds.contains(subApp.id)
+    }
+
     private var isAppHidden: Bool {
         viewModel.isItemHidden(subApp)
     }
 
     private var effectiveOpacity: Double {
+        if isTerminating {
+            return 0.0
+        }
         if isAppHidden {
             return isHovered ? min(1.0, viewModel.config.hiddenAppOpacity + 0.25) : viewModel.config.hiddenAppOpacity
         }
@@ -279,6 +297,7 @@ private struct RunningSubAppItemView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: subAppSlotWidth - 4)
+                    .opacity(isTerminating ? 0.0 : 1.0)
             }
 
             // Icon (au milieu)
@@ -289,7 +308,8 @@ private struct RunningSubAppItemView: View {
                 .clipShape(RoundedRectangle(cornerRadius: subIconSize * 0.22, style: .continuous))
                 .opacity(effectiveOpacity)
                 .shadow(color: Color.black.opacity(isAppHidden ? 0.1 : 0.25), radius: 2, x: 0, y: 1)
-                .scaleEffect(isHovered ? 1.08 : 1.0)
+                .scaleEffect(isTerminating ? 0.05 : (isHovered ? 1.08 : 1.0))
+                .animation(.spring(response: 0.18, dampingFraction: 0.7), value: isTerminating)
                 .animation(.spring(response: 0.25, dampingFraction: 0.65), value: isHovered)
                 .dockBounce(isBouncing: viewModel.isItemBouncing(subApp))
 
@@ -299,12 +319,16 @@ private struct RunningSubAppItemView: View {
                 dotSize: 2.3,
                 spacing: 1.6
             )
+            .opacity(isTerminating ? 0.0 : 1.0)
 
             Spacer(minLength: 1)
         }
-        .frame(width: subAppSlotWidth, height: bubbleHeight)
+        .frame(width: isTerminating ? 0 : subAppSlotWidth, height: bubbleHeight)
+        .clipped()
         .contentShape(Rectangle())
+        .animation(.spring(response: 0.20, dampingFraction: 0.75), value: isTerminating)
         .onHover { hovering in
+            guard !isTerminating else { return }
             isHovered = hovering
             if hovering {
                 viewModel.hoveredItemId = subApp.id
@@ -314,6 +338,7 @@ private struct RunningSubAppItemView: View {
             }
         }
         .onTapGesture {
+            guard !isTerminating else { return }
             viewModel.launch(item: subApp)
         }
         .contextMenu {
@@ -331,12 +356,12 @@ private struct RunningSubAppItemView: View {
                 viewModel.toggleFolderPopover(folder)
             }
         }
-        .help(subApp.title)
+        .help(isTerminating ? "" : subApp.title)
         .background(
             GeometryReader { geo in
                 Color.clear.preference(
                     key: ItemFramesPreferenceKey.self,
-                    value: [subApp.id: geo.frame(in: .named("dockContainer"))]
+                    value: isTerminating ? [:] : [subApp.id: geo.frame(in: .named("dockContainer"))]
                 )
             }
         )

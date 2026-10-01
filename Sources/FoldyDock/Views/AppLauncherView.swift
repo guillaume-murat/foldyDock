@@ -96,7 +96,7 @@ public struct AppLauncherView: View {
                 }
             ),
             attachmentAnchor: .point(.top),
-            arrowEdge: .bottom
+            arrowEdge: .top
         ) {
             ApplicationsPopoverView(viewModel: viewModel)
         }

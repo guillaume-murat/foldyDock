@@ -1,4 +1,34 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon\r
+._*
+.Spotlight-V100
+.Trashes
+
+# Xcode / Swift Package Manager
 /.build
 /build
 .swiftpm/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+*.xcuserdatad/
+xcuserdata/
+DerivedData/
+
+# Environments & Local Secrets
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.cer
+*.cert
+
+# Scratch / Local Workspaces
+scratch/
+.t3/
+*~
+*.swp

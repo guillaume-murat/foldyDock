@@ -12,11 +12,13 @@ public final class HotspotPanel: NSPanel {
             defer: false
         )
 
-        self.level = .floating
+        self.level = .statusBar
         self.isOpaque = false
         self.backgroundColor = .clear
         self.hasShadow = false
         self.ignoresMouseEvents = false
+        self.hidesOnDeactivate = false
+        self.isReleasedWhenClosed = false
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
 
         let view = HotspotView()
@@ -32,7 +34,7 @@ public final class HotspotPanel: NSPanel {
 
     public func updatePosition(screen: NSScreen) {
         let screenFrame = screen.frame
-        let height: CGFloat = 5.0
+        let height: CGFloat = 8.0
         let frame = NSRect(
             x: screenFrame.origin.x,
             y: screenFrame.origin.y,
@@ -69,11 +71,21 @@ public final class HotspotManager {
     }
 
     public func orderFrontAll() {
-        panels.forEach { $0.orderFront(nil) }
+        panels.forEach {
+            $0.orderFrontRegardless()
+            ($0.contentView as? HotspotView)?.refreshTracking()
+        }
     }
 
     public func orderOutAll() {
         panels.forEach { $0.orderOut(nil) }
+    }
+
+    public func handleSpaceChange() {
+        for panel in panels {
+            panel.orderFrontRegardless()
+            (panel.contentView as? HotspotView)?.refreshTracking()
+        }
     }
 }
 
@@ -86,6 +98,11 @@ private final class HotspotView: NSView {
         // Subtle almost-zero alpha fill guarantees hit-testing works without visible pixels
         NSColor(white: 0.0, alpha: 0.001).setFill()
         dirtyRect.fill()
+    }
+
+    public func refreshTracking() {
+        updateTrackingAreas()
+        window?.invalidateCursorRects(for: self)
     }
 
     override func updateTrackingAreas() {
