@@ -362,7 +362,7 @@
       border: 1px solid var(--border-glass);
       box-shadow: var(--shadow-ambient);
       overflow: hidden;
-      min-height: 640px;
+      min-height: 660px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -428,7 +428,7 @@
 
     .stage-center-badge {
       position: absolute;
-      top: 14%;
+      top: 10%;
       text-align: center;
       pointer-events: none;
       opacity: 0.85;
@@ -448,11 +448,11 @@
     }
 
     /* -------------------------------------------------------------
-       SIMULATED APPS WINDOWS (Safari, Terminal, Finder)
+       SIMULATED APPS WINDOWS (Exclusive Single Window Mode)
        ------------------------------------------------------------- */
     .app-window {
       position: absolute;
-      top: 30px;
+      top: 24px;
       left: 50%;
       transform: translateX(-50%) scale(0.92);
       width: min(720px, 94%);
@@ -475,13 +475,22 @@
     }
 
     /* SAFARI TOOLBAR & GOOGLE HOMEPAGE */
-    .safari-toolbar {
+    .app-toolbar {
       display: flex;
       align-items: center;
       gap: 12px;
       padding: 10px 14px;
       background: rgba(36, 42, 58, 0.65);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .toolbar-title {
+      flex: 1;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
     }
 
     .safari-nav-btns {
@@ -586,6 +595,308 @@
     .google-btn:hover {
       background: rgba(255, 255, 255, 0.12);
       color: #fff;
+    }
+
+    /* -------------------------------------------------------------
+       FINDER WINDOW (Q2: B - Minimalist List with Active Search)
+       ------------------------------------------------------------- */
+    .finder-search-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 4px 10px;
+      width: 180px;
+    }
+    .finder-search-input {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 0.78rem;
+      outline: none;
+      width: 100%;
+    }
+
+    .finder-body {
+      background: #141722;
+      padding: 1.25rem;
+      min-height: 290px;
+    }
+
+    .finder-path-bar {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .finder-file-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 16px;
+    }
+    .finder-file-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s var(--ease-smooth);
+    }
+    .finder-file-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+    .finder-file-item:active {
+      transform: scale(0.96);
+    }
+    .finder-file-icon {
+      font-size: 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .finder-file-item img {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+    }
+    .finder-file-name {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-align: center;
+      word-break: break-word;
+    }
+
+    /* -------------------------------------------------------------
+       MESSAGES WINDOW (Q3: B - Centered Conversation)
+       ------------------------------------------------------------- */
+    .messages-contact-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+    .messages-contact-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .messages-contact-status {
+      font-size: 0.7rem;
+      color: #30d158;
+    }
+
+    .messages-body {
+      background: #151824;
+      display: flex;
+      flex-direction: column;
+      height: 320px;
+      padding: 1rem 1.25rem;
+    }
+
+    .messages-thread {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+    }
+
+    .msg-bubble {
+      max-width: 70%;
+      padding: 8px 14px;
+      border-radius: 18px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      position: relative;
+      animation: fadeIn 0.25s var(--ease-spring);
+    }
+    .msg-bubble.inbound {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-primary);
+      border-bottom-left-radius: 4px;
+    }
+    .msg-bubble.outbound {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #0a84ff 0%, #0071e3 100%);
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+    }
+
+    .messages-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 20px;
+      padding: 6px 12px;
+    }
+    .messages-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+    .messages-send-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #0a84ff;
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.8rem;
+      transition: transform 0.15s ease;
+    }
+    .messages-send-btn:hover {
+      transform: scale(1.1);
+    }
+    .messages-send-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* -------------------------------------------------------------
+       APPLE MUSIC WINDOW (Q4: B - Responsive Albums Grid)
+       ------------------------------------------------------------- */
+    .music-body {
+      background: #141724;
+      padding: 1.25rem;
+      min-height: 290px;
+    }
+    .music-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 16px;
+    }
+    .music-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.2s var(--ease-spring);
+    }
+    .music-card:hover {
+      transform: scale(1.05);
+    }
+    .music-artwork {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .music-artwork-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .music-card:hover .music-artwork-overlay {
+      opacity: 1;
+    }
+    .music-play-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    .music-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .music-artist {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* -------------------------------------------------------------
+       TRASH WINDOW (CORBEILLE FACTICE)
+       ------------------------------------------------------------- */
+    .trash-body {
+      background: #141722;
+      padding: 1.5rem;
+      min-height: 270px;
+      display: flex;
+      flex-direction: column;
+    }
+    .btn-empty-trash {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-glass);
+      color: var(--text-primary);
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-empty-trash:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--border-specular);
+    }
+    .btn-empty-trash:active {
+      transform: scale(0.95);
+    }
+    .trash-items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 16px;
+      flex: 1;
+    }
+    .trash-empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
     }
 
     /* TERMINAL WINDOW */
@@ -1254,26 +1565,26 @@
       <div class="window-header">
         <div class="window-dots">
           <span class="window-dot close" onclick="closeAllSimulatedWindows()"></span>
-          <span class="window-dot min" onclick="minimizeSafariWindow()"></span>
-          <span class="window-dot max" onclick="toggleMaximizeSafari()"></span>
+          <span class="window-dot min" onclick="minimizeActiveWindow()"></span>
+          <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
         </div>
         <div class="window-title">Desktop Space — FoldyDock Live Preview</div>
-        <div class="interactive-hint">💡 Click Foldy, Safari, or DEV TOOLS below</div>
+        <div class="interactive-hint">💡 Click any app in the dock to open its window</div>
       </div>
 
       <div class="stage-canvas" id="stageCanvas">
         <div class="stage-center-badge" id="actionToast">
           <h3>Try interacting with the Dock</h3>
-          <p>Click Foldy for the App Launcher • Click Safari for a Google window • Middle-click to quit</p>
+          <p>Click Safari, Finder, Messages, Music, Trash, or Foldy • Middle-click to quit</p>
         </div>
 
-        <!-- SIMULATED SAFARI WINDOW (GOOGLE HOMEPAGE) -->
+        <!-- 1. SAFARI WINDOW (GOOGLE HOMEPAGE) -->
         <div class="app-window" id="safariWindow">
-          <div class="safari-toolbar">
+          <div class="app-toolbar">
             <div class="window-dots">
-              <span class="window-dot close" onclick="closeSafariWindow()"></span>
-              <span class="window-dot min" onclick="minimizeSafariWindow()"></span>
-              <span class="window-dot max" onclick="toggleMaximizeSafari()"></span>
+              <span class="window-dot close" onclick="closeAppWindow('Safari')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Safari')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
             </div>
             <div class="safari-nav-btns">
               <button class="safari-nav-btn" title="Back">‹</button>
@@ -1317,17 +1628,191 @@
           </div>
         </div>
 
-        <!-- SIMULATED TERMINAL WINDOW -->
-        <div class="app-window" id="terminalWindow" style="width: min(580px, 92%);">
-          <div class="safari-toolbar" style="background: #1e2230;">
+        <!-- 2. FINDER WINDOW (Q2: B - Minimalist List with Active Search) -->
+        <div class="app-window" id="finderWindow">
+          <div class="app-toolbar">
             <div class="window-dots">
-              <span class="window-dot close" onclick="closeTerminalWindow()"></span>
-              <span class="window-dot min" onclick="minimizeTerminalWindow()"></span>
-              <span class="window-dot max"></span>
+              <span class="window-dot close" onclick="closeAppWindow('Finder')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Finder')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
             </div>
-            <div style="flex: 1; text-align: center; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">
-              gmperso — zsh — 80×24
+            <div class="toolbar-title">Finder — Applications</div>
+            <div class="finder-search-box">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9aa0aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" class="finder-search-input" id="finderSearchInput" placeholder="Search files..." oninput="filterFinderFiles(this.value)" />
             </div>
+          </div>
+          <div class="finder-body">
+            <div class="finder-path-bar">
+              <span>Macintosh HD</span>
+              <span>›</span>
+              <span>Users</span>
+              <span>›</span>
+              <span>gmperso</span>
+              <span>›</span>
+              <span style="color: var(--text-primary); font-weight: 500;">Applications</span>
+            </div>
+            <div class="finder-file-list" id="finderFileList">
+              <div class="finder-file-item" data-name="FoldyDock.app">
+                <img src="assets/logoFoldyDock.png" alt="FoldyDock" />
+                <span class="finder-file-name">FoldyDock.app</span>
+              </div>
+              <div class="finder-file-item" data-name="Safari.app">
+                <img src="assets/icon_safari.png" alt="Safari" />
+                <span class="finder-file-name">Safari.app</span>
+              </div>
+              <div class="finder-file-item" data-name="Xcode.app">
+                <img src="assets/icon_xcode.png" alt="Xcode" />
+                <span class="finder-file-name">Xcode.app</span>
+              </div>
+              <div class="finder-file-item" data-name="Terminal.app">
+                <img src="assets/icon_terminal.png" alt="Terminal" />
+                <span class="finder-file-name">Terminal.app</span>
+              </div>
+              <div class="finder-file-item" data-name="Documents">
+                <div class="finder-file-icon">📁</div>
+                <span class="finder-file-name">Documents</span>
+              </div>
+              <div class="finder-file-item" data-name="Downloads">
+                <div class="finder-file-icon">📂</div>
+                <span class="finder-file-name">Downloads</span>
+              </div>
+              <div class="finder-file-item" data-name="Config.plist">
+                <div class="finder-file-icon">📄</div>
+                <span class="finder-file-name">Config.plist</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. MESSAGES WINDOW (Q3: B - Centered Conversation) -->
+        <div class="app-window" id="messagesWindow" style="width: min(620px, 94%);">
+          <div class="app-toolbar">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeAppWindow('Messages')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Messages')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
+            </div>
+            <div class="messages-contact-badge">
+              <span class="messages-contact-name">Tim Cook </span>
+              <span class="messages-contact-status">iMessage • Active now</span>
+            </div>
+          </div>
+          <div class="messages-body">
+            <div class="messages-thread" id="messagesThread">
+              <div class="msg-bubble inbound">
+                Hey! Did you try that new FoldyDock app on macOS?
+              </div>
+              <div class="msg-bubble outbound">
+                Yeah, grouping apps into dynamic folders directly in the dock is insanely clean 🔥
+              </div>
+              <div class="msg-bubble inbound">
+                And middle-click to kill apps? Pure genius.
+              </div>
+            </div>
+            <div class="messages-input-row">
+              <input type="text" class="messages-input" id="messageInput" placeholder="iMessage" onkeydown="handleMessageInput(event)" />
+              <button class="messages-send-btn" onclick="sendCustomMessage()" title="Send">↑</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. APPLE MUSIC WINDOW (Q4: B - Responsive Albums Grid) -->
+        <div class="app-window" id="musicWindow">
+          <div class="app-toolbar">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeAppWindow('Music')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Music')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
+            </div>
+            <div class="toolbar-title">Apple Music — Top Albums & Playlists</div>
+          </div>
+          <div class="music-body">
+            <div class="music-grid">
+              <div class="music-card" onclick="playMockAlbum('Ambient Chill Vibes')">
+                <div class="music-artwork" style="background: linear-gradient(135deg, #4b1248 0%, #1e1145 100%);">
+                  🌌
+                  <div class="music-artwork-overlay"><span class="music-play-btn">▶</span></div>
+                </div>
+                <div class="music-title">Ambient Chill Vibes</div>
+                <div class="music-artist">Apple Music Electronic</div>
+              </div>
+
+              <div class="music-card" onclick="playMockAlbum('Coding in Swift')">
+                <div class="music-artwork" style="background: linear-gradient(135deg, #09473b 0%, #032b43 100%);">
+                  ⚡
+                  <div class="music-artwork-overlay"><span class="music-play-btn">▶</span></div>
+                </div>
+                <div class="music-title">Coding in Swift</div>
+                <div class="music-artist">Developer Focus</div>
+              </div>
+
+              <div class="music-card" onclick="playMockAlbum('Lo-Fi Study Beats')">
+                <div class="music-artwork" style="background: linear-gradient(135deg, #6c2e0b 0%, #301404 100%);">
+                  ☕
+                  <div class="music-artwork-overlay"><span class="music-play-btn">▶</span></div>
+                </div>
+                <div class="music-title">Lo-Fi Study Beats</div>
+                <div class="music-artist">Chillhop Music</div>
+              </div>
+
+              <div class="music-card" onclick="playMockAlbum('Spatial Audio Hits')">
+                <div class="music-artwork" style="background: linear-gradient(135deg, #0f3d64 0%, #121033 100%);">
+                  🎧
+                  <div class="music-artwork-overlay"><span class="music-play-btn">▶</span></div>
+                </div>
+                <div class="music-title">Spatial Audio Hits</div>
+                <div class="music-artist">Today's Hits</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. TRASH WINDOW (CORBEILLE FACTICE) -->
+        <div class="app-window" id="trashWindow" style="width: min(580px, 92%);">
+          <div class="app-toolbar">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeAppWindow('Trash')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Trash')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
+            </div>
+            <div class="toolbar-title">Trash</div>
+            <button class="btn-empty-trash" id="btnEmptyTrash" onclick="emptyTrashAction()">Empty Trash</button>
+          </div>
+          <div class="trash-body" id="trashBody">
+            <div class="trash-items-grid" id="trashItemsGrid">
+              <div class="finder-file-item">
+                <div class="finder-file-icon">🖼️</div>
+                <span class="finder-file-name">old_dock.png</span>
+              </div>
+              <div class="finder-file-item">
+                <div class="finder-file-icon">📜</div>
+                <span class="finder-file-name">unused_dock_hack.sh</span>
+              </div>
+              <div class="finder-file-item">
+                <div class="finder-file-icon">📄</div>
+                <span class="finder-file-name">cluttered_notes.txt</span>
+              </div>
+            </div>
+            <div class="trash-empty-state" id="trashEmptyState" style="display: none;">
+              <div style="font-size: 2.5rem; opacity: 0.8;">✨</div>
+              <div>The Trash is empty.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. TERMINAL WINDOW -->
+        <div class="app-window" id="terminalWindow" style="width: min(580px, 92%);">
+          <div class="app-toolbar" style="background: #1e2230;">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeAppWindow('Terminal')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Terminal')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
+            </div>
+            <div class="toolbar-title">gmperso — zsh — 80×24</div>
           </div>
           <div class="terminal-body">
             <div>Last login: Thu Oct 1 12:54:12 on ttys001</div>
@@ -1360,67 +1845,67 @@
             <input type="text" class="launcher-search-input" id="launcherSearchInput" placeholder="Search applications..." oninput="filterLauncherApps(this.value)" />
           </div>
           <div class="launcher-app-grid" id="launcherAppGrid">
-            <div class="launcher-app-item" data-app="Safari" onclick="launchApp('Safari')">
+            <div class="launcher-app-item" data-app="Safari" onclick="openAppWindow('Safari')">
               <img src="assets/icon_safari.png" alt="Safari" />
               <span>Safari</span>
             </div>
-            <div class="launcher-app-item" data-app="Finder" onclick="launchApp('Finder')">
+            <div class="launcher-app-item" data-app="Finder" onclick="openAppWindow('Finder')">
               <img src="assets/icon_finder.png" alt="Finder" />
               <span>Finder</span>
             </div>
-            <div class="launcher-app-item" data-app="Terminal" onclick="launchApp('Terminal')">
-              <img src="assets/icon_terminal.png" alt="Terminal" />
-              <span>Terminal</span>
-            </div>
-            <div class="launcher-app-item" data-app="Xcode" onclick="launchApp('Xcode')">
-              <img src="assets/icon_xcode.png" alt="Xcode" />
-              <span>Xcode</span>
-            </div>
-            <div class="launcher-app-item" data-app="VS Code" onclick="launchApp('VS Code')">
-              <img src="assets/icon_vscode.png" alt="VS Code" />
-              <span>VS Code</span>
-            </div>
-            <div class="launcher-app-item" data-app="Messages" onclick="launchApp('Messages')">
+            <div class="launcher-app-item" data-app="Messages" onclick="openAppWindow('Messages')">
               <img src="assets/icon_messages.png" alt="Messages" />
               <span>Messages</span>
             </div>
-            <div class="launcher-app-item" data-app="Mail" onclick="launchApp('Mail')">
-              <img src="assets/icon_mail.png" alt="Mail" />
-              <span>Mail</span>
-            </div>
-            <div class="launcher-app-item" data-app="Music" onclick="launchApp('Music')">
+            <div class="launcher-app-item" data-app="Music" onclick="openAppWindow('Music')">
               <img src="assets/icon_music.png" alt="Music" />
               <span>Music</span>
             </div>
-            <div class="launcher-app-item" data-app="Notes" onclick="launchApp('Notes')">
+            <div class="launcher-app-item" data-app="Terminal" onclick="openAppWindow('Terminal')">
+              <img src="assets/icon_terminal.png" alt="Terminal" />
+              <span>Terminal</span>
+            </div>
+            <div class="launcher-app-item" data-app="Xcode" onclick="openAppWindow('Xcode')">
+              <img src="assets/icon_xcode.png" alt="Xcode" />
+              <span>Xcode</span>
+            </div>
+            <div class="launcher-app-item" data-app="VS Code" onclick="openAppWindow('VS Code')">
+              <img src="assets/icon_vscode.png" alt="VS Code" />
+              <span>VS Code</span>
+            </div>
+            <div class="launcher-app-item" data-app="Notes" onclick="openAppWindow('Notes')">
               <img src="assets/icon_notes.png" alt="Notes" />
               <span>Notes</span>
             </div>
-            <div class="launcher-app-item" data-app="Settings" onclick="launchApp('Settings')">
+            <div class="launcher-app-item" data-app="Mail" onclick="openAppWindow('Mail')">
+              <img src="assets/icon_mail.png" alt="Mail" />
+              <span>Mail</span>
+            </div>
+            <div class="launcher-app-item" data-app="Settings" onclick="openAppWindow('Settings')">
               <img src="assets/icon_settings.png" alt="Settings" />
               <span>Settings</span>
             </div>
-            <div class="launcher-app-item" data-app="Photos" onclick="launchApp('Photos')">
+            <div class="launcher-app-item" data-app="Photos" onclick="openAppWindow('Photos')">
               <img src="assets/icon_photos.png" alt="Photos" />
               <span>Photos</span>
             </div>
-            <div class="launcher-app-item" data-app="Figma" onclick="launchApp('Figma')">
+            <div class="launcher-app-item" data-app="Figma" onclick="openAppWindow('Figma')">
               <img src="assets/icon_figma.png" alt="Figma" />
               <span>Figma</span>
             </div>
-            <div class="launcher-app-item" data-app="Calculator" onclick="launchApp('Calculator')">
+            <div class="launcher-app-item" data-app="Calculator" onclick="openAppWindow('Calculator')">
               <img src="assets/icon_calculator.png" alt="Calculator" />
               <span>Calculator</span>
             </div>
-            <div class="launcher-app-item" data-app="Calendar" onclick="launchApp('Calendar')">
+            <div class="launcher-app-item" data-app="Calendar" onclick="openAppWindow('Calendar')">
               <img src="assets/icon_calendar.png" alt="Calendar" />
               <span>Calendar</span>
             </div>
-            <div class="launcher-app-item" data-app="Preview" onclick="launchApp('Preview')">
+            <div class="launcher-app-item" data-app="Preview" onclick="openAppWindow('Preview')">
               <img src="assets/icon_preview.png" alt="Preview" />
               <span>Preview</span>
             </div>
-            <div class="launcher-app-item" data-app="Activity Monitor" onclick="launchApp('Activity Monitor')">
+            <div class="launcher-app-item" data-app="Activity Monitor" onclick="openAppWindow('Activity Monitor')">
               <img src="assets/icon_activitymonitor.png" alt="Activity Monitor" />
               <span>Activity</span>
             </div>
@@ -1434,27 +1919,27 @@
             <button class="popover-close" id="closePopoverBtn">✕</button>
           </div>
           <div class="popover-grid">
-            <div class="popover-app" onclick="launchApp('Xcode')">
+            <div class="popover-app" onclick="openAppWindow('Xcode')">
               <img src="assets/icon_xcode.png" alt="Xcode" />
               <span class="popover-app-name">Xcode</span>
             </div>
-            <div class="popover-app" onclick="launchApp('Terminal')">
+            <div class="popover-app" onclick="openAppWindow('Terminal')">
               <img src="assets/icon_terminal.png" alt="Terminal" />
               <span class="popover-app-name">Terminal</span>
             </div>
-            <div class="popover-app" onclick="launchApp('VS Code')">
+            <div class="popover-app" onclick="openAppWindow('VS Code')">
               <img src="assets/icon_vscode.png" alt="VS Code" />
               <span class="popover-app-name">VS Code</span>
             </div>
-            <div class="popover-app" onclick="launchApp('Figma')">
+            <div class="popover-app" onclick="openAppWindow('Figma')">
               <img src="assets/icon_figma.png" alt="Figma" />
               <span class="popover-app-name">Figma</span>
             </div>
-            <div class="popover-app" onclick="launchApp('Activity Monitor')">
+            <div class="popover-app" onclick="openAppWindow('Activity Monitor')">
               <img src="assets/icon_activitymonitor.png" alt="Activity Monitor" />
               <span class="popover-app-name">Activity</span>
             </div>
-            <div class="popover-app" onclick="launchApp('Preview')">
+            <div class="popover-app" onclick="openAppWindow('Preview')">
               <img src="assets/icon_preview.png" alt="Preview" />
               <span class="popover-app-name">Preview</span>
             </div>
@@ -1474,7 +1959,7 @@
           <div class="dock-separator"></div>
 
           <!-- FINDER -->
-          <div class="dock-item" id="itemFinder" onclick="launchApp('Finder')" onauxclick="triggerMiddleClick(event, 'Finder')">
+          <div class="dock-item" id="itemFinder" onclick="openAppWindow('Finder')" onauxclick="triggerMiddleClick(event, 'Finder')">
             <span class="dock-item-name">Finder</span>
             <div class="dock-icon-wrapper">
               <img src="assets/icon_finder.png" alt="Finder" class="dock-icon-img" />
@@ -1485,7 +1970,7 @@
           </div>
 
           <!-- SAFARI -->
-          <div class="dock-item" id="itemSafari" onclick="launchApp('Safari')" onauxclick="triggerMiddleClick(event, 'Safari')">
+          <div class="dock-item" id="itemSafari" onclick="openAppWindow('Safari')" onauxclick="triggerMiddleClick(event, 'Safari')">
             <span class="dock-item-name">Safari</span>
             <div class="dock-icon-wrapper">
               <img src="assets/icon_safari.png" alt="Safari" class="dock-icon-img" />
@@ -1497,7 +1982,7 @@
           </div>
 
           <!-- MESSAGES -->
-          <div class="dock-item" id="itemMessages" onclick="launchApp('Messages')" onauxclick="triggerMiddleClick(event, 'Messages')">
+          <div class="dock-item" id="itemMessages" onclick="openAppWindow('Messages')" onauxclick="triggerMiddleClick(event, 'Messages')">
             <span class="dock-item-name">Messages</span>
             <div class="dock-icon-wrapper">
               <img src="assets/icon_messages.png" alt="Messages" class="dock-icon-img" />
@@ -1522,7 +2007,7 @@
           </div>
 
           <!-- MUSIC -->
-          <div class="dock-item" id="itemMusic" onclick="launchApp('Music')" onauxclick="triggerMiddleClick(event, 'Music')">
+          <div class="dock-item" id="itemMusic" onclick="openAppWindow('Music')" onauxclick="triggerMiddleClick(event, 'Music')">
             <span class="dock-item-name">Music</span>
             <div class="dock-icon-wrapper">
               <img src="assets/icon_music.png" alt="Music" class="dock-icon-img" />
@@ -1535,7 +2020,7 @@
           <div class="dock-separator"></div>
 
           <!-- TRASH (Official Apple Trash Icon) -->
-          <div class="dock-item" id="itemTrash" onclick="triggerTrashClick()">
+          <div class="dock-item" id="itemTrash" onclick="openAppWindow('Trash')">
             <span class="dock-item-name">Trash</span>
             <div class="dock-icon-wrapper">
               <img src="assets/apple_trash.png" alt="Trash" class="dock-icon-img" />
@@ -1621,7 +2106,7 @@
   <!-- FOOTER -->
   <footer>
     <p>
-      FoldyDock is open source under the <a href="https://github.com/guillaumeslash/folderDock/blob/main/LICENSE">MIT License</a>.
+      FoldyDock is open source under the <a href="https://github.com/guillaumeslash/folderDock/blob/main/LICENSE">MIT License</a>.<br>
       Crafted with Apple Design principles for macOS 14+.<br>
       Copyright &copy; 2026 Guillaume Murat.
     </p>
@@ -1636,12 +2121,26 @@
     const itemFoldy = document.getElementById('itemFoldy');
     const closePopoverBtn = document.getElementById('closePopoverBtn');
     const foldyLauncher = document.getElementById('foldyLauncher');
-    const safariWindow = document.getElementById('safariWindow');
-    const terminalWindow = document.getElementById('terminalWindow');
-    const dotsSafari = document.getElementById('dotsSafari');
-    const dotsFinder = document.getElementById('dotsFinder');
-    const dotsMessages = document.getElementById('dotsMessages');
-    const dotsMusic = document.getElementById('dotsMusic');
+
+    // Windows
+    const windows = {
+      Safari: document.getElementById('safariWindow'),
+      Finder: document.getElementById('finderWindow'),
+      Messages: document.getElementById('messagesWindow'),
+      Music: document.getElementById('musicWindow'),
+      Trash: document.getElementById('trashWindow'),
+      Terminal: document.getElementById('terminalWindow')
+    };
+
+    // Dots
+    const dots = {
+      Safari: document.getElementById('dotsSafari'),
+      Finder: document.getElementById('dotsFinder'),
+      Messages: document.getElementById('dotsMessages'),
+      Music: document.getElementById('dotsMusic')
+    };
+
+    let activeWindowName = null;
 
     function showToast(title, subtitle) {
       actionToast.innerHTML = `<h3>${title}</h3><p>${subtitle}</p>`;
@@ -1680,7 +2179,7 @@
         updateFolderPopoverPosition();
         foldyLauncher.classList.remove('visible');
         folderPopover.classList.add('visible');
-        showToast('DEV TOOLS Folder Opened 📂', 'Positioned directly above the dock capsule • Click any app to launch');
+        showToast('DEV TOOLS Folder Opened 📂', 'Positioned directly above dock capsule • Click any app to launch');
       }
     }
 
@@ -1711,83 +2210,168 @@
       const q = query.toLowerCase().trim();
       items.forEach(item => {
         const appName = item.getAttribute('data-app').toLowerCase();
-        if (appName.includes(q)) {
-          item.style.display = 'flex';
-        } else {
-          item.style.display = 'none';
-        }
+        item.style.display = appName.includes(q) ? 'flex' : 'none';
       });
     }
 
-    function launchApp(appName) {
-      // Dismiss popovers
+    // EXCLUSIVE SINGLE WINDOW MANAGER (Q1: A)
+    function openAppWindow(appName) {
+      // Dismiss drawers
       foldyLauncher.classList.remove('visible');
       folderPopover.classList.remove('visible');
 
+      // Hide all other windows
+      Object.keys(windows).forEach(name => {
+        if (windows[name]) {
+          windows[name].classList.remove('visible');
+        }
+      });
+
+      if (windows[appName]) {
+        windows[appName].classList.add('visible');
+        activeWindowName = appName;
+      }
+
+      // Activate dock dot
+      if (dots[appName]) {
+        dots[appName].style.display = 'flex';
+      }
+
       if (appName === 'Safari') {
-        terminalWindow.classList.remove('visible');
-        safariWindow.classList.add('visible');
-        dotsSafari.style.display = 'flex';
         showToast('Safari Opened 🧭', 'Displaying live simulated Google Search home page');
-      } else if (appName === 'Terminal') {
-        safariWindow.classList.remove('visible');
-        terminalWindow.classList.add('visible');
-        showToast('Terminal Opened >_', 'Active zsh shell window on macOS');
       } else if (appName === 'Finder') {
-        showToast('Finder Active 🙂', 'Switched focus to Desktop & file manager');
-        dotsFinder.style.display = 'flex';
+        showToast('Finder Opened 📁', 'Minimalist view with active live search filter');
       } else if (appName === 'Messages') {
-        dotsMessages.style.display = 'flex';
-        showToast('Messages Opened 💬', 'Focused iMessage conversation threads');
+        showToast('Messages Opened 💬', 'Direct iMessage conversation thread with Tim Cook ');
       } else if (appName === 'Music') {
-        dotsMusic.style.display = 'flex';
-        showToast('Music Opened 🎵', 'Now playing Apple Music library');
+        showToast('Apple Music Opened 🎵', 'Modern albums & curated playlists grid');
+      } else if (appName === 'Trash') {
+        showToast('Trash Opened 🗑️', 'Authentic Apple Trash window with 1-click cleanup');
+      } else if (appName === 'Terminal') {
+        showToast('Terminal Opened >_', 'Active zsh shell window on macOS');
       } else {
         showToast(`Launched ${appName} 🚀`, 'Fluid spring bounce feedback triggered');
       }
     }
 
-    function closeSafariWindow() {
-      safariWindow.classList.remove('visible');
-      dotsSafari.style.display = 'none';
-      showToast('Safari Closed', 'Window dismissed • Activity indicator removed');
+    function closeAppWindow(appName) {
+      if (windows[appName]) {
+        windows[appName].classList.remove('visible');
+      }
+      if (dots[appName]) {
+        dots[appName].style.display = 'none';
+      }
+      if (activeWindowName === appName) {
+        activeWindowName = null;
+      }
+      showToast(`${appName} Closed`, 'Window dismissed • Activity dot removed');
     }
 
-    function minimizeSafariWindow() {
-      safariWindow.style.transform = 'translateX(-50%) translateY(120px) scale(0.4)';
-      safariWindow.style.opacity = '0';
+    function minimizeAppWindow(appName) {
+      const win = windows[appName];
+      if (!win) return;
+      win.style.transform = 'translateX(-50%) translateY(120px) scale(0.4)';
+      win.style.opacity = '0';
       setTimeout(() => {
-        safariWindow.classList.remove('visible');
-        safariWindow.style.transform = '';
-        safariWindow.style.opacity = '';
+        win.classList.remove('visible');
+        win.style.transform = '';
+        win.style.opacity = '';
+        if (activeWindowName === appName) activeWindowName = null;
       }, 250);
-      showToast('Safari Minimized 🟡', 'Click the Safari icon in the dock to restore it');
-    }
-
-    function toggleMaximizeSafari() {
-      const isMax = safariWindow.style.width === '98%';
-      safariWindow.style.width = isMax ? '' : '98%';
-      showToast(isMax ? 'Safari Standard Window' : 'Safari Expanded Window 🟢', 'Zoom toggle preview');
-    }
-
-    function closeTerminalWindow() {
-      terminalWindow.classList.remove('visible');
-      showToast('Terminal Closed', 'Process exited smoothly');
-    }
-
-    function minimizeTerminalWindow() {
-      terminalWindow.classList.remove('visible');
-      showToast('Terminal Minimized', 'Process still running in background');
+      showToast(`${appName} Minimized 🟡`, `Click ${appName} in the dock to restore it`);
     }
 
     function closeAllSimulatedWindows() {
-      safariWindow.classList.remove('visible');
-      terminalWindow.classList.remove('visible');
+      Object.keys(windows).forEach(name => {
+        if (windows[name]) windows[name].classList.remove('visible');
+      });
       foldyLauncher.classList.remove('visible');
       folderPopover.classList.remove('visible');
+      activeWindowName = null;
       showToast('Desktop Cleared', 'All open windows dismissed');
     }
 
+    function minimizeActiveWindow() {
+      if (activeWindowName) {
+        minimizeAppWindow(activeWindowName);
+      }
+    }
+
+    function toggleMaximizeActiveWindow() {
+      if (!activeWindowName || !windows[activeWindowName]) return;
+      const win = windows[activeWindowName];
+      const isMax = win.style.width === '98%';
+      win.style.width = isMax ? '' : '98%';
+      showToast(isMax ? 'Standard Window' : 'Expanded Window 🟢', 'Zoom toggle preview');
+    }
+
+    // FINDER SEARCH
+    function filterFinderFiles(query) {
+      const items = document.querySelectorAll('.finder-file-item');
+      const q = query.toLowerCase().trim();
+      items.forEach(item => {
+        const name = (item.getAttribute('data-name') || item.innerText).toLowerCase();
+        item.style.display = name.includes(q) ? 'flex' : 'none';
+      });
+    }
+
+    // MESSAGES CHAT
+    function handleMessageInput(event) {
+      if (event.key === 'Enter') {
+        sendCustomMessage();
+      }
+    }
+
+    function sendCustomMessage() {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const thread = document.getElementById('messagesThread');
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble outbound';
+      bubble.innerText = text;
+      thread.appendChild(bubble);
+      input.value = '';
+      thread.scrollTop = thread.scrollHeight;
+
+      // Simulated auto-reply after 800ms
+      setTimeout(() => {
+        const reply = document.createElement('div');
+        reply.className = 'msg-bubble inbound';
+        reply.innerText = "FoldyDock is definitely staying in my dock permanently 👌";
+        thread.appendChild(reply);
+        thread.scrollTop = thread.scrollHeight;
+      }, 900);
+    }
+
+    // APPLE MUSIC PLAY ALBUM
+    function playMockAlbum(title) {
+      showToast(`Now Playing: ${title} 🎶`, 'Apple Music lossless audio stream');
+    }
+
+    // TRASH CLEANUP
+    function emptyTrashAction() {
+      const grid = document.getElementById('trashItemsGrid');
+      const emptyState = document.getElementById('trashEmptyState');
+      const btn = document.getElementById('btnEmptyTrash');
+      
+      grid.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      grid.style.opacity = '0';
+      grid.style.transform = 'scale(0.95)';
+      
+      setTimeout(() => {
+        grid.style.display = 'none';
+        emptyState.style.display = 'flex';
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        btn.innerText = 'Empty';
+      }, 200);
+
+      showToast('Trash Emptied 🗑️', 'All temporary files permanently removed');
+    }
+
+    // GOOGLE SEARCH
     function handleGoogleSearch(event) {
       if (event.key === 'Enter') {
         executeGoogleSearch();
@@ -1799,10 +2383,7 @@
       showToast(`Google Search: "${query}" 🔍`, 'Simulated search navigation on Safari macOS');
     }
 
-    function triggerTrashClick() {
-      showToast('Apple Trash Can 🗑️', 'Authentic macOS glass & metallic trash can');
-    }
-
+    // MIDDLE CLICK ON DOCK ITEM
     function triggerMiddleClick(event, appName) {
       if (event.button === 1) { // middle click
         event.preventDefault();
@@ -1812,10 +2393,7 @@
         target.style.transform = 'scale(0.5)';
         target.style.opacity = '0.3';
         
-        if (appName === 'Safari') {
-          safariWindow.classList.remove('visible');
-          dotsSafari.style.display = 'none';
-        }
+        closeAppWindow(appName);
 
         setTimeout(() => {
           target.style.transform = '';
