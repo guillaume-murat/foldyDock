@@ -218,7 +218,7 @@
       z-index: 1;
       max-width: 1040px;
       margin: 0 auto;
-      padding: 4.5rem 1.5rem 3rem 1.5rem;
+      padding: 4.5rem 1.5rem 2.5rem 1.5rem;
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -348,8 +348,8 @@
     .interactive-stage {
       position: relative;
       width: 100%;
-      max-width: 1080px;
-      margin: 2rem auto 5rem auto;
+      max-width: 1100px;
+      margin: 1.5rem auto 5rem auto;
       padding: 0 1.5rem;
       z-index: 10;
     }
@@ -362,7 +362,7 @@
       border: 1px solid var(--border-glass);
       box-shadow: var(--shadow-ambient);
       overflow: hidden;
-      min-height: 480px;
+      min-height: 640px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -370,12 +370,13 @@
     }
 
     .window-header {
-      padding: 1rem 1.25rem;
+      padding: 0.85rem 1.25rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       background: rgba(255, 255, 255, 0.02);
+      z-index: 20;
     }
 
     .window-dots {
@@ -386,10 +387,16 @@
       width: 12px;
       height: 12px;
       border-radius: 50%;
+      cursor: pointer;
+      transition: opacity 0.15s ease, transform 0.1s ease;
     }
     .window-dot.close { background: #ff5f57; }
     .window-dot.min { background: #febc2e; }
     .window-dot.max { background: #28c840; }
+    .window-dot:hover {
+      opacity: 0.85;
+      transform: scale(1.08);
+    }
 
     .window-title {
       font-size: 0.8rem;
@@ -416,18 +423,20 @@
       justify-content: flex-end;
       padding-bottom: 2.25rem;
       user-select: none;
+      overflow: hidden;
     }
 
     .stage-center-badge {
       position: absolute;
-      top: 30%;
+      top: 14%;
       text-align: center;
       pointer-events: none;
-      opacity: 0.75;
+      opacity: 0.85;
       transition: opacity 0.3s ease;
+      z-index: 5;
     }
     .stage-center-badge h3 {
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       font-weight: 600;
       letter-spacing: -0.02em;
       color: var(--text-primary);
@@ -438,7 +447,296 @@
       color: var(--text-secondary);
     }
 
-    /* THE SIMULATED FOLDYDOCK BAR */
+    /* -------------------------------------------------------------
+       SIMULATED APPS WINDOWS (Safari, Terminal, Finder)
+       ------------------------------------------------------------- */
+    .app-window {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.92);
+      width: min(720px, 94%);
+      background: rgba(26, 30, 42, 0.88);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 35px 80px -15px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(255, 255, 255, 0.25) inset;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.3s var(--ease-spring), opacity 0.25s ease;
+      z-index: 40;
+    }
+    .app-window.visible {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+      pointer-events: auto;
+    }
+
+    /* SAFARI TOOLBAR & GOOGLE HOMEPAGE */
+    .safari-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(36, 42, 58, 0.65);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .safari-nav-btns {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+    }
+    .safari-nav-btn {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .safari-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .safari-address-bar {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      color: var(--text-primary);
+    }
+
+    .safari-body {
+      padding: 2.25rem 1.5rem;
+      background: #191b22;
+      min-height: 290px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .google-logo {
+      font-family: -apple-system, Roboto, Arial, sans-serif;
+      font-size: 2.75rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      margin-bottom: 1.25rem;
+      user-select: none;
+    }
+    .google-logo span:nth-child(1) { color: #4285f4; }
+    .google-logo span:nth-child(2) { color: #ea4335; }
+    .google-logo span:nth-child(3) { color: #fbbc05; }
+    .google-logo span:nth-child(4) { color: #4285f4; }
+    .google-logo span:nth-child(5) { color: #34a853; }
+    .google-logo span:nth-child(6) { color: #ea4335; }
+
+    .google-search-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: min(460px, 95%);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      padding: 8px 16px;
+      margin-bottom: 1.25rem;
+      color: #fff;
+    }
+    .google-search-input {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    .google-btn-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    .google-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .google-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    /* TERMINAL WINDOW */
+    .terminal-body {
+      background: #0f121a;
+      padding: 1rem 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #e5e9f0;
+      min-height: 240px;
+    }
+    .terminal-prompt {
+      color: #30d158;
+    }
+    .terminal-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 15px;
+      background: #e5e9f0;
+      vertical-align: text-bottom;
+      animation: pulse 1s infinite;
+    }
+
+    /* -------------------------------------------------------------
+       FOLDY APP LAUNCHER DRAWER (Click on Foldy Mascot)
+       ------------------------------------------------------------- */
+    .foldy-launcher-demo {
+      position: absolute;
+      bottom: 105px;
+      left: 140px;
+      transform: scale(0.92);
+      transform-origin: bottom left;
+      width: min(440px, 94%);
+      background: rgba(24, 28, 40, 0.88);
+      backdrop-filter: blur(40px) saturate(200%);
+      -webkit-backdrop-filter: blur(40px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 22px;
+      box-shadow: 0 35px 80px -15px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(255, 255, 255, 0.25) inset;
+      padding: 16px 18px;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.28s var(--ease-spring), opacity 0.22s ease;
+      z-index: 55;
+    }
+    .foldy-launcher-demo.visible {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+    .foldy-launcher-demo::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 28px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid rgba(24, 28, 40, 0.88);
+    }
+
+    .launcher-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .launcher-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .launcher-count-badge {
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 980px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+    }
+
+    .launcher-search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      padding: 7px 12px;
+      margin-bottom: 12px;
+    }
+    .launcher-search-input {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 0.85rem;
+      width: 100%;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .launcher-app-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      max-height: 240px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .launcher-app-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 8px 4px;
+      border-radius: 12px;
+      transition: background 0.15s ease, transform 0.15s var(--ease-smooth);
+    }
+    .launcher-app-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.06);
+    }
+    .launcher-app-item:active {
+      transform: scale(0.95);
+    }
+    .launcher-app-item img {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+    }
+    .launcher-app-item span {
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 80px;
+    }
+
+    /* -------------------------------------------------------------
+       THE SIMULATED FOLDYDOCK BAR
+       ------------------------------------------------------------- */
     .dock-container {
       position: relative;
       display: flex;
@@ -455,6 +753,7 @@
         0 1px 0 0 rgba(255, 255, 255, 0.35) inset,
         0 -1px 0 0 rgba(0, 0, 0, 0.5) inset;
       transition: transform 0.25s var(--ease-smooth), padding 0.2s ease;
+      z-index: 30;
     }
 
     .dock-item {
@@ -473,7 +772,7 @@
       top: -24px;
       font-size: 10.5px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.85);
+      color: rgba(255, 255, 255, 0.9);
       text-shadow: 0 1px 3px rgba(0,0,0,0.8);
       white-space: nowrap;
       pointer-events: none;
@@ -513,20 +812,20 @@
     .dock-icon-img {
       width: 100%;
       height: 100%;
-      border-radius: 13px;
-      object-fit: cover;
+      border-radius: 12px;
+      object-fit: contain;
     }
 
-    /* FOLDER MINIATURE GRID */
+    /* FOLDER MINIATURE GRID WITH REAL MACOS ICONS */
     .folder-grid-icon {
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.18);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-radius: 13px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      padding: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 4px;
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       grid-gap: 3px;
@@ -536,10 +835,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
-      font-weight: bold;
-      color: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+    .mini-icon-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     /* ACTIVITY DOT INDICATORS */
@@ -567,23 +868,26 @@
       margin: 0 2px;
     }
 
-    /* INTERACTIVE POPOVER DRAWER (iOS style) */
+    /* -------------------------------------------------------------
+       INTERACTIVE POPOVER DRAWER (iOS style) DIRECTLY ABOVE FOLDER
+       ------------------------------------------------------------- */
     .folder-popover-demo {
       position: absolute;
-      bottom: 84px;
+      bottom: 110px; /* Elevated cleanly above the dock */
       left: 50%;
       transform: translateX(-50%) scale(0.92);
+      transform-origin: bottom center;
       opacity: 0;
       pointer-events: none;
-      background: rgba(26, 32, 45, 0.78);
+      background: rgba(26, 32, 45, 0.84);
       backdrop-filter: blur(40px) saturate(200%);
       -webkit-backdrop-filter: blur(40px) saturate(200%);
       border: 1px solid rgba(255, 255, 255, 0.22);
-      box-shadow: 0 30px 70px -10px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.25) inset;
+      box-shadow: 0 35px 80px -15px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(255, 255, 255, 0.25) inset;
       border-radius: 22px;
       padding: 16px 20px;
       width: 320px;
-      transition: all 0.3s var(--ease-spring);
+      transition: transform 0.28s var(--ease-spring), opacity 0.22s ease;
       z-index: 50;
     }
 
@@ -591,6 +895,19 @@
       opacity: 1;
       transform: translateX(-50%) scale(1);
       pointer-events: auto;
+    }
+
+    .folder-popover-demo::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid rgba(26, 32, 45, 0.84);
     }
 
     .popover-header {
@@ -602,9 +919,9 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
     .popover-title {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.04em;
       color: #fff;
     }
     .popover-close {
@@ -641,16 +958,11 @@
     .popover-app:active {
       transform: scale(0.95);
     }
-    .popover-app-icon {
-      width: 44px;
-      height: 44px;
+    .popover-app img {
+      width: 46px;
+      height: 46px;
       border-radius: 11px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 18px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
     }
     .popover-app-name {
       font-size: 10px;
@@ -843,6 +1155,13 @@
       .nav-links {
         display: none;
       }
+      .foldy-launcher-demo {
+        left: 50% !important;
+        transform: translateX(-50%) scale(0.92) !important;
+      }
+      .foldy-launcher-demo::after {
+        left: 50% !important;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -934,58 +1253,218 @@
     <div class="stage-window">
       <div class="window-header">
         <div class="window-dots">
-          <span class="window-dot close"></span>
-          <span class="window-dot min"></span>
-          <span class="window-dot max"></span>
+          <span class="window-dot close" onclick="closeAllSimulatedWindows()"></span>
+          <span class="window-dot min" onclick="minimizeSafariWindow()"></span>
+          <span class="window-dot max" onclick="toggleMaximizeSafari()"></span>
         </div>
         <div class="window-title">Desktop Space — FoldyDock Live Preview</div>
-        <div class="interactive-hint">💡 Click items below to test launch, folders, or middle-click</div>
+        <div class="interactive-hint">💡 Click Foldy, Safari, or DEV TOOLS below</div>
       </div>
 
-      <div class="stage-canvas">
+      <div class="stage-canvas" id="stageCanvas">
         <div class="stage-center-badge" id="actionToast">
           <h3>Try interacting with the Dock</h3>
-          <p>Click the Folder to view the iOS popover • Middle-click to quit an app</p>
+          <p>Click Foldy for the App Launcher • Click Safari for a Google window • Middle-click to quit</p>
         </div>
 
-        <!-- SIMULATED FOLDER POPOVER -->
+        <!-- SIMULATED SAFARI WINDOW (GOOGLE HOMEPAGE) -->
+        <div class="app-window" id="safariWindow">
+          <div class="safari-toolbar">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeSafariWindow()"></span>
+              <span class="window-dot min" onclick="minimizeSafariWindow()"></span>
+              <span class="window-dot max" onclick="toggleMaximizeSafari()"></span>
+            </div>
+            <div class="safari-nav-btns">
+              <button class="safari-nav-btn" title="Back">‹</button>
+              <button class="safari-nav-btn" title="Forward">›</button>
+            </div>
+            <div class="safari-address-bar">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <span>google.com</span>
+            </div>
+            <div class="safari-nav-btns">
+              <button class="safari-nav-btn" title="Share">⎋</button>
+              <button class="safari-nav-btn" title="New Tab">+</button>
+            </div>
+          </div>
+          <div class="safari-body">
+            <div class="google-logo">
+              <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+            </div>
+            <div class="google-search-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa0aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" class="google-search-input" id="googleSearchInput" placeholder="Search Google or type a URL" value="FoldyDock native macOS app" onkeydown="handleGoogleSearch(event)" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+              </svg>
+            </div>
+            <div class="google-btn-group">
+              <button class="google-btn" onclick="executeGoogleSearch()">Google Search</button>
+              <button class="google-btn" onclick="executeGoogleSearch()">I'm Feeling Lucky</button>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-tertiary);">
+              Google offered in: <a href="#" style="color: #4285f4; text-decoration: none;">Français</a> • <a href="#" style="color: #4285f4; text-decoration: none;">English</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIMULATED TERMINAL WINDOW -->
+        <div class="app-window" id="terminalWindow" style="width: min(580px, 92%);">
+          <div class="safari-toolbar" style="background: #1e2230;">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeTerminalWindow()"></span>
+              <span class="window-dot min" onclick="minimizeTerminalWindow()"></span>
+              <span class="window-dot max"></span>
+            </div>
+            <div style="flex: 1; text-align: center; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);">
+              gmperso — zsh — 80×24
+            </div>
+          </div>
+          <div class="terminal-body">
+            <div>Last login: Thu Oct 1 12:54:12 on ttys001</div>
+            <div style="margin-top: 8px;">
+              <span class="terminal-prompt">gmperso@macbook-pro ~ %</span> foldydock --status
+            </div>
+            <div style="color: #9cb8ff; margin: 4px 0 8px 0;">
+              [FoldyDock] Status: Active • Spaces: .canJoinAllSpaces • Popover: Ready
+            </div>
+            <div>
+              <span class="terminal-prompt">gmperso@macbook-pro ~ %</span> <span class="terminal-cursor"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOLDY APP LAUNCHER (APPLICATIONS DRAWER) -->
+        <div class="foldy-launcher-demo" id="foldyLauncher">
+          <div class="launcher-header">
+            <div class="launcher-title">
+              <img src="assets/logoFoldyDock.png" width="18" height="18" alt="Foldy" style="border-radius: 4px;" />
+              <span>Applications</span>
+            </div>
+            <div class="launcher-count-badge">16 Apps</div>
+          </div>
+          <div class="launcher-search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9aa0aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="launcher-search-input" id="launcherSearchInput" placeholder="Search applications..." oninput="filterLauncherApps(this.value)" />
+          </div>
+          <div class="launcher-app-grid" id="launcherAppGrid">
+            <div class="launcher-app-item" data-app="Safari" onclick="launchApp('Safari')">
+              <img src="assets/icon_safari.png" alt="Safari" />
+              <span>Safari</span>
+            </div>
+            <div class="launcher-app-item" data-app="Finder" onclick="launchApp('Finder')">
+              <img src="assets/icon_finder.png" alt="Finder" />
+              <span>Finder</span>
+            </div>
+            <div class="launcher-app-item" data-app="Terminal" onclick="launchApp('Terminal')">
+              <img src="assets/icon_terminal.png" alt="Terminal" />
+              <span>Terminal</span>
+            </div>
+            <div class="launcher-app-item" data-app="Xcode" onclick="launchApp('Xcode')">
+              <img src="assets/icon_xcode.png" alt="Xcode" />
+              <span>Xcode</span>
+            </div>
+            <div class="launcher-app-item" data-app="VS Code" onclick="launchApp('VS Code')">
+              <img src="assets/icon_vscode.png" alt="VS Code" />
+              <span>VS Code</span>
+            </div>
+            <div class="launcher-app-item" data-app="Messages" onclick="launchApp('Messages')">
+              <img src="assets/icon_messages.png" alt="Messages" />
+              <span>Messages</span>
+            </div>
+            <div class="launcher-app-item" data-app="Mail" onclick="launchApp('Mail')">
+              <img src="assets/icon_mail.png" alt="Mail" />
+              <span>Mail</span>
+            </div>
+            <div class="launcher-app-item" data-app="Music" onclick="launchApp('Music')">
+              <img src="assets/icon_music.png" alt="Music" />
+              <span>Music</span>
+            </div>
+            <div class="launcher-app-item" data-app="Notes" onclick="launchApp('Notes')">
+              <img src="assets/icon_notes.png" alt="Notes" />
+              <span>Notes</span>
+            </div>
+            <div class="launcher-app-item" data-app="Settings" onclick="launchApp('Settings')">
+              <img src="assets/icon_settings.png" alt="Settings" />
+              <span>Settings</span>
+            </div>
+            <div class="launcher-app-item" data-app="Photos" onclick="launchApp('Photos')">
+              <img src="assets/icon_photos.png" alt="Photos" />
+              <span>Photos</span>
+            </div>
+            <div class="launcher-app-item" data-app="Figma" onclick="launchApp('Figma')">
+              <img src="assets/icon_figma.png" alt="Figma" />
+              <span>Figma</span>
+            </div>
+            <div class="launcher-app-item" data-app="Calculator" onclick="launchApp('Calculator')">
+              <img src="assets/icon_calculator.png" alt="Calculator" />
+              <span>Calculator</span>
+            </div>
+            <div class="launcher-app-item" data-app="Calendar" onclick="launchApp('Calendar')">
+              <img src="assets/icon_calendar.png" alt="Calendar" />
+              <span>Calendar</span>
+            </div>
+            <div class="launcher-app-item" data-app="Preview" onclick="launchApp('Preview')">
+              <img src="assets/icon_preview.png" alt="Preview" />
+              <span>Preview</span>
+            </div>
+            <div class="launcher-app-item" data-app="Activity Monitor" onclick="launchApp('Activity Monitor')">
+              <img src="assets/icon_activitymonitor.png" alt="Activity Monitor" />
+              <span>Activity</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIMULATED FOLDER POPOVER DIRECTLY ABOVE FOLDER ITEM -->
         <div class="folder-popover-demo" id="folderPopover">
           <div class="popover-header">
             <span class="popover-title">DEV TOOLS</span>
             <button class="popover-close" id="closePopoverBtn">✕</button>
           </div>
           <div class="popover-grid">
-            <div class="popover-app" onclick="triggerAppClick('Xcode')">
-              <div class="popover-app-icon" style="background: linear-gradient(135deg, #1070e5, #0045a5); color: #fff;">🛠️</div>
+            <div class="popover-app" onclick="launchApp('Xcode')">
+              <img src="assets/icon_xcode.png" alt="Xcode" />
               <span class="popover-app-name">Xcode</span>
             </div>
-            <div class="popover-app" onclick="triggerAppClick('Terminal')">
-              <div class="popover-app-icon" style="background: linear-gradient(135deg, #2b2b2b, #111); color: #30d158;">&gt;_</div>
+            <div class="popover-app" onclick="launchApp('Terminal')">
+              <img src="assets/icon_terminal.png" alt="Terminal" />
               <span class="popover-app-name">Terminal</span>
             </div>
-            <div class="popover-app" onclick="triggerAppClick('VS Code')">
-              <div class="popover-app-icon" style="background: linear-gradient(135deg, #007acc, #005a9e); color: #fff;">📝</div>
+            <div class="popover-app" onclick="launchApp('VS Code')">
+              <img src="assets/icon_vscode.png" alt="VS Code" />
               <span class="popover-app-name">VS Code</span>
             </div>
-            <div class="popover-app" onclick="triggerAppClick('Postman')">
-              <div class="popover-app-icon" style="background: linear-gradient(135deg, #ff6c37, #d94e1b); color: #fff;">🚀</div>
-              <span class="popover-app-name">Postman</span>
-            </div>
-            <div class="popover-app" onclick="triggerAppClick('Figma')">
-              <div class="popover-app-icon" style="background: linear-gradient(135deg, #a259ff, #f24e1e); color: #fff;">🎨</div>
+            <div class="popover-app" onclick="launchApp('Figma')">
+              <img src="assets/icon_figma.png" alt="Figma" />
               <span class="popover-app-name">Figma</span>
             </div>
-            <div class="popover-app" onclick="triggerAppClick('Docker')">
-              <div class="popover-app-icon" style="background: linear-gradient(135deg, #0db7ed, #077194); color: #fff;">🐳</div>
-              <span class="popover-app-name">Docker</span>
+            <div class="popover-app" onclick="launchApp('Activity Monitor')">
+              <img src="assets/icon_activitymonitor.png" alt="Activity Monitor" />
+              <span class="popover-app-name">Activity</span>
+            </div>
+            <div class="popover-app" onclick="launchApp('Preview')">
+              <img src="assets/icon_preview.png" alt="Preview" />
+              <span class="popover-app-name">Preview</span>
             </div>
           </div>
         </div>
 
         <!-- DOCK -->
         <div class="dock-container" id="dockBar">
-          <!-- LAUNCHER -->
-          <div class="dock-item" onclick="triggerLauncher()" title="App Launcher">
+          <!-- LAUNCHER (Foldy Mascot) -->
+          <div class="dock-item" id="itemFoldy" onclick="toggleFoldyLauncher()" title="App Launcher">
             <span class="dock-item-name">Foldy</span>
             <div class="dock-icon-wrapper">
               <img src="assets/logoFoldyDock.png" alt="Foldy" class="dock-icon-img" />
@@ -995,24 +1474,35 @@
           <div class="dock-separator"></div>
 
           <!-- FINDER -->
-          <div class="dock-item" onclick="triggerAppClick('Finder')" onauxclick="triggerMiddleClick(event, 'Finder')">
+          <div class="dock-item" id="itemFinder" onclick="launchApp('Finder')" onauxclick="triggerMiddleClick(event, 'Finder')">
             <span class="dock-item-name">Finder</span>
-            <div class="dock-icon-wrapper" style="background: linear-gradient(135deg, #439df6, #1b6cd5);">
-              <span style="font-size: 24px;">🙂</span>
+            <div class="dock-icon-wrapper">
+              <img src="assets/icon_finder.png" alt="Finder" class="dock-icon-img" />
             </div>
-            <div class="dock-dot-container">
+            <div class="dock-dot-container" id="dotsFinder">
               <span class="dock-dot"></span>
             </div>
           </div>
 
           <!-- SAFARI -->
-          <div class="dock-item" onclick="triggerAppClick('Safari')" onauxclick="triggerMiddleClick(event, 'Safari')">
+          <div class="dock-item" id="itemSafari" onclick="launchApp('Safari')" onauxclick="triggerMiddleClick(event, 'Safari')">
             <span class="dock-item-name">Safari</span>
-            <div class="dock-icon-wrapper" style="background: linear-gradient(135deg, #259bf6, #0e6ecc);">
-              <span style="font-size: 24px;">🧭</span>
+            <div class="dock-icon-wrapper">
+              <img src="assets/icon_safari.png" alt="Safari" class="dock-icon-img" />
             </div>
             <div class="dock-dot-container" id="dotsSafari">
               <span class="dock-dot"></span>
+              <span class="dock-dot"></span>
+            </div>
+          </div>
+
+          <!-- MESSAGES -->
+          <div class="dock-item" id="itemMessages" onclick="launchApp('Messages')" onauxclick="triggerMiddleClick(event, 'Messages')">
+            <span class="dock-item-name">Messages</span>
+            <div class="dock-icon-wrapper">
+              <img src="assets/icon_messages.png" alt="Messages" class="dock-icon-img" />
+            </div>
+            <div class="dock-dot-container" id="dotsMessages">
               <span class="dock-dot"></span>
             </div>
           </div>
@@ -1021,34 +1511,34 @@
           <div class="dock-item folder" id="folderItem" onclick="toggleFolderPopover()">
             <span class="dock-item-name">DEV TOOLS</span>
             <div class="dock-icon-wrapper folder-grid-icon">
-              <div class="mini-sub-icon" style="background: #1070e5;">🛠️</div>
-              <div class="mini-sub-icon" style="background: #222;">&gt;_</div>
-              <div class="mini-sub-icon" style="background: #007acc;">📝</div>
-              <div class="mini-sub-icon" style="background: #ff6c37;">🚀</div>
+              <div class="mini-sub-icon"><img src="assets/icon_xcode.png" class="mini-icon-img" alt="Xcode" /></div>
+              <div class="mini-sub-icon"><img src="assets/icon_terminal.png" class="mini-icon-img" alt="Terminal" /></div>
+              <div class="mini-sub-icon"><img src="assets/icon_vscode.png" class="mini-icon-img" alt="VS Code" /></div>
+              <div class="mini-sub-icon"><img src="assets/icon_figma.png" class="mini-icon-img" alt="Figma" /></div>
             </div>
-            <div class="dock-dot-container">
+            <div class="dock-dot-container" id="dotsFolder">
               <span class="dock-dot"></span>
             </div>
           </div>
 
-          <!-- SLACK -->
-          <div class="dock-item" onclick="triggerAppClick('Slack')" onauxclick="triggerMiddleClick(event, 'Slack')">
-            <span class="dock-item-name">Slack</span>
-            <div class="dock-icon-wrapper" style="background: linear-gradient(135deg, #4a154b, #361037);">
-              <span style="font-size: 24px;">💬</span>
+          <!-- MUSIC -->
+          <div class="dock-item" id="itemMusic" onclick="launchApp('Music')" onauxclick="triggerMiddleClick(event, 'Music')">
+            <span class="dock-item-name">Music</span>
+            <div class="dock-icon-wrapper">
+              <img src="assets/icon_music.png" alt="Music" class="dock-icon-img" />
             </div>
-            <div class="dock-dot-container" id="dotsSlack">
+            <div class="dock-dot-container" id="dotsMusic" style="display: none;">
               <span class="dock-dot"></span>
             </div>
           </div>
 
           <div class="dock-separator"></div>
 
-          <!-- TRASH -->
-          <div class="dock-item" onclick="triggerAppClick('Trash')">
+          <!-- TRASH (Official Apple Trash Icon) -->
+          <div class="dock-item" id="itemTrash" onclick="triggerTrashClick()">
             <span class="dock-item-name">Trash</span>
             <div class="dock-icon-wrapper">
-              <img src="assets/TrashSquircleEmpty.png" alt="Trash" class="dock-icon-img" />
+              <img src="assets/apple_trash.png" alt="Trash" class="dock-icon-img" />
             </div>
           </div>
         </div>
@@ -1139,37 +1629,47 @@
 
   <!-- SCRIPT FOR INTERACTIVE DEMO -->
   <script>
+    const stageCanvas = document.getElementById('stageCanvas');
     const actionToast = document.getElementById('actionToast');
     const folderPopover = document.getElementById('folderPopover');
+    const folderItem = document.getElementById('folderItem');
+    const itemFoldy = document.getElementById('itemFoldy');
     const closePopoverBtn = document.getElementById('closePopoverBtn');
+    const foldyLauncher = document.getElementById('foldyLauncher');
+    const safariWindow = document.getElementById('safariWindow');
+    const terminalWindow = document.getElementById('terminalWindow');
+    const dotsSafari = document.getElementById('dotsSafari');
+    const dotsFinder = document.getElementById('dotsFinder');
+    const dotsMessages = document.getElementById('dotsMessages');
+    const dotsMusic = document.getElementById('dotsMusic');
 
     function showToast(title, subtitle) {
       actionToast.innerHTML = `<h3>${title}</h3><p>${subtitle}</p>`;
       actionToast.style.opacity = '1';
     }
 
-    function triggerAppClick(appName) {
-      showToast(`Launched ${appName} 🚀`, 'Triggered native launch with fluid spring bounce animation');
+    // POSITION FOLDER POPOVER DYNAMICALLY EXACTLY ABOVE FOLDER ITEM
+    function updateFolderPopoverPosition() {
+      if (!folderItem || !folderPopover || !stageCanvas) return;
+      const folderRect = folderItem.getBoundingClientRect();
+      const canvasRect = stageCanvas.getBoundingClientRect();
+      const folderCenter = (folderRect.left + folderRect.width / 2) - canvasRect.left;
+      folderPopover.style.left = `${folderCenter}px`;
     }
 
-    function triggerMiddleClick(event, appName) {
-      if (event.button === 1) { // middle click
-        event.preventDefault();
-        showToast(`Quit ${appName} 🛑`, 'Middle-click terminates process immediately');
-        const target = event.currentTarget;
-        target.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s ease';
-        target.style.transform = 'scale(0.5)';
-        target.style.opacity = '0.3';
-        setTimeout(() => {
-          target.style.transform = '';
-          target.style.opacity = '1';
-        }, 1200);
-      }
+    // POSITION FOLDY LAUNCHER ABOVE FOLDY ICON
+    function updateFoldyLauncherPosition() {
+      if (!itemFoldy || !foldyLauncher || !stageCanvas) return;
+      const foldyRect = itemFoldy.getBoundingClientRect();
+      const canvasRect = stageCanvas.getBoundingClientRect();
+      const foldyCenter = (foldyRect.left + foldyRect.width / 2) - canvasRect.left;
+      foldyLauncher.style.left = `${Math.max(16, foldyCenter - 40)}px`;
     }
 
-    function triggerLauncher() {
-      showToast('Foldy App Launcher 🔍', 'Opens instant searchable drawer indexing all apps on your Mac');
-    }
+    window.addEventListener('resize', () => {
+      updateFolderPopoverPosition();
+      updateFoldyLauncherPosition();
+    });
 
     function toggleFolderPopover() {
       const isVisible = folderPopover.classList.contains('visible');
@@ -1177,14 +1677,159 @@
         folderPopover.classList.remove('visible');
         showToast('Folder Closed 📁', 'Dynamic mini-grid thumbnail active in dock');
       } else {
+        updateFolderPopoverPosition();
+        foldyLauncher.classList.remove('visible');
         folderPopover.classList.add('visible');
-        showToast('Dev Tools Folder Expanded 📂', 'Shows enlarged apps, drag-to-reorder & inline rename');
+        showToast('DEV TOOLS Folder Opened 📂', 'Positioned directly above the dock capsule • Click any app to launch');
       }
     }
 
     closePopoverBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       folderPopover.classList.remove('visible');
+    });
+
+    function toggleFoldyLauncher() {
+      const isVisible = foldyLauncher.classList.contains('visible');
+      if (isVisible) {
+        foldyLauncher.classList.remove('visible');
+        showToast('Launcher Closed', 'Click Foldy mascot anytime to search apps');
+      } else {
+        updateFoldyLauncherPosition();
+        folderPopover.classList.remove('visible');
+        foldyLauncher.classList.add('visible');
+        showToast('Foldy App Launcher 🔍', 'Simulated macOS app drawer • Select an app to open its window');
+        setTimeout(() => {
+          const input = document.getElementById('launcherSearchInput');
+          if (input) input.focus();
+        }, 150);
+      }
+    }
+
+    function filterLauncherApps(query) {
+      const items = document.querySelectorAll('.launcher-app-item');
+      const q = query.toLowerCase().trim();
+      items.forEach(item => {
+        const appName = item.getAttribute('data-app').toLowerCase();
+        if (appName.includes(q)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function launchApp(appName) {
+      // Dismiss popovers
+      foldyLauncher.classList.remove('visible');
+      folderPopover.classList.remove('visible');
+
+      if (appName === 'Safari') {
+        terminalWindow.classList.remove('visible');
+        safariWindow.classList.add('visible');
+        dotsSafari.style.display = 'flex';
+        showToast('Safari Opened 🧭', 'Displaying live simulated Google Search home page');
+      } else if (appName === 'Terminal') {
+        safariWindow.classList.remove('visible');
+        terminalWindow.classList.add('visible');
+        showToast('Terminal Opened >_', 'Active zsh shell window on macOS');
+      } else if (appName === 'Finder') {
+        showToast('Finder Active 🙂', 'Switched focus to Desktop & file manager');
+        dotsFinder.style.display = 'flex';
+      } else if (appName === 'Messages') {
+        dotsMessages.style.display = 'flex';
+        showToast('Messages Opened 💬', 'Focused iMessage conversation threads');
+      } else if (appName === 'Music') {
+        dotsMusic.style.display = 'flex';
+        showToast('Music Opened 🎵', 'Now playing Apple Music library');
+      } else {
+        showToast(`Launched ${appName} 🚀`, 'Fluid spring bounce feedback triggered');
+      }
+    }
+
+    function closeSafariWindow() {
+      safariWindow.classList.remove('visible');
+      dotsSafari.style.display = 'none';
+      showToast('Safari Closed', 'Window dismissed • Activity indicator removed');
+    }
+
+    function minimizeSafariWindow() {
+      safariWindow.style.transform = 'translateX(-50%) translateY(120px) scale(0.4)';
+      safariWindow.style.opacity = '0';
+      setTimeout(() => {
+        safariWindow.classList.remove('visible');
+        safariWindow.style.transform = '';
+        safariWindow.style.opacity = '';
+      }, 250);
+      showToast('Safari Minimized 🟡', 'Click the Safari icon in the dock to restore it');
+    }
+
+    function toggleMaximizeSafari() {
+      const isMax = safariWindow.style.width === '98%';
+      safariWindow.style.width = isMax ? '' : '98%';
+      showToast(isMax ? 'Safari Standard Window' : 'Safari Expanded Window 🟢', 'Zoom toggle preview');
+    }
+
+    function closeTerminalWindow() {
+      terminalWindow.classList.remove('visible');
+      showToast('Terminal Closed', 'Process exited smoothly');
+    }
+
+    function minimizeTerminalWindow() {
+      terminalWindow.classList.remove('visible');
+      showToast('Terminal Minimized', 'Process still running in background');
+    }
+
+    function closeAllSimulatedWindows() {
+      safariWindow.classList.remove('visible');
+      terminalWindow.classList.remove('visible');
+      foldyLauncher.classList.remove('visible');
+      folderPopover.classList.remove('visible');
+      showToast('Desktop Cleared', 'All open windows dismissed');
+    }
+
+    function handleGoogleSearch(event) {
+      if (event.key === 'Enter') {
+        executeGoogleSearch();
+      }
+    }
+
+    function executeGoogleSearch() {
+      const query = document.getElementById('googleSearchInput').value;
+      showToast(`Google Search: "${query}" 🔍`, 'Simulated search navigation on Safari macOS');
+    }
+
+    function triggerTrashClick() {
+      showToast('Apple Trash Can 🗑️', 'Authentic macOS glass & metallic trash can');
+    }
+
+    function triggerMiddleClick(event, appName) {
+      if (event.button === 1) { // middle click
+        event.preventDefault();
+        showToast(`Quit ${appName} 🛑`, 'Middle-click terminates application immediately');
+        const target = event.currentTarget;
+        target.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s ease';
+        target.style.transform = 'scale(0.5)';
+        target.style.opacity = '0.3';
+        
+        if (appName === 'Safari') {
+          safariWindow.classList.remove('visible');
+          dotsSafari.style.display = 'none';
+        }
+
+        setTimeout(() => {
+          target.style.transform = '';
+          target.style.opacity = '1';
+        }, 1200);
+      }
+    }
+
+    // DISMISS OPEN PANELS WHEN CLICKING ON DESKTOP BACKGROUND
+    stageCanvas.addEventListener('click', (e) => {
+      if (e.target === stageCanvas) {
+        folderPopover.classList.remove('visible');
+        foldyLauncher.classList.remove('visible');
+      }
     });
 
     function copyBuildCommand(btn) {
@@ -1195,6 +1840,12 @@
         setTimeout(() => btn.innerText = original, 2000);
       });
     }
+
+    // INITIAL POSITIONING
+    setTimeout(() => {
+      updateFolderPopoverPosition();
+      updateFoldyLauncherPosition();
+    }, 100);
   </script>
 </body>
 </html>
