@@ -1617,6 +1617,8 @@
     .dock-item-name {
       position: absolute;
       top: -24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
       font-size: 10.5px;
       font-weight: 600;
       color: rgba(255, 255, 255, 0.9);
@@ -1624,17 +1626,164 @@
       white-space: nowrap;
       pointer-events: none;
       opacity: 0;
-      transform: translateY(4px);
       transition: all 0.15s var(--ease-smooth);
     }
     .dock-item:hover .dock-item-name {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateX(-50%) translateY(0);
+    }
+    .dock-item.folder {
+      position: relative;
+      transition: width 0.28s var(--ease-spring), transform 0.15s ease;
+    }
+    .dock-item.folder.expanded {
+      width: auto;
     }
     .dock-item.folder .dock-item-name {
       text-transform: uppercase;
       font-weight: 700;
       letter-spacing: 0.04em;
+    }
+    .dock-item.folder.expanded .dock-item-name {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: none;
+      color: #ffffff;
+      font-size: 11px;
+    }
+
+    /* Standard compact view */
+    #folderCompactView {
+      cursor: pointer;
+    }
+
+    /* Expanded folder capsule view (True FoldyDock native replica) */
+    .folder-expanded-capsule {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 3px 6px;
+      background: linear-gradient(135deg, rgba(58, 60, 68, 0.78), rgba(34, 36, 42, 0.74));
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 0 1px rgba(255, 255, 255, 0.35);
+      gap: 6px;
+      animation: capsuleExpand 0.28s var(--ease-spring);
+    }
+
+    @keyframes capsuleExpand {
+      0% { transform: scale(0.92); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Mini Folder Grid Inside Capsule (Left) */
+    .capsule-folder-grid {
+      width: 48px;
+      height: 44px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 2px;
+      padding: 2.5px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+      position: relative;
+    }
+    .capsule-folder-grid:hover {
+      transform: scale(1.05);
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .capsule-mini-slot {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    .capsule-mini-slot img {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      object-fit: contain;
+    }
+    .capsule-mini-slot .mini-dot {
+      display: none;
+      position: absolute;
+      bottom: -3px;
+      width: 2.5px;
+      height: 2.5px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 3px #ffffff;
+    }
+    .capsule-mini-slot.active .mini-dot {
+      display: block;
+    }
+
+    /* Subtle Vertical Divider */
+    .capsule-divider {
+      width: 1px;
+      height: 32px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.28) 50%, rgba(255, 255, 255, 0.06));
+    }
+
+    /* Active Running Sub-Application Slot (Right) */
+    .capsule-active-app {
+      min-width: 46px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      padding: 0 4px;
+      transition: transform 0.15s ease;
+    }
+    .capsule-active-app:hover {
+      transform: scale(1.08);
+    }
+    .capsule-active-app:active {
+      transform: scale(0.95);
+    }
+    .capsule-app-name {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.95);
+      margin-bottom: 2px;
+      line-height: 1;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+      white-space: nowrap;
+    }
+    .capsule-app-icon-wrap {
+      width: 24px;
+      height: 24px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .capsule-app-icon {
+      width: 100%;
+      height: 100%;
+      border-radius: 5px;
+      object-fit: contain;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+    .capsule-app-dot {
+      width: 3.5px;
+      height: 3.5px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.9);
+      margin-top: 2px;
     }
 
     .dock-icon-wrapper {
@@ -1694,6 +1843,8 @@
     .dock-dot-container {
       position: absolute;
       bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       align-items: center;
       gap: 3px;
@@ -2826,16 +2977,63 @@
             </div>
           </div>
 
-          <!-- FOLDER ITEM (DEV TOOLS) -->
-          <div class="dock-item folder" id="folderItem" onclick="toggleFolderPopover()">
-            <span class="dock-item-name">DEV TOOLS</span>
-            <div class="dock-icon-wrapper folder-grid-icon">
+          <!-- FOLDER ITEM (DEV TOOLS - EXPANDABLE CAPSULE) -->
+          <div class="dock-item folder" id="folderItem">
+            <span class="dock-item-name" id="folderTitleText">DEV TOOLS</span>
+
+            <!-- Compact folder icon (when no sub-app is active) -->
+            <div class="dock-icon-wrapper folder-grid-icon" id="folderCompactView" onclick="onFolderItemClick(event)" title="DEV TOOLS folder • Click to open in capsule">
               <div class="mini-sub-icon"><img src="assets/icon_xcode.png" class="mini-icon-img" alt="Xcode" /></div>
               <div class="mini-sub-icon"><img src="assets/icon_terminal.png" class="mini-icon-img" alt="Terminal" /></div>
               <div class="mini-sub-icon"><img src="assets/icon_vscode.png" class="mini-icon-img" alt="VS Code" /></div>
               <div class="mini-sub-icon"><img src="assets/icon_figma.png" class="mini-icon-img" alt="Figma" /></div>
             </div>
-            <div class="dock-dot-container" id="dotsFolder">
+
+            <!-- Expanded folder capsule (Matching FoldyDock native app) -->
+            <div class="folder-expanded-capsule" id="folderExpandedView" style="display: none;">
+              <!-- 1. Folder Miniature Grid Block (Left) -->
+              <div class="capsule-folder-grid" onclick="toggleFolderPopover(event)" title="DEV TOOLS • Click to browse all apps">
+                <div class="capsule-mini-slot" id="slotXcode">
+                  <img src="assets/icon_xcode.png" alt="Xcode" />
+                  <span class="mini-dot"></span>
+                </div>
+                <div class="capsule-mini-slot" id="slotTerminal">
+                  <img src="assets/icon_terminal.png" alt="Terminal" />
+                  <span class="mini-dot"></span>
+                </div>
+                <div class="capsule-mini-slot" id="slotVSCode">
+                  <img src="assets/icon_vscode.png" alt="VS Code" />
+                  <span class="mini-dot"></span>
+                </div>
+                <div class="capsule-mini-slot" id="slotFigma">
+                  <img src="assets/icon_figma.png" alt="Figma" />
+                  <span class="mini-dot"></span>
+                </div>
+                <div class="capsule-mini-slot" id="slotActivity">
+                  <img src="assets/icon_activitymonitor.png" alt="Activity" />
+                  <span class="mini-dot"></span>
+                </div>
+                <div class="capsule-mini-slot" id="slotPreview">
+                  <img src="assets/icon_preview.png" alt="Preview" />
+                  <span class="mini-dot"></span>
+                </div>
+              </div>
+
+              <!-- 2. Subtle Vertical Divider -->
+              <div class="capsule-divider"></div>
+
+              <!-- 3. Active Running Sub-Application Slot (Right) -->
+              <div class="capsule-active-app" id="capsuleActiveAppSlot" onclick="onCapsuleActiveAppClick(event)" onauxclick="triggerCapsuleMiddleClick(event)" title="Active Application • Click to focus • Middle-click to quit">
+                <span class="capsule-app-name" id="capsuleAppName">Terminal</span>
+                <div class="capsule-app-icon-wrap">
+                  <img src="assets/icon_terminal.png" id="capsuleAppIcon" class="capsule-app-icon" alt="Terminal" />
+                </div>
+                <span class="capsule-app-dot"></span>
+              </div>
+            </div>
+
+            <!-- Activity dot centered below entire capsule -->
+            <div class="dock-dot-container" id="dotsFolder" style="display: none;">
               <span class="dock-dot"></span>
             </div>
           </div>
@@ -3012,16 +3210,118 @@
       updateFoldyLauncherPosition();
     });
 
-    function toggleFolderPopover() {
+    // FOLDER CAPSULE STATE & BEHAVIOR (True FoldyDock replication)
+    let activeFolderApp = null;
+
+    const folderAppConfigs = {
+      'Terminal': { name: 'Terminal', icon: 'assets/icon_terminal.png', slotId: 'slotTerminal' },
+      'Xcode': { name: 'Xcode', icon: 'assets/icon_xcode.png', slotId: 'slotXcode' },
+      'VS Code': { name: 'VS Code', icon: 'assets/icon_vscode.png', slotId: 'slotVSCode' },
+      'Figma': { name: 'Figma', icon: 'assets/icon_figma.png', slotId: 'slotFigma' },
+      'Activity Monitor': { name: 'Activity', icon: 'assets/icon_activitymonitor.png', slotId: 'slotActivity' },
+      'Activity': { name: 'Activity', icon: 'assets/icon_activitymonitor.png', slotId: 'slotActivity' },
+      'Preview': { name: 'Preview', icon: 'assets/icon_preview.png', slotId: 'slotPreview' }
+    };
+
+    function expandFolderCapsule(appName) {
+      const config = folderAppConfigs[appName] || folderAppConfigs['Terminal'];
+      activeFolderApp = appName;
+
+      // Update capsule details
+      const nameEl = document.getElementById('capsuleAppName');
+      const iconEl = document.getElementById('capsuleAppIcon');
+      if (nameEl) nameEl.textContent = config.name;
+      if (iconEl) {
+        iconEl.src = config.icon;
+        iconEl.alt = config.name;
+      }
+
+      // Update active mini-dot in the capsule miniature grid
+      document.querySelectorAll('.capsule-mini-slot').forEach(slot => slot.classList.remove('active'));
+      const activeSlot = document.getElementById(config.slotId);
+      if (activeSlot) activeSlot.classList.add('active');
+
+      // Switch views smoothly
+      const compactView = document.getElementById('folderCompactView');
+      const expandedView = document.getElementById('folderExpandedView');
+      if (compactView) compactView.style.display = 'none';
+      if (expandedView) expandedView.style.display = 'flex';
+      if (folderItem) folderItem.classList.add('expanded');
+
+      // Centered dot under capsule
+      const dotsFolder = document.getElementById('dotsFolder');
+      if (dotsFolder) dotsFolder.style.display = 'flex';
+
+      setTimeout(updateFolderPopoverPosition, 20);
+    }
+
+    function collapseFolderCapsule() {
+      activeFolderApp = null;
+      document.querySelectorAll('.capsule-mini-slot').forEach(slot => slot.classList.remove('active'));
+
+      const compactView = document.getElementById('folderCompactView');
+      const expandedView = document.getElementById('folderExpandedView');
+      if (compactView) compactView.style.display = 'grid';
+      if (expandedView) expandedView.style.display = 'none';
+      if (folderItem) folderItem.classList.remove('expanded');
+
+      const dotsFolder = document.getElementById('dotsFolder');
+      if (dotsFolder) dotsFolder.style.display = 'none';
+
+      setTimeout(updateFolderPopoverPosition, 20);
+    }
+
+    function onFolderItemClick(e) {
+      if (e) e.stopPropagation();
+      // Click on compact folder: opens default application inside the capsule!
+      if (!activeFolderApp) {
+        openAppWindow('Terminal');
+        showToast('DEV TOOLS Capsule 🔥', 'Application opened inside folder capsule • Click mini-grid to switch apps');
+      } else {
+        toggleFolderPopover(e);
+      }
+    }
+
+    function onCapsuleActiveAppClick(e) {
+      if (e) e.stopPropagation();
+      if (activeFolderApp) {
+        openAppWindow(activeFolderApp);
+      }
+    }
+
+    function triggerCapsuleMiddleClick(e) {
+      if (e.button === 1 && activeFolderApp) {
+        e.preventDefault();
+        e.stopPropagation();
+        const appToClose = activeFolderApp;
+        showToast(`Quit ${appToClose} 🛑`, 'Middle-click terminates application immediately');
+        const target = document.getElementById('capsuleActiveAppSlot');
+        if (target) {
+          target.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s ease';
+          target.style.transform = 'scale(0.5)';
+          target.style.opacity = '0.3';
+        }
+        setTimeout(() => {
+          closeAppWindow(appToClose);
+          if (target) {
+            target.style.transform = '';
+            target.style.opacity = '1';
+          }
+        }, 220);
+      }
+    }
+
+    function toggleFolderPopover(e) {
+      if (e) e.stopPropagation();
       const isVisible = folderPopover.classList.contains('visible');
       if (isVisible) {
         folderPopover.classList.remove('visible');
-        showToast('Folder Closed 📁', 'Dynamic mini-grid thumbnail active in dock');
+        showToast('Folder Drawer Closed 📁', 'Running application remains active in dock capsule');
       } else {
         updateFolderPopoverPosition();
         foldyLauncher.classList.remove('visible');
         folderPopover.classList.add('visible');
-        showToast('DEV TOOLS Folder Opened 📂', 'Positioned directly above dock capsule • Click any app to launch');
+        showToast('DEV TOOLS Folder Opened 📂', 'Browse apps • Click any app to run it inside the capsule');
       }
     }
 
@@ -3079,7 +3379,9 @@
         dots[appName].style.display = 'flex';
       }
       if (folderApps.includes(appName)) {
-        dotsFolder.style.display = 'flex';
+        expandFolderCapsule(appName);
+      } else {
+        collapseFolderCapsule();
       }
 
       if (appName === 'Safari') {
@@ -3117,7 +3419,7 @@
         dots[appName].style.display = 'none';
       }
       if (folderApps.includes(appName)) {
-        dotsFolder.style.display = 'none';
+        collapseFolderCapsule();
       }
       if (activeWindowName === appName) {
         activeWindowName = null;
