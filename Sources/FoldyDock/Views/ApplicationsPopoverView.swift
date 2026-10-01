@@ -125,7 +125,7 @@ public struct ApplicationsPopoverView: View {
                         .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.6))
                 }
-                .frame(maxWidth: .infinity, minHeight: 240)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if filteredApps.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
@@ -135,7 +135,7 @@ public struct ApplicationsPopoverView: View {
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white.opacity(0.6))
                 }
-                .frame(maxWidth: .infinity, minHeight: 220)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView(.vertical, showsIndicators: true) {
                     LazyVGrid(columns: columns, spacing: 14) {
@@ -146,12 +146,11 @@ public struct ApplicationsPopoverView: View {
                     .padding(.vertical, 6)
                     .padding(.horizontal, 2)
                 }
-                .frame(maxHeight: 460)
+                .frame(maxHeight: .infinity)
             }
         }
         .padding(16)
-        .frame(minWidth: 480, maxWidth: 540)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 520, height: 490)
         .background(
             ZStack {
                 VisualEffectBackground(
@@ -288,7 +287,7 @@ private struct AppGridItemCell: View {
 }
 
 
-// MARK: - Auto-Focus AppKit Helper
+// MARK: - Auto-Focus & Position Clamping Helper
 private struct FirstResponderFocusHelper: NSViewRepresentable {
     func makeNSView(context: Context) -> FocusTriggerView {
         FocusTriggerView()
@@ -297,6 +296,8 @@ private struct FirstResponderFocusHelper: NSViewRepresentable {
     func updateNSView(_ nsView: FocusTriggerView, context: Context) {}
 
     final class FocusTriggerView: NSView {
+        private var resizeObserver: NSObjectProtocol?
+
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             guard let window = self.window else { return }
@@ -304,13 +305,37 @@ private struct FirstResponderFocusHelper: NSViewRepresentable {
             NSApp.activate(ignoringOtherApps: true)
             window.makeKey()
 
-            for delay in [0.02, 0.08, 0.2] {
+            self.adjustPosition(window: window)
+
+            for delay in [0.01, 0.05, 0.12, 0.25] {
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak window] in
                     guard let self = self, let window = window else { return }
                     NSApp.activate(ignoringOtherApps: true)
                     window.makeKey()
+                    self.adjustPosition(window: window)
                     self.focusSearchField(in: window.contentView)
                 }
+            }
+
+            if resizeObserver == nil {
+                resizeObserver = NotificationCenter.default.addObserver(
+                    forName: NSWindow.didResizeNotification,
+                    object: window,
+                    queue: .main
+                ) { [weak self, weak window] _ in
+                    guard let self = self, let window = window else { return }
+                    self.adjustPosition(window: window)
+                }
+            }
+        }
+
+        private func adjustPosition(window: NSWindow) {
+            guard let dockWindow = NSApp.windows.first(where: { $0 is DockPanel }) else { return }
+            let targetMinY = dockWindow.frame.maxY + 4
+            if window.frame.minY < targetMinY {
+                var f = window.frame
+                f.origin.y = targetMinY
+                window.setFrame(f, display: true)
             }
         }
 
@@ -322,6 +347,12 @@ private struct FirstResponderFocusHelper: NSViewRepresentable {
             }
             for subview in view.subviews {
                 focusSearchField(in: subview)
+            }
+        }
+
+        deinit {
+            if let observer = resizeObserver {
+                NotificationCenter.default.removeObserver(observer)
             }
         }
     }
