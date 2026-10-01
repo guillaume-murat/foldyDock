@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#07080b">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#07080b">
+  <meta name="color-scheme" content="dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>FoldyDock — The Native macOS Dock with iOS Folders</title>
   <meta name="description" content="A sleek, native floating dock for macOS with iOS-style folders, multi-window tracking, frosted glass blur, and fluid physical interactions.">
-  <meta name="theme-color" content="#07080b">
-  
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="FoldyDock — The Native macOS Dock with iOS Folders">
@@ -66,6 +69,30 @@
       font-family: var(--font-body);
       font-size: 16px;
       line-height: 1.5;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* Mobile-Native: Inputs must never trigger iOS Safari auto-zoom */
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+
+    /* Mobile-Native: Controls have manipulation touch-action & no text callouts */
+    button, a, [role="button"], .dock-item, .popover-app, .launcher-app-item,
+    .traffic-btn, .window-dot, .safari-nav-btn, .finder-view-btn, .finder-tag-dot,
+    .music-ctrl-btn, .preview-zoom-btn, .btn-hero-primary, .btn-hero-secondary {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    /* Mobile-Native: Immediate active press feedback */
+    button:active, a:active, .dock-item:active, .popover-app:active,
+    .launcher-app-item:active, .window-dot:active {
+      transform: scale(0.96);
+      transition: transform 0.1s var(--ease-smooth);
     }
 
     body {
@@ -106,12 +133,13 @@
       background: rgba(7, 8, 11, 0.75);
       border-bottom: 1px solid var(--border-subtle);
       transition: background 0.2s ease;
+      padding-top: env(safe-area-inset-top, 0px);
     }
 
     .navbar {
       max-width: 1160px;
       margin: 0 auto;
-      padding: 0.85rem 1.5rem;
+      padding: 0.85rem calc(1.5rem + env(safe-area-inset-right, 0px)) 0.85rem calc(1.5rem + env(safe-area-inset-left, 0px));
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -215,6 +243,7 @@
        ------------------------------------------------------------- */
     .hero {
       position: relative;
+      min-height: 100svh;
       z-index: 1;
       max-width: 1040px;
       margin: 0 auto;
@@ -504,13 +533,16 @@
       left: 50%;
       transform: translateX(-50%) scale(0.92);
       width: min(720px, 94%);
+      max-height: calc(100% - 90px);
       background: rgba(26, 30, 42, 0.88);
       backdrop-filter: blur(40px) saturate(180%);
       -webkit-backdrop-filter: blur(40px) saturate(180%);
       border-radius: 16px;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 35px 80px -15px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(255, 255, 255, 0.25) inset;
-      overflow: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       opacity: 0;
       pointer-events: none;
       transition: transform 0.3s var(--ease-spring), opacity 0.25s ease;
@@ -1593,6 +1625,8 @@
       gap: 10px;
       max-height: 240px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       padding-right: 4px;
     }
     .launcher-app-item {
@@ -2162,7 +2196,7 @@
        ------------------------------------------------------------- */
     footer {
       border-top: 1px solid var(--border-subtle);
-      padding: 3rem 1.5rem 4rem 1.5rem;
+      padding: 3rem 1.5rem calc(4rem + env(safe-area-inset-bottom, 0px)) 1.5rem;
       text-align: center;
       font-size: 0.875rem;
       color: var(--text-tertiary);
@@ -2190,13 +2224,52 @@
       50% { transform: scale(1.3); opacity: 0.7; }
     }
 
+    /* Gated Hover Styles: prevents sticky hover states on touch screens */
+    @media (hover: hover) and (pointer: fine) {
+      .btn-hero-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(255, 255, 255, 0.35);
+      }
+      .btn-hero-secondary:hover {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.35);
+      }
+      .dock-item:hover {
+        transform: translateY(-4px) scale(1.08);
+      }
+      .dock-item:hover .dock-item-name {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      .popover-app:hover {
+        transform: scale(1.08);
+      }
+      .popover-close:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .gesture-box:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: var(--border-specular);
+      }
+      .hero-logo-pulse:hover {
+        transform: scale(1.08) rotate(1deg);
+        filter: 
+          drop-shadow(0 16px 32px rgba(0, 0, 0, 0.65))
+          drop-shadow(0 0 34px rgba(99, 210, 255, 0.52));
+      }
+      footer a:hover {
+        color: var(--text-primary);
+      }
+    }
+
     @media (max-width: 860px) {
       .dock-item {
-        width: 48px;
+        width: 44px;
       }
       .dock-icon-wrapper {
-        width: 42px;
-        height: 42px;
+        width: 38px;
+        height: 38px;
       }
       .nav-links {
         display: none;
@@ -2207,6 +2280,148 @@
       }
       .foldy-launcher-demo::after {
         left: 50% !important;
+      }
+    }
+
+    /* Mobile screens (tablets & phones < 640px) */
+    @media (max-width: 640px) {
+      .hero {
+        padding: calc(4rem + env(safe-area-inset-top, 0px)) 1rem 2rem 1rem;
+      }
+      .hero h1 {
+        font-size: clamp(2rem, 8.5vw, 2.75rem);
+      }
+      .hero-subtitle {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+      }
+      .hero-cta {
+        flex-direction: column;
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto 1.5rem auto;
+      }
+      .btn-hero-primary, .btn-hero-secondary {
+        width: 100%;
+        justify-content: center;
+      }
+      .hero-meta {
+        font-size: 0.72rem;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+
+      /* Stage & Dock adaptations */
+      .interactive-stage {
+        padding: 0 0.5rem;
+        margin: 1rem auto 3rem auto;
+      }
+      .stage-window {
+        min-height: 520px;
+        border-radius: 18px;
+      }
+      .stage-canvas {
+        padding-bottom: 1.25rem;
+      }
+      .stage-center-badge h3 {
+        font-size: 1.15rem;
+      }
+      .stage-center-badge p {
+        font-size: 0.78rem;
+      }
+
+      .dock-container {
+        gap: 5px;
+        padding: 6px 8px;
+        max-width: 98%;
+        border-radius: 18px;
+      }
+      .dock-item {
+        width: 34px;
+      }
+      .dock-icon-wrapper {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+      }
+      .dock-item.folder.expanded {
+        width: 74px;
+      }
+      .capsule-folder-grid {
+        width: 32px;
+        height: 30px;
+        gap: 2px;
+      }
+      .capsule-mini-slot {
+        width: 9px;
+        height: 11px;
+      }
+      .capsule-mini-slot img {
+        width: 9px;
+        height: 9px;
+      }
+      .capsule-active-app {
+        width: 32px;
+      }
+      .capsule-app-name {
+        font-size: 8px;
+      }
+      .capsule-app-icon {
+        width: 20px;
+        height: 20px;
+      }
+      .dock-item-name {
+        font-size: 8.5px;
+        top: -18px;
+      }
+      .dock-separator {
+        height: 22px;
+        margin: 0 2px;
+      }
+
+      /* Popover & Launchers on phones */
+      .folder-popover-demo {
+        width: min(285px, 92vw);
+        padding: 12px 14px;
+        bottom: 84px;
+        border-radius: 18px;
+      }
+      .popover-grid {
+        gap: 8px;
+      }
+      .popover-app img {
+        width: 38px;
+        height: 38px;
+      }
+      .foldy-launcher-demo {
+        width: min(315px, 94vw);
+        padding: 12px 14px;
+        bottom: 84px;
+        border-radius: 18px;
+      }
+      .launcher-app-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        max-height: 200px;
+      }
+      .launcher-app-item img {
+        width: 34px;
+        height: 34px;
+      }
+
+      /* Sections & cards */
+      .section {
+        padding: 3rem 1rem;
+      }
+      .quickstart-card {
+        padding: 2rem 1.25rem;
+        border-radius: 18px;
+      }
+      .code-pill {
+        font-size: 0.72rem;
+        padding: 0.6rem 0.8rem;
+        word-break: break-all;
       }
     }
 
@@ -2350,7 +2565,7 @@
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-              <input type="text" class="google-search-input" id="googleSearchInput" placeholder="Search Google or type a URL" value="FoldyDock native macOS app" onkeydown="handleGoogleSearch(event)" />
+              <input type="text" class="google-search-input" id="googleSearchInput" placeholder="Search Google or type a URL" autocapitalize="none" autocorrect="off" enterkeyhint="search" value="FoldyDock native macOS app" onkeydown="handleGoogleSearch(event)" />
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -2381,7 +2596,7 @@
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-              <input type="text" class="finder-search-input" id="finderSearchInput" placeholder="Search files..." oninput="filterFinderFiles(this.value)" />
+              <input type="text" class="finder-search-input" id="finderSearchInput" placeholder="Search files..." autocapitalize="none" autocorrect="off" enterkeyhint="search" oninput="filterFinderFiles(this.value)" />
             </div>
           </div>
           <div class="finder-body">
@@ -2453,7 +2668,7 @@
               </div>
             </div>
             <div class="messages-input-row">
-              <input type="text" class="messages-input" id="messageInput" placeholder="iMessage" onkeydown="handleMessageInput(event)" />
+              <input type="text" class="messages-input" id="messageInput" placeholder="iMessage" autocapitalize="sentences" enterkeyhint="send" onkeydown="handleMessageInput(event)" />
               <button class="messages-send-btn" onclick="sendCustomMessage()" title="Send">↑</button>
             </div>
           </div>
@@ -2564,7 +2779,7 @@
             <div id="terminalHistory"></div>
             <div class="terminal-input-line">
               <span class="terminal-prompt">gmperso@macbook-pro ~ %</span>
-              <input type="text" class="terminal-cli-input" id="terminalCliInput" placeholder="try 'help', 'status', 'ls'" onkeydown="handleTerminalCommand(event)" />
+              <input type="text" class="terminal-cli-input" id="terminalCliInput" placeholder="try 'help', 'status', 'ls'" autocapitalize="none" autocorrect="off" enterkeyhint="go" onkeydown="handleTerminalCommand(event)" />
             </div>
           </div>
         </div>
@@ -2762,7 +2977,7 @@
               <span class="activity-seg">Network</span>
             </div>
             <div class="finder-search-box" style="width: 140px;">
-              <input type="text" class="finder-search-input" id="activitySearchInput" placeholder="Filter processes..." oninput="filterActivityRows(this.value)" />
+              <input type="text" class="finder-search-input" id="activitySearchInput" placeholder="Filter processes..." autocapitalize="none" autocorrect="off" enterkeyhint="search" oninput="filterActivityRows(this.value)" />
             </div>
             <button class="btn-empty-trash" onclick="quitSelectedActivityProcess()" title="Force Quit Process" style="color: #ff5f57; border-color: rgba(255, 95, 87, 0.3);">Stop ✕</button>
           </div>
@@ -2879,7 +3094,7 @@
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="text" class="launcher-search-input" id="launcherSearchInput" placeholder="Search applications..." oninput="filterLauncherApps(this.value)" />
+            <input type="text" class="launcher-search-input" id="launcherSearchInput" placeholder="Search applications..." autocapitalize="none" autocorrect="off" enterkeyhint="search" oninput="filterLauncherApps(this.value)" />
           </div>
           <div class="launcher-app-grid" id="launcherAppGrid">
             <div class="launcher-app-item" data-app="Safari" onclick="openAppWindow('Safari')">
