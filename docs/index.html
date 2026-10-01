@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>FoldyDock — The Native macOS Dock Reimagined</title>
+  <title>FoldyDock — The Native macOS Dock with iOS Folders</title>
   <meta name="description" content="A sleek, native floating dock for macOS with iOS-style folders, multi-window tracking, frosted glass blur, and fluid physical interactions.">
   <meta name="theme-color" content="#07080b">
   
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="FoldyDock — The Native macOS Dock Reimagined">
+  <meta property="og:title" content="FoldyDock — The Native macOS Dock with iOS Folders">
   <meta property="og:description" content="iOS-style app folders, real-time frosted glass, multi-space support, and rapid window management for macOS.">
   <meta property="og:image" content="assets/logoFoldyDock.png">
   
@@ -259,6 +259,50 @@
       color: var(--text-primary);
       margin-bottom: 1.25rem;
       max-width: 900px;
+    }
+
+    .hero-logo-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 0.5rem;
+      margin-bottom: 1.75rem;
+      position: relative;
+    }
+
+    .hero-logo-pulse {
+      width: clamp(82px, 9.5vw, 100px);
+      height: clamp(82px, 9.5vw, 100px);
+      border-radius: 22px;
+      object-fit: contain;
+      box-shadow: 
+        0 14px 34px -4px rgba(0, 0, 0, 0.55),
+        0 0 32px rgba(99, 170, 255, 0.22);
+      animation: logoSubtlePulse 3.2s ease-in-out infinite;
+      transition: transform 0.25s var(--ease-spring), box-shadow 0.25s ease;
+      cursor: pointer;
+    }
+
+    .hero-logo-pulse:hover {
+      transform: scale(1.08) rotate(1deg);
+      box-shadow: 
+        0 20px 44px -4px rgba(0, 0, 0, 0.65),
+        0 0 48px rgba(99, 210, 255, 0.42);
+    }
+
+    @keyframes logoSubtlePulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 
+          0 14px 34px -4px rgba(0, 0, 0, 0.55),
+          0 0 28px rgba(99, 170, 255, 0.18);
+      }
+      50% {
+        transform: scale(1.045);
+        box-shadow: 
+          0 18px 42px -2px rgba(0, 0, 0, 0.65),
+          0 0 46px rgba(99, 195, 255, 0.38);
+      }
     }
 
     .hero h1 .gradient-text {
@@ -2212,8 +2256,12 @@
 
     <h1>
       Your Mac's Dock.<br>
-      <span class="gradient-text">Reimagined with iOS Folders.</span>
+      <span class="gradient-text">With iOS Folders.</span>
     </h1>
+
+    <div class="hero-logo-container">
+      <img src="assets/logoFoldyDock.png" alt="FoldyDock Logo" class="hero-logo-pulse" title="FoldyDock" />
+    </div>
 
     <p class="hero-subtitle">
       FoldyDock is a sleek, floating glass dock for macOS. Group apps into dynamic live folders, track multi-window instances with glowing activity dots, and quit apps with a single middle-click.
