@@ -921,6 +921,542 @@
       animation: pulse 1s infinite;
     }
 
+    
+    /* -------------------------------------------------------------
+       XCODE WINDOW
+       ------------------------------------------------------------- */
+    .xcode-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .xcode-run-btn, .xcode-stop-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .xcode-run-btn:hover { background: rgba(48, 209, 88, 0.25); color: #30d158; border-color: #30d158; }
+    .xcode-stop-btn:hover { background: rgba(255, 95, 87, 0.25); color: #ff5f57; border-color: #ff5f57; }
+    .xcode-scheme-pill {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .xcode-status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 3px 12px;
+      font-size: 0.75rem;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+    .xcode-body {
+      display: flex;
+      background: #171922;
+      min-height: 310px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .xcode-sidebar {
+      width: 210px;
+      background: rgba(20, 23, 32, 0.95);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      user-select: none;
+    }
+    .xcode-tree-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+      margin-bottom: 6px;
+      padding-left: 6px;
+    }
+    .xcode-tree-item {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.12s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .xcode-tree-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+    .xcode-tree-item.active {
+      background: rgba(10, 132, 255, 0.28);
+      color: #fff;
+      font-weight: 500;
+    }
+    .xcode-editor {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #161822;
+      overflow: hidden;
+    }
+    .xcode-editor-tabs {
+      background: rgba(24, 28, 38, 0.7);
+      padding: 6px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .xcode-code {
+      flex: 1;
+      padding: 14px 18px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.65;
+      color: #d1d5db;
+      overflow-x: auto;
+      margin: 0;
+    }
+    .swift-kw { color: #bf5af2; font-weight: 600; }
+    .swift-type { color: #64d2ff; }
+    .swift-attr { color: #ff9f0a; }
+    .swift-func { color: #30d158; }
+    .swift-num { color: #ffd60a; }
+
+    /* -------------------------------------------------------------
+       TERMINAL COMMAND LINE INPUT
+       ------------------------------------------------------------- */
+    .terminal-input-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .terminal-cli-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    /* -------------------------------------------------------------
+       VS CODE WINDOW
+       ------------------------------------------------------------- */
+    .vscode-body {
+      display: flex;
+      background: #1e1e1e;
+      min-height: 310px;
+    }
+    .vscode-activity-bar {
+      width: 44px;
+      background: #252526;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+      gap: 16px;
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 1rem;
+    }
+    .vscode-act-icon {
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    .vscode-act-icon.active, .vscode-act-icon:hover {
+      color: #fff;
+    }
+    .vscode-explorer {
+      width: 170px;
+      background: #181818;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      user-select: none;
+    }
+    .vscode-exp-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 6px;
+      padding-left: 4px;
+    }
+    .vscode-file-item {
+      font-size: 0.74rem;
+      color: #cccccc;
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vscode-file-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .vscode-file-item.active {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+    .vscode-editor {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1e1e1e;
+    }
+    .vscode-tabs {
+      display: flex;
+      background: #252526;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .vscode-tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      font-size: 0.74rem;
+      background: #1e1e1e;
+      color: #ffffff;
+      border-top: 2px solid #007acc;
+    }
+    .vscode-tab-close {
+      cursor: pointer;
+      opacity: 0.6;
+      font-size: 0.7rem;
+    }
+    .vscode-tab-close:hover { opacity: 1; }
+    .vscode-editor-content {
+      display: flex;
+      flex: 1;
+      padding: 12px 0;
+    }
+    .vscode-line-nums {
+      width: 40px;
+      text-align: right;
+      padding-right: 12px;
+      color: #5c6370;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      line-height: 1.6;
+      user-select: none;
+    }
+    .vscode-code {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      line-height: 1.6;
+      color: #abb2bf;
+      margin: 0;
+      padding: 0;
+    }
+    .vscode-statusbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #007acc;
+      color: #ffffff;
+      font-size: 0.7rem;
+      padding: 3px 12px;
+      user-select: none;
+    }
+
+    /* -------------------------------------------------------------
+       FIGMA WINDOW
+       ------------------------------------------------------------- */
+    .figma-tools {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .figma-tool-btn {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .figma-tool-btn.active, .figma-tool-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+    .figma-btn-share {
+      background: #0d99ff;
+      border: none;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .figma-btn-play {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .figma-body {
+      display: flex;
+      background: #202020;
+      min-height: 310px;
+    }
+    .figma-layers {
+      width: 175px;
+      background: #2c2c2c;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.73rem;
+      color: rgba(255, 255, 255, 0.7);
+      user-select: none;
+    }
+    .figma-layer-hdr {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 6px;
+      padding-left: 4px;
+    }
+    .figma-layer-item {
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .figma-layer-item:hover { background: rgba(255, 255, 255, 0.06); }
+    .figma-layer-item.selected {
+      background: #0d99ff;
+      color: #fff;
+      font-weight: 500;
+    }
+    .figma-canvas {
+      flex: 1;
+      background: #1e1e1e;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 0);
+      background-size: 20px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+    }
+    .figma-artboard-frame {
+      border: 1px solid #0d99ff;
+      box-shadow: 0 0 0 1px #0d99ff;
+      border-radius: 14px;
+      padding: 14px 18px;
+      background: rgba(15, 18, 25, 0.85);
+      position: relative;
+    }
+    .figma-artboard-title {
+      position: absolute;
+      top: -20px;
+      left: 0;
+      font-size: 0.7rem;
+      color: #0d99ff;
+      font-weight: 600;
+    }
+    .figma-mock-dock {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .figma-inspector {
+      width: 170px;
+      background: #2c2c2c;
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.73rem;
+      color: rgba(255, 255, 255, 0.8);
+      user-select: none;
+    }
+    .figma-prop-hdr {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 2px;
+    }
+    .figma-prop-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .figma-prop-row b { color: #fff; font-weight: 500; }
+
+    /* -------------------------------------------------------------
+       ACTIVITY MONITOR WINDOW
+       ------------------------------------------------------------- */
+    .activity-segmented {
+      display: flex;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 7px;
+      padding: 2px;
+    }
+    .activity-seg {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      padding: 3px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .activity-seg.active {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+    }
+    .activity-body {
+      background: #141724;
+      display: flex;
+      flex-direction: column;
+      min-height: 310px;
+    }
+    .activity-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      text-align: left;
+    }
+    .activity-table th {
+      padding: 6px 12px;
+      color: var(--text-tertiary);
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+      font-size: 0.7rem;
+    }
+    .activity-table td {
+      padding: 7px 12px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .activity-row {
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+    .activity-row:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .activity-row.selected {
+      background: rgba(10, 132, 255, 0.28) !important;
+      color: #fff !important;
+    }
+    .activity-row.selected td {
+      color: #fff !important;
+    }
+    .activity-footer {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: rgba(0, 0, 0, 0.4);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    /* -------------------------------------------------------------
+       PREVIEW WINDOW
+       ------------------------------------------------------------- */
+    .preview-zoom-ctrls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+    .preview-zoom-btn {
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .preview-zoom-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .preview-body {
+      background: #171924;
+      display: flex;
+      flex-direction: column;
+      min-height: 310px;
+    }
+    .preview-checkerboard {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image: 
+        linear-gradient(45deg, #1b1e2a 25%, transparent 25%), 
+        linear-gradient(-45deg, #1b1e2a 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #1b1e2a 75%), 
+        linear-gradient(-45deg, transparent 75%, #1b1e2a 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      padding: 24px;
+      overflow: hidden;
+    }
+    .preview-footer-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 6px 14px;
+      background: rgba(0, 0, 0, 0.4);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+    }
+
     /* -------------------------------------------------------------
        FOLDY APP LAUNCHER DRAWER (Click on Foldy Mascot)
        ------------------------------------------------------------- */
@@ -1804,8 +2340,8 @@
           </div>
         </div>
 
-        <!-- 6. TERMINAL WINDOW -->
-        <div class="app-window" id="terminalWindow" style="width: min(580px, 92%);">
+        <!-- 6. TERMINAL WINDOW (ENHANCED INTERACTIVE) -->
+        <div class="app-window" id="terminalWindow" style="width: min(620px, 92%);">
           <div class="app-toolbar" style="background: #1e2230;">
             <div class="window-dots">
               <span class="window-dot close" onclick="closeAppWindow('Terminal')"></span>
@@ -1814,16 +2350,314 @@
             </div>
             <div class="toolbar-title">gmperso — zsh — 80×24</div>
           </div>
-          <div class="terminal-body">
-            <div>Last login: Thu Oct 1 12:54:12 on ttys001</div>
+          <div class="terminal-body" id="terminalBody">
+            <div>Last login: Thu Oct 1 14:15:32 on ttys001</div>
             <div style="margin-top: 8px;">
               <span class="terminal-prompt">gmperso@macbook-pro ~ %</span> foldydock --status
             </div>
             <div style="color: #9cb8ff; margin: 4px 0 8px 0;">
-              [FoldyDock] Status: Active • Spaces: .canJoinAllSpaces • Popover: Ready
+              [FoldyDock] Status: Active • Spaces: .canJoinAllSpaces • Popover: Ready • Folders: 1 (DEV TOOLS)
             </div>
-            <div>
-              <span class="terminal-prompt">gmperso@macbook-pro ~ %</span> <span class="terminal-cursor"></span>
+            <div id="terminalHistory"></div>
+            <div class="terminal-input-line">
+              <span class="terminal-prompt">gmperso@macbook-pro ~ %</span>
+              <input type="text" class="terminal-cli-input" id="terminalCliInput" placeholder="try 'help', 'status', 'ls'" onkeydown="handleTerminalCommand(event)" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. XCODE WINDOW (DEV TOOLS APP 1) -->
+        <div class="app-window" id="xcodeWindow" style="width: min(780px, 95%);">
+          <div class="app-toolbar" style="background: #1f2330;">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeAppWindow('Xcode')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Xcode')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
+            </div>
+            <div class="xcode-actions">
+              <button class="xcode-run-btn" onclick="buildXcodeProject()" title="Build and Run">▶</button>
+              <button class="xcode-stop-btn" onclick="stopXcodeProject()" title="Stop">■</button>
+              <div class="xcode-scheme-pill">FoldyDock › My Mac (MacBook Pro)</div>
+            </div>
+            <div class="xcode-status-pill" id="xcodeStatusPill">
+              <span style="color: #30d158;">✓</span> FoldyDock | Build Succeeded
+            </div>
+          </div>
+          <div class="xcode-body">
+            <div class="xcode-sidebar">
+              <div class="xcode-tree-header">PROJECT NAVIGATOR</div>
+              <div class="xcode-tree-item active">📁 FoldyDock</div>
+              <div class="xcode-tree-item" style="padding-left: 18px;">📁 Sources</div>
+              <div class="xcode-tree-item" style="padding-left: 28px; color: #fff; background: rgba(10, 132, 255, 0.25);">📄 FoldyDockApp.swift</div>
+              <div class="xcode-tree-item" style="padding-left: 28px;">📄 DockView.swift</div>
+              <div class="xcode-tree-item" style="padding-left: 28px;">📄 FolderPopover.swift</div>
+              <div class="xcode-tree-item" style="padding-left: 28px;">📄 WindowTracker.swift</div>
+              <div class="xcode-tree-item" style="padding-left: 18px;">📁 Resources</div>
+              <div class="xcode-tree-item" style="padding-left: 28px;">🎨 Assets.xcassets</div>
+            </div>
+            <div class="xcode-editor">
+              <div class="xcode-editor-tabs">
+                <span class="xcode-tab active">FoldyDockApp.swift › struct FoldyDockApp</span>
+                <span style="font-size: 0.7rem; color: #30d158;">Swift 5.9</span>
+              </div>
+              <pre class="xcode-code"><code><span class="swift-kw">import</span> <span class="swift-type">SwiftUI</span>
+
+<span class="swift-attr">@main</span>
+<span class="swift-kw">struct</span> <span class="swift-type">FoldyDockApp</span>: <span class="swift-type">App</span> {
+    <span class="swift-attr">@NSApplicationDelegateAdaptor</span>(<span class="swift-type">AppDelegate</span>.<span class="swift-kw">self</span>) <span class="swift-kw">var</span> appDelegate
+
+    <span class="swift-kw">var</span> body: <span class="swift-kw">some</span> <span class="swift-type">Scene</span> {
+        <span class="swift-type">WindowGroup</span> {
+            <span class="swift-type">DockView</span>()
+                .<span class="swift-func">background</span>(.<span class="swift-type">ultraThinMaterial</span>)
+                .<span class="swift-func">clipShape</span>(<span class="swift-type">RoundedRectangle</span>(cornerRadius: <span class="swift-num">24</span>))
+                .<span class="swift-func">shadow</span>(color: .<span class="swift-type">black</span>.<span class="swift-func">opacity</span>(<span class="swift-num">0.4</span>), radius: <span class="swift-num">20</span>)
+        }
+        .<span class="swift-func">windowStyle</span>(.<span class="swift-type">hiddenTitleBar</span>)
+    }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. VS CODE WINDOW (DEV TOOLS APP 3) -->
+        <div class="app-window" id="vscodeWindow" style="width: min(780px, 95%);">
+          <div class="app-toolbar" style="background: #1e1e1e; border-bottom: 1px solid #333;">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeAppWindow('VS Code')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('VS Code')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
+            </div>
+            <div class="toolbar-title" style="color: #cccccc; font-size: 0.78rem;">README.md — foldyDock — Visual Studio Code</div>
+          </div>
+          <div class="vscode-body">
+            <div class="vscode-activity-bar">
+              <div class="vscode-act-icon active" title="Explorer">📄</div>
+              <div class="vscode-act-icon" title="Search">🔍</div>
+              <div class="vscode-act-icon" title="Source Control">🌿</div>
+              <div class="vscode-act-icon" title="Extensions">🧩</div>
+            </div>
+            <div class="vscode-explorer">
+              <div class="vscode-exp-title">EXPLORER: FOLDYDOCK</div>
+              <div class="vscode-file-item">📁 .github</div>
+              <div class="vscode-file-item">📁 docs</div>
+              <div class="vscode-file-item" style="padding-left: 20px;">📄 index.html</div>
+              <div class="vscode-file-item">📁 scripts</div>
+              <div class="vscode-file-item" style="padding-left: 20px;">⚙️ build_app.sh</div>
+              <div class="vscode-file-item active">📄 README.md</div>
+              <div class="vscode-file-item">📄 LICENSE</div>
+            </div>
+            <div class="vscode-editor">
+              <div class="vscode-tabs">
+                <div class="vscode-tab active">
+                  <span style="color: #42a5f5;">M↓</span> README.md
+                  <span class="vscode-tab-close">✕</span>
+                </div>
+              </div>
+              <div class="vscode-editor-content">
+                <div class="vscode-line-nums">
+                  1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10
+                </div>
+                <pre class="vscode-code"><code><span style="color: #61afef; font-weight: bold;"># FoldyDock 🚀</span>
+<span style="color: #98c379;">A sleek floating dock for macOS with iOS-style folders.</span>
+
+<span style="color: #e5c07b;">## Key Highlights</span>
+- <span style="color: #e06c75;">Native Swift 5.9</span> & SwiftUI architecture
+- <span style="color: #98c379;">Interactive Folders</span> directly docked
+- <span style="color: #d19a66;">Middle-click</span> to kill unresponsive apps
+- <span style="color: #61afef;">Multi-Window</span> activity tracking dots</code></pre>
+              </div>
+            </div>
+          </div>
+          <div class="vscode-statusbar">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <span>🌿 main*</span>
+              <span>⊗ 0  ⚠ 0</span>
+            </div>
+            <div style="display: flex; gap: 14px; align-items: center;">
+              <span>Ln 4, Col 1</span>
+              <span>UTF-8</span>
+              <span>Markdown</span>
+              <span>Prettier ✓</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 9. FIGMA WINDOW (DEV TOOLS APP 4) -->
+        <div class="app-window" id="figmaWindow" style="width: min(780px, 95%);">
+          <div class="app-toolbar" style="background: #2c2c2c; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeAppWindow('Figma')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Figma')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
+            </div>
+            <div class="figma-tools">
+              <button class="figma-tool-btn active" title="Move">↖</button>
+              <button class="figma-tool-btn" title="Frame">#</button>
+              <button class="figma-tool-btn" title="Rectangle">□</button>
+              <button class="figma-tool-btn" title="Pen">✎</button>
+              <button class="figma-tool-btn" title="Text">T</button>
+            </div>
+            <div class="toolbar-title" style="color: #f0f0f0; font-size: 0.78rem;">FoldyDock UI Kit — Design Spec (Draft)</div>
+            <div style="display: flex; gap: 8px;">
+              <button class="figma-btn-share">Share</button>
+              <button class="figma-btn-play" onclick="showToast('Figma Prototype ▶️', 'Playing FoldyDock interaction flow in presentation mode')">▶</button>
+            </div>
+          </div>
+          <div class="figma-body">
+            <div class="figma-layers">
+              <div class="figma-layer-hdr">LAYERS</div>
+              <div class="figma-layer-item">▾ # Desktop Canvas</div>
+              <div class="figma-layer-item selected" style="padding-left: 18px;">▾ ❖ Dock Capsule</div>
+              <div class="figma-layer-item" style="padding-left: 28px;">▸ ▫ Background Blur</div>
+              <div class="figma-layer-item" style="padding-left: 28px;">▸ ▫ Specular Inner Border</div>
+              <div class="figma-layer-item" style="padding-left: 28px;">▾ ❖ Folder Item (DEV TOOLS)</div>
+              <div class="figma-layer-item" style="padding-left: 38px;">▫ 2x2 Mini Icons Grid</div>
+            </div>
+            <div class="figma-canvas">
+              <div class="figma-artboard-frame">
+                <div class="figma-artboard-title">Dock Capsule (Selected)</div>
+                <div class="figma-artboard-content">
+                  <div class="figma-mock-dock">
+                    <img src="assets/logoFoldyDock.png" width="28" height="28" style="border-radius: 6px;" />
+                    <img src="assets/icon_safari.png" width="28" height="28" />
+                    <img src="assets/icon_finder.png" width="28" height="28" />
+                    <div style="width: 28px; height: 28px; border: 1.5px dashed #0d99ff; border-radius: 7px; display: grid; grid-template-columns: repeat(2, 1fr); padding: 2px; gap: 2px;">
+                      <div style="background: #0d99ff; border-radius: 2px;"></div>
+                      <div style="background: #30d158; border-radius: 2px;"></div>
+                      <div style="background: #bf5af2; border-radius: 2px;"></div>
+                      <div style="background: #ff9f0a; border-radius: 2px;"></div>
+                    </div>
+                    <img src="assets/apple_trash.png" width="28" height="28" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="figma-inspector">
+              <div class="figma-prop-hdr">PROPERTIES</div>
+              <div class="figma-prop-row"><span>W</span> <b>720</b> <span>H</span> <b>68</b></div>
+              <div class="figma-prop-row"><span>Radius</span> <b>24px</b></div>
+              <div class="figma-prop-row"><span>Fill</span> <b>rgba(25, 30, 42, 0.55)</b></div>
+              <div class="figma-prop-row"><span>Blur</span> <b>35px Material</b></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10. ACTIVITY MONITOR WINDOW (DEV TOOLS APP 5) -->
+        <div class="app-window" id="activityWindow" style="width: min(780px, 95%);">
+          <div class="app-toolbar" style="background: #1e222e;">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeAppWindow('Activity Monitor')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Activity Monitor')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
+            </div>
+            <div class="activity-segmented">
+              <span class="activity-seg active">CPU</span>
+              <span class="activity-seg">Memory</span>
+              <span class="activity-seg">Energy</span>
+              <span class="activity-seg">Disk</span>
+              <span class="activity-seg">Network</span>
+            </div>
+            <div class="finder-search-box" style="width: 140px;">
+              <input type="text" class="finder-search-input" id="activitySearchInput" placeholder="Filter processes..." oninput="filterActivityRows(this.value)" />
+            </div>
+            <button class="btn-empty-trash" onclick="quitSelectedActivityProcess()" title="Force Quit Process" style="color: #ff5f57; border-color: rgba(255, 95, 87, 0.3);">Stop ✕</button>
+          </div>
+          <div class="activity-body">
+            <table class="activity-table" id="activityTable">
+              <thead>
+                <tr>
+                  <th>Process Name</th>
+                  <th>% CPU</th>
+                  <th>CPU Time</th>
+                  <th>Threads</th>
+                  <th>Memory</th>
+                  <th>Kind</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="activity-row selected" onclick="selectActivityRow(this)" data-name="FoldyDock">
+                  <td><span style="display: inline-flex; align-items: center; gap: 6px;"><img src="assets/logoFoldyDock.png" width="16" height="16" style="border-radius: 4px;" /> FoldyDock</span></td>
+                  <td style="color: #30d158; font-weight: 600;">0.1 %</td>
+                  <td>01:34.88</td>
+                  <td>8</td>
+                  <td>42.4 MB</td>
+                  <td>Apple Silicon</td>
+                </tr>
+                <tr class="activity-row" onclick="selectActivityRow(this)" data-name="WindowServer">
+                  <td>⚙️ WindowServer</td>
+                  <td>4.8 %</td>
+                  <td>12:45.10</td>
+                  <td>16</td>
+                  <td>312.0 MB</td>
+                  <td>Apple Silicon</td>
+                </tr>
+                <tr class="activity-row" onclick="selectActivityRow(this)" data-name="Safari">
+                  <td><span style="display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icon_safari.png" width="16" height="16" /> Safari</span></td>
+                  <td>1.2 %</td>
+                  <td>04:22.31</td>
+                  <td>22</td>
+                  <td>240.5 MB</td>
+                  <td>Apple Silicon</td>
+                </tr>
+                <tr class="activity-row" onclick="selectActivityRow(this)" data-name="Xcode">
+                  <td><span style="display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icon_xcode.png" width="16" height="16" /> Xcode</span></td>
+                  <td>0.4 %</td>
+                  <td>09:15.04</td>
+                  <td>36</td>
+                  <td>895.1 MB</td>
+                  <td>Apple Silicon</td>
+                </tr>
+                <tr class="activity-row" onclick="selectActivityRow(this)" data-name="VS Code">
+                  <td><span style="display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icon_vscode.png" width="16" height="16" /> Code</span></td>
+                  <td>0.8 %</td>
+                  <td>06:10.22</td>
+                  <td>18</td>
+                  <td>185.0 MB</td>
+                  <td>Apple Silicon</td>
+                </tr>
+                <tr class="activity-row" onclick="selectActivityRow(this)" data-name="Finder">
+                  <td><span style="display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icon_finder.png" width="16" height="16" /> Finder</span></td>
+                  <td>0.0 %</td>
+                  <td>00:42.15</td>
+                  <td>6</td>
+                  <td>74.8 MB</td>
+                  <td>Apple Silicon</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="activity-footer">
+              <span>CPU Usage: <b>System: 2.8%</b> • <b>User: 6.4%</b> • <b style="color: #30d158;">Idle: 90.8%</b></span>
+              <span>Processes: 412 • Threads: 1,420</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 11. PREVIEW WINDOW (DEV TOOLS APP 6) -->
+        <div class="app-window" id="previewWindow" style="width: min(640px, 94%);">
+          <div class="app-toolbar" style="background: #1c202c;">
+            <div class="window-dots">
+              <span class="window-dot close" onclick="closeAppWindow('Preview')"></span>
+              <span class="window-dot min" onclick="minimizeAppWindow('Preview')"></span>
+              <span class="window-dot max" onclick="toggleMaximizeActiveWindow()"></span>
+            </div>
+            <div class="toolbar-title">logoFoldyDock.png (PNG image, 512×512)</div>
+            <div class="preview-zoom-ctrls">
+              <button class="preview-zoom-btn" onclick="zoomPreviewImage(-0.25)" title="Zoom Out">−</button>
+              <span id="previewZoomLabel" style="font-size: 0.75rem; color: var(--text-secondary); min-width: 40px; text-align: center;">100%</span>
+              <button class="preview-zoom-btn" onclick="zoomPreviewImage(0.25)" title="Zoom In">+</button>
+            </div>
+          </div>
+          <div class="preview-body">
+            <div class="preview-checkerboard">
+              <img src="assets/logoFoldyDock.png" id="previewTargetImg" alt="Foldy Mascot High-Res" style="width: 220px; height: 220px; object-fit: contain; filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6)); transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);" />
+            </div>
+            <div class="preview-footer-info">
+              <span>Dimensions: 512 × 512 px</span>
+              <span>•</span>
+              <span>Color Profile: sRGB Display P3</span>
+              <span>•</span>
+              <span>Alpha Channel: Yes</span>
             </div>
           </div>
         </div>
@@ -2129,8 +2963,16 @@
       Messages: document.getElementById('messagesWindow'),
       Music: document.getElementById('musicWindow'),
       Trash: document.getElementById('trashWindow'),
-      Terminal: document.getElementById('terminalWindow')
+      Terminal: document.getElementById('terminalWindow'),
+      Xcode: document.getElementById('xcodeWindow'),
+      'VS Code': document.getElementById('vscodeWindow'),
+      Figma: document.getElementById('figmaWindow'),
+      'Activity Monitor': document.getElementById('activityWindow'),
+      Activity: document.getElementById('activityWindow'),
+      Preview: document.getElementById('previewWindow')
     };
+
+    const folderApps = ['Xcode', 'Terminal', 'VS Code', 'Figma', 'Activity Monitor', 'Activity', 'Preview'];
 
     // Dots
     const dots = {
@@ -2236,6 +3078,9 @@
       if (dots[appName]) {
         dots[appName].style.display = 'flex';
       }
+      if (folderApps.includes(appName)) {
+        dotsFolder.style.display = 'flex';
+      }
 
       if (appName === 'Safari') {
         showToast('Safari Opened 🧭', 'Displaying live simulated Google Search home page');
@@ -2248,7 +3093,17 @@
       } else if (appName === 'Trash') {
         showToast('Trash Opened 🗑️', 'Authentic Apple Trash window with 1-click cleanup');
       } else if (appName === 'Terminal') {
-        showToast('Terminal Opened >_', 'Active zsh shell window on macOS');
+        showToast('Terminal Opened >_', 'Interactive zsh shell • Type commands into the prompt');
+      } else if (appName === 'Xcode') {
+        showToast('Xcode Opened 🔨', 'Native Swift 5.9 workspace • Click ▶ to run FoldyDock');
+      } else if (appName === 'VS Code') {
+        showToast('VS Code Opened 💻', 'Code editor with README.md & dark modern theme');
+      } else if (appName === 'Figma') {
+        showToast('Figma Opened 🎨', 'Vector canvas with FoldyDock macOS UI components spec');
+      } else if (appName === 'Activity Monitor' || appName === 'Activity') {
+        showToast('Activity Monitor Opened 📊', 'macOS process inspector • FoldyDock uses only 0.1% CPU');
+      } else if (appName === 'Preview') {
+        showToast('Preview Opened 🔍', 'High-res image inspector with interactive zoom controls');
       } else {
         showToast(`Launched ${appName} 🚀`, 'Fluid spring bounce feedback triggered');
       }
@@ -2260,6 +3115,9 @@
       }
       if (dots[appName]) {
         dots[appName].style.display = 'none';
+      }
+      if (folderApps.includes(appName)) {
+        dotsFolder.style.display = 'none';
       }
       if (activeWindowName === appName) {
         activeWindowName = null;
@@ -2419,7 +3277,115 @@
       });
     }
 
-    // INITIAL POSITIONING
+
+    // XCODE INTERACTION
+    function buildXcodeProject() {
+      const pill = document.getElementById('xcodeStatusPill');
+      if (!pill) return;
+      pill.innerHTML = '<span style="color: #ff9f0a;">⏳</span> Building FoldyDock (macOS)...';
+      showToast('Xcode: Compiling Sources ⚙️', 'Swift 5.9 compilation with strict concurrency checking');
+      setTimeout(() => {
+        pill.innerHTML = '<span style="color: #30d158;">✓</span> Build Succeeded (0.42s)';
+        showToast('Xcode: Build Succeeded ⚡', 'FoldyDock.app linked for Apple Silicon architecture');
+      }, 700);
+    }
+    function stopXcodeProject() {
+      const pill = document.getElementById('xcodeStatusPill');
+      if (!pill) return;
+      pill.innerHTML = '<span style="color: var(--text-tertiary);">■</span> FoldyDock: Idle';
+      showToast('Xcode: Execution Halted ⏹️', 'App process detached');
+    }
+
+    // TERMINAL INTERACTION
+    function handleTerminalCommand(event) {
+      if (event.key !== 'Enter') return;
+      const input = document.getElementById('terminalCliInput');
+      const cmd = input.value.trim();
+      if (!cmd) return;
+      
+      const history = document.getElementById('terminalHistory');
+      const line = document.createElement('div');
+      line.style.marginTop = '6px';
+      line.innerHTML = `<span class="terminal-prompt">gmperso@macbook-pro ~ %</span> ${cmd}`;
+      history.appendChild(line);
+
+      const resp = document.createElement('div');
+      resp.style.margin = '2px 0 8px 0';
+      
+      const lower = cmd.toLowerCase();
+      if (lower === 'help') {
+        resp.style.color = '#ffd60a';
+        resp.innerHTML = 'Available commands:<br>• <b>status</b> — Show FoldyDock runtime telemetry<br>• <b>ls</b> — List current directory files<br>• <b>apps</b> — List dock & folder applications<br>• <b>clear</b> — Clear terminal buffer<br>• <b>build</b> — Trigger swift build';
+      } else if (lower === 'status') {
+        resp.style.color = '#30d158';
+        resp.innerHTML = '[FoldyDock v1.0.0] PID: 15757 | Memory: 42.4 MB | CPU: 0.1% | Status: Healthy';
+      } else if (lower === 'ls' || lower === 'ls -la') {
+        resp.style.color = '#9cb8ff';
+        resp.innerHTML = 'FoldyDock.xcodeproj/ &nbsp; Sources/ &nbsp; docs/ &nbsp; scripts/ &nbsp; README.md &nbsp; LICENSE';
+      } else if (lower === 'apps') {
+        resp.style.color = '#ff9f0a';
+        resp.innerHTML = 'Dock apps: Safari, Finder, Messages, Music, Trash<br>DEV TOOLS folder: Xcode, Terminal, VS Code, Figma, Activity Monitor, Preview';
+      } else if (lower === 'clear') {
+        history.innerHTML = '';
+        input.value = '';
+        return;
+      } else if (lower.includes('build')) {
+        resp.style.color = '#30d158';
+        resp.innerHTML = '⚡ Building FoldyDock... [100%] Compilation finished (0 errors).';
+      } else {
+        resp.style.color = '#ff7ab2';
+        resp.innerHTML = `zsh: command not found: ${cmd}. Type 'help' for options.`;
+      }
+      
+      history.appendChild(resp);
+      input.value = '';
+      const body = document.getElementById('terminalBody');
+      body.scrollTop = body.scrollHeight;
+    }
+
+    // ACTIVITY MONITOR INTERACTION
+    let selectedActivityProcessName = 'FoldyDock';
+    function selectActivityRow(row) {
+      document.querySelectorAll('.activity-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+      selectedActivityProcessName = row.getAttribute('data-name');
+    }
+    function quitSelectedActivityProcess() {
+      if (!selectedActivityProcessName) return;
+      const row = document.querySelector(`.activity-row[data-name="${selectedActivityProcessName}"]`);
+      if (row) {
+        row.style.transition = 'all 0.25s ease';
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(20px)';
+        setTimeout(() => {
+          row.remove();
+          showToast(`Force Quit: ${selectedActivityProcessName} 🛑`, 'Process terminated from Activity Monitor');
+          if (activeWindowName === selectedActivityProcessName || (selectedActivityProcessName === 'Code' && activeWindowName === 'VS Code')) {
+            closeAppWindow(activeWindowName);
+          }
+        }, 250);
+      }
+    }
+    function filterActivityRows(query) {
+      const q = query.toLowerCase().trim();
+      document.querySelectorAll('.activity-row').forEach(row => {
+        const name = (row.getAttribute('data-name') || '').toLowerCase();
+        row.style.display = name.includes(q) ? '' : 'none';
+      });
+    }
+
+    // PREVIEW ZOOM INTERACTION
+    let currentPreviewZoom = 1.0;
+    function zoomPreviewImage(delta) {
+      currentPreviewZoom = Math.min(2.5, Math.max(0.5, currentPreviewZoom + delta));
+      const img = document.getElementById('previewTargetImg');
+      const label = document.getElementById('previewZoomLabel');
+      if (img) img.style.transform = `scale(${currentPreviewZoom})`;
+      if (label) label.innerText = `${Math.round(currentPreviewZoom * 100)}%`;
+      showToast('Preview Zoom 🔍', `Magnification set to ${Math.round(currentPreviewZoom * 100)}%`);
+    }
+
+        // INITIAL POSITIONING
     setTimeout(() => {
       updateFolderPopoverPosition();
       updateFoldyLauncherPosition();
