@@ -126,7 +126,6 @@ public struct DockContainerView: View {
             }
         )
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 6)
         .coordinateSpace(name: "dockContainer")
         .onDrop(of: [.plainText, .utf8PlainText, .text], isTargeted: nil) { _ in
             defer {

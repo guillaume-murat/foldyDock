@@ -156,7 +156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "FoldyDock v1.0", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "FoldyDock v1.0.1", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
 
         let settingsItem = NSMenuItem(title: "Paramètres FoldyDock…", action: #selector(openSettingsAction), keyEquivalent: ",")

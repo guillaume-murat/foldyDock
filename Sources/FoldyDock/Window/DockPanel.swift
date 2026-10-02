@@ -52,6 +52,8 @@ public final class DockPanel: NSPanel {
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
 
         let trackingContainer = DockTrackingView(dockPanel: self)
+        trackingContainer.wantsLayer = true
+        trackingContainer.layer?.backgroundColor = .clear
         trackingContainer.addSubview(contentView)
         contentView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
