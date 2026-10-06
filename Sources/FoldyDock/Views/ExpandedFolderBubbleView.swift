@@ -54,7 +54,19 @@ public struct ExpandedFolderBubbleView: View {
     }
 
     private var subAppSlotWidth: CGFloat {
-        max(48.0, iconSize * 0.92)
+        max(39.0, iconSize * 0.74)
+    }
+
+    private var subAppSpacing: CGFloat {
+        3.5
+    }
+
+    private var dividerSpacing: CGFloat {
+        5.5
+    }
+
+    private var capsuleHorizontalPadding: CGFloat {
+        5.5
     }
 
     private var activeCount: Int {
@@ -62,13 +74,22 @@ public struct ExpandedFolderBubbleView: View {
         return max(0, runningSubItems.count - terminatingCount)
     }
 
-    private var capsuleWidth: CGFloat {
-        if activeCount == 0 {
-            return folderSize + 14.0
+    public static func capsuleWidth(iconSize: CGFloat, activeCount: Int) -> CGFloat {
+        let folderSize = iconSize
+        let subAppSlotWidth = max(39.0, iconSize * 0.74)
+        let subAppSpacing: CGFloat = 3.5
+        let dividerSpacing: CGFloat = 5.5
+        let capsuleHorizontalPadding: CGFloat = 5.5
+        if activeCount <= 0 {
+            return folderSize + capsuleHorizontalPadding * 2
         }
-        let totalRunningWidth = CGFloat(activeCount) * subAppSlotWidth + CGFloat(max(0, activeCount - 1)) * 6.0
-        let dividerAndPadding: CGFloat = 8.0 + 1.2 + 8.0 + 14.0
+        let totalRunningWidth = CGFloat(activeCount) * subAppSlotWidth + CGFloat(max(0, activeCount - 1)) * subAppSpacing
+        let dividerAndPadding: CGFloat = dividerSpacing + 1.2 + dividerSpacing + capsuleHorizontalPadding * 2
         return folderSize + dividerAndPadding + totalRunningWidth
+    }
+
+    private var capsuleWidth: CGFloat {
+        Self.capsuleWidth(iconSize: iconSize, activeCount: activeCount)
     }
 
     @State private var isCapsuleHovered: Bool = false
@@ -103,7 +124,7 @@ public struct ExpandedFolderBubbleView: View {
             }
 
             // Capsule Content
-            HStack(spacing: 8) {
+            HStack(spacing: dividerSpacing) {
                 // 1. Folder Miniature Block (bordure supprimée, applications miniatures directement sur le fond de capsule)
                 ZStack(alignment: .center) {
                     FolderIconGrid(
@@ -152,7 +173,7 @@ public struct ExpandedFolderBubbleView: View {
                 }
 
                 // 3. Running Sub-Applications
-                HStack(spacing: 6) {
+                HStack(spacing: subAppSpacing) {
                     ForEach(runningSubItems) { subApp in
                         RunningSubAppItemView(
                             viewModel: viewModel,
@@ -166,7 +187,7 @@ public struct ExpandedFolderBubbleView: View {
                     }
                 }
             }
-            .padding(.horizontal, 7)
+            .padding(.horizontal, capsuleHorizontalPadding)
             .frame(height: bubbleHeight)
             .background(
                 RoundedRectangle(cornerRadius: bubbleCornerRadius, style: .continuous)
@@ -295,8 +316,9 @@ private struct RunningSubAppItemView: View {
                     .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
                     .shadow(color: Color.black.opacity(0.8), radius: 1.0, x: 0, y: 0.5)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.82)
                     .truncationMode(.tail)
-                    .frame(maxWidth: subAppSlotWidth - 4)
+                    .frame(maxWidth: subAppSlotWidth)
                     .opacity(isTerminating ? 0.0 : 1.0)
             }
 
@@ -342,12 +364,18 @@ private struct RunningSubAppItemView: View {
             viewModel.launch(item: subApp)
         }
         .contextMenu {
-            Button("Ouvrir") {
-                viewModel.launch(item: subApp)
-            }
+            if subApp.isFinder {
+                Button("Nouvelle fenêtre du Finder") {
+                    viewModel.openNewFinderWindow()
+                }
+            } else {
+                Button("Ouvrir") {
+                    viewModel.launch(item: subApp)
+                }
 
-            Button("Quitter l'application") {
-                viewModel.terminate(item: subApp)
+                Button("Quitter l'application") {
+                    viewModel.terminate(item: subApp)
+                }
             }
 
             Divider()

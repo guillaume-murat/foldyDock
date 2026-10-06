@@ -186,6 +186,25 @@ public final class DockViewModel: ObservableObject {
         }
     }
 
+    /// Opens a new Finder window and brings Finder to the front.
+    public func openNewFinderWindow() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let script = """
+            tell application "Finder"
+                activate
+                make new Finder window
+            end tell
+            """
+            var error: NSDictionary?
+            if let appleScript = NSAppleScript(source: script) {
+                appleScript.executeAndReturnError(&error)
+                if let error = error {
+                    print("[DockViewModel] Failed to open new Finder window: \(error)")
+                }
+            }
+        }
+    }
+
     public func isItemBouncing(_ item: DockItem) -> Bool {
         bouncingItemIds.contains(item.id)
     }
@@ -400,8 +419,16 @@ public final class DockViewModel: ObservableObject {
         closeApplicationsLauncher()
         if let matchingItem = items.first(where: { $0.matches(bundleIdentifier: app.bundleIdentifier ?? "") || $0.appPath == app.path }) {
             triggerBounce(for: matchingItem)
+            launch(item: matchingItem)
+        } else {
+            let item = DockItem(
+                type: .app,
+                title: app.name,
+                bundleIdentifier: app.bundleIdentifier,
+                appPath: app.path
+            )
+            appObserver.launchApp(item: item)
         }
-        NSWorkspace.shared.open(app.url)
     }
 
     public func pinInstalledApp(_ app: InstalledApp) {

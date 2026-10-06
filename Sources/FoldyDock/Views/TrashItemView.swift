@@ -22,7 +22,7 @@ public struct TrashItemView: View {
     private static let dockFullTrashPath = "/System/Library/CoreServices/Dock.app/Contents/Resources/trashfull@2x.png"
 
     private var itemWidth: CGFloat {
-        max(iconSize + 12, iconSize * 1.22 + 4)
+        iconSize
     }
 
     private var folderFontSize: CGFloat {
@@ -97,7 +97,7 @@ public struct TrashItemView: View {
                     .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .frame(maxWidth: itemWidth + 8)
+                    .frame(maxWidth: max(itemWidth + 18, 92))
                     .offset(y: -(iconSize / 2 + viewModel.config.labelDistance))
             }
         }

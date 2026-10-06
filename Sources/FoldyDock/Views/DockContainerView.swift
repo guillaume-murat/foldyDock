@@ -14,7 +14,7 @@ public struct DockContainerView: View {
         let dockHeight = viewModel.dockHeight
         let cornerRadius = dockHeight * 0.285
 
-        HStack(spacing: 8) {
+        HStack(spacing: viewModel.config.itemSpacing) {
             // FoldyDock Applications Launcher at the far left
             if viewModel.config.showAppLauncher {
                 AppLauncherView(
@@ -94,6 +94,8 @@ public struct DockContainerView: View {
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.runningBundleIds)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.config.showTrash)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.config.showAppLauncher)
+        .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.config.itemSpacing)
+        .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.config.horizontalPadding)
         .padding(.horizontal, viewModel.config.horizontalPadding)
         .background(
             ZStack {

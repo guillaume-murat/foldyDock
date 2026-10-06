@@ -261,16 +261,25 @@ private struct FolderSubItemView: View {
             itemWidth: itemWidth
         ))
         .contextMenu {
-            Button("Ouvrir") {
-                viewModel.launch(item: item)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
-                    viewModel.closeFolderPopover()
+            if item.isFinder {
+                Button("Nouvelle fenêtre du Finder") {
+                    viewModel.openNewFinderWindow()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        viewModel.closeFolderPopover()
+                    }
                 }
-            }
+            } else {
+                Button("Ouvrir") {
+                    viewModel.launch(item: item)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+                        viewModel.closeFolderPopover()
+                    }
+                }
 
-            if isRunning {
-                Button("Quitter l'application") {
-                    viewModel.terminate(item: item)
+                if isRunning {
+                    Button("Quitter l'application") {
+                        viewModel.terminate(item: item)
+                    }
                 }
             }
 

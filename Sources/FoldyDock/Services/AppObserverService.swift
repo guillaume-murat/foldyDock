@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Combine
 
 @MainActor
@@ -188,13 +189,30 @@ public final class AppObserverService: ObservableObject {
             .store(in: &cancellables)
     }
 
-    /// Launches or brings to front an application
+    /// Launches or brings to front an application, focusing its windows and switching virtual desktops (Spaces) if needed.
     public func launchApp(item: DockItem) {
-        var appURL: URL?
+        let bid = item.bundleIdentifier
 
+        // 1. If already running, activate directly, unhide, yield activation, and raise windows to switch Spaces.
+        let matchingApps: [NSRunningApplication] = {
+            if let bid = bid {
+                return NSRunningApplication.runningApplications(withBundleIdentifier: bid)
+            } else if let path = item.appPath {
+                return NSWorkspace.shared.runningApplications.filter { $0.bundleURL?.path == path }
+            }
+            return []
+        }()
+
+        if let runningApp = matchingApps.first(where: { $0.activationPolicy == .regular }) ?? matchingApps.first {
+            activateRunningApp(runningApp, bundleIdentifier: bid, item: item)
+            return
+        }
+
+        // 2. Otherwise, launch the application via NSWorkspace
+        var appURL: URL?
         if let path = item.appPath, FileManager.default.fileExists(atPath: path) {
             appURL = URL(fileURLWithPath: path)
-        } else if let bid = item.bundleIdentifier {
+        } else if let bid = bid {
             appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)
         }
 
@@ -209,6 +227,56 @@ public final class AppObserverService: ObservableObject {
         NSWorkspace.shared.openApplication(at: targetURL, configuration: config) { _, error in
             if let error = error {
                 print("[AppObserverService] Failed to open \(item.title): \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Brings an already-open application to focus, unhiding, unminimizing, and switching Spaces if necessary.
+    public func activateRunningApp(_ runningApp: NSRunningApplication, bundleIdentifier: String?, item: DockItem? = nil) {
+        // 1. Unhide if hidden
+        if runningApp.isHidden {
+            runningApp.unhide()
+        }
+
+        // 2. Cooperative activation for macOS 14+ (crucial for LSUIElement background docks)
+        if #available(macOS 14.0, *) {
+            NSApp.yieldActivation(to: runningApp)
+            runningApp.activate(options: [.activateAllWindows])
+        } else {
+            runningApp.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+        }
+
+        // 3. Unminimize and raise windows via Accessibility API to trigger Space switch
+        let appElem = AXUIElementCreateApplication(runningApp.processIdentifier)
+        var winListRef: CFTypeRef?
+        if AXUIElementCopyAttributeValue(appElem, kAXWindowsAttribute as CFString, &winListRef) == .success,
+           let wins = winListRef as? [AXUIElement], !wins.isEmpty {
+            for w in wins.reversed() {
+                var minVal: CFTypeRef?
+                if AXUIElementCopyAttributeValue(w, kAXMinimizedAttribute as CFString, &minVal) == .success,
+                   let isMin = minVal as? Bool, isMin {
+                    AXUIElementSetAttributeValue(w, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+                }
+                AXUIElementPerformAction(w, kAXRaiseAction as CFString)
+            }
+            if let frontWindow = wins.first {
+                AXUIElementPerformAction(frontWindow, kAXRaiseAction as CFString)
+            }
+        }
+
+        // 4. Send AppleScript reopen & activate to ensure macOS Mission Control switches to the Space of the open window
+        let targetBid = (bundleIdentifier ?? runningApp.bundleIdentifier)?
+            .replacingOccurrences(of: "\"", with: "")
+        if let safeBid = targetBid, !safeBid.isEmpty {
+            DispatchQueue.global(qos: .userInitiated).async {
+                let script = """
+                tell application id "\(safeBid)"
+                    reopen
+                    activate
+                end tell
+                """
+                var error: NSDictionary?
+                NSAppleScript(source: script)?.executeAndReturnError(&error)
             }
         }
     }

@@ -15,6 +15,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
     public var showAppLauncher: Bool // Show FoldyDock Applications launcher at far left (default: true)
     public var hiddenAppOpacity: Double // Opacity of hidden/minimized apps (default: 0.5)
     public var launchAtLogin: Bool // Launch FoldyDock at macOS startup (default: false)
+    public var itemSpacing: Double // Spacing between dock items in points (default: 12.0)
 
     public var hideDelay: Double {
         get { autohideDelay }
@@ -40,6 +41,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         case showAppLauncher
         case hiddenAppOpacity
         case launchAtLogin
+        case itemSpacing
     }
 
     public init(
@@ -56,7 +58,8 @@ public struct DockConfig: Codable, Equatable, Sendable {
         labelDistance: Double = 10.0,
         showAppLauncher: Bool = true,
         hiddenAppOpacity: Double = 0.5,
-        launchAtLogin: Bool = false
+        launchAtLogin: Bool = false,
+        itemSpacing: Double = 12.0
     ) {
         self.autohideEnabled = autohideEnabled
         self.autohideDelay = autohideDelay
@@ -72,6 +75,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.showAppLauncher = showAppLauncher
         self.hiddenAppOpacity = hiddenAppOpacity
         self.launchAtLogin = launchAtLogin
+        self.itemSpacing = itemSpacing
     }
 
     public init(from decoder: Decoder) throws {
@@ -90,6 +94,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.showAppLauncher = try container.decodeIfPresent(Bool.self, forKey: .showAppLauncher) ?? true
         self.hiddenAppOpacity = try container.decodeIfPresent(Double.self, forKey: .hiddenAppOpacity) ?? 0.5
         self.launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
+        self.itemSpacing = try container.decodeIfPresent(Double.self, forKey: .itemSpacing) ?? 12.0
     }
 
     /// Default dock configuration with standard macOS applications and an example folder.

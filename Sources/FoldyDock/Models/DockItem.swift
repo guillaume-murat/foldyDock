@@ -50,6 +50,11 @@ public struct DockItem: Identifiable, Codable, Equatable, Sendable {
         return false
     }
 
+    /// Returns true if this item represents the macOS Finder application.
+    public var isFinder: Bool {
+        type == .app && (bundleIdentifier == "com.apple.finder" || title.lowercased() == "finder")
+    }
+
     /// All bundle identifiers contained within this item (itself if app, or its children if folder).
     public var allBundleIdentifiers: [String] {
         if type == .app, let bid = bundleIdentifier {

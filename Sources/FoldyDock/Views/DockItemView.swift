@@ -44,20 +44,14 @@ public struct DockItemView: View {
         if item.type == .separator {
             return 14.0
         }
-        let baseWidth = max(iconSize + 12, iconSize * 1.22 + 4)
         if isExpandedFolder {
-            let folderSize = iconSize
-            let subAppSlotWidth = max(48.0, iconSize * 0.92)
-            let dividerAndPadding: CGFloat = 8.0 + 1.2 + 8.0 + 14.0
             let terminatingCount = runningSubItems.filter { viewModel.terminatingItemIds.contains($0.id) }.count
             let activeCount = max(0, runningSubItems.count - terminatingCount)
-            if activeCount == 0 {
-                return baseWidth
+            if activeCount > 0 {
+                return ExpandedFolderBubbleView.capsuleWidth(iconSize: iconSize, activeCount: activeCount)
             }
-            let totalRunningWidth = CGFloat(activeCount) * subAppSlotWidth + CGFloat(max(0, activeCount - 1)) * 6.0
-            return max(baseWidth, folderSize + dividerAndPadding + totalRunningWidth)
         }
-        return baseWidth
+        return iconSize
     }
 
     private var folderFontSize: CGFloat {
@@ -92,7 +86,7 @@ public struct DockItemView: View {
                 if dropPlacement == .before {
                     HStack {
                         InsertionBar(height: iconSize * 0.85)
-                            .offset(x: -6)
+                            .offset(x: -(viewModel.config.itemSpacing / 2 + 1))
                         Spacer()
                     }
                 }
@@ -102,7 +96,7 @@ public struct DockItemView: View {
                     HStack {
                         Spacer()
                         InsertionBar(height: iconSize * 0.85)
-                            .offset(x: 6)
+                            .offset(x: viewModel.config.itemSpacing / 2 + 1)
                     }
                 }
 
@@ -226,7 +220,7 @@ public struct DockItemView: View {
                     .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .frame(maxWidth: itemWidth + 8)
+                    .frame(maxWidth: max(itemWidth + 18, 92))
                     .offset(y: -(iconSize / 2 + viewModel.config.labelDistance))
             } else if item.type == .app && viewModel.config.showAppTitles {
                 Text(item.title)
@@ -235,7 +229,7 @@ public struct DockItemView: View {
                     .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .frame(maxWidth: itemWidth + 8)
+                    .frame(maxWidth: max(itemWidth + 18, 92))
                     .offset(y: -(iconSize / 2 + viewModel.config.labelDistance))
             }
 
@@ -303,24 +297,22 @@ public struct DockItemView: View {
                 viewModel.removeItem(itemId: item.id)
             }
         case .app:
-            Button("Ouvrir") {
-                viewModel.launch(item: item)
-            }
+            if item.isFinder {
+                Button("Nouvelle fenêtre du Finder") {
+                    viewModel.openNewFinderWindow()
+                }
 
-            if isRunning {
+                Divider()
+            } else if isRunning {
                 Button("Quitter l'application") {
                     viewModel.terminate(item: item)
                 }
-            }
 
-            Divider()
+                Divider()
+            }
 
             Button(item.isPinned ? "Détacher du dock" : "Conserver dans le dock") {
                 viewModel.togglePin(itemId: item.id)
-            }
-
-            Button(item.isPinned ? "Supprimer du dock" : "Fermer") {
-                viewModel.removeItem(itemId: item.id)
             }
         }
     }

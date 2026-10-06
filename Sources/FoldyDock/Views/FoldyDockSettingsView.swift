@@ -35,7 +35,7 @@ public struct FoldyDockSettingsView: View {
 
                 Spacer()
 
-                Text("v1.0")
+                Text("v1.1.0")
                     .font(.system(size: 11, weight: .medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -193,10 +193,51 @@ public struct FoldyDockSettingsView: View {
 
                             Divider()
 
-                            // Horizontal padding
+                            // Espacement entre les icônes (marge horizontale entre éléments)
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
-                                    Text("Marge horizontale (padding)")
+                                    Text("Espacement entre les icônes (marge)")
+                                        .font(.system(size: 13, weight: .medium))
+                                    Spacer()
+                                    Text("\(Int(viewModel.config.itemSpacing)) pt")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.accentColor.opacity(0.12))
+                                        .cornerRadius(4)
+                                }
+
+                                Slider(
+                                    value: Binding(
+                                        get: { viewModel.config.itemSpacing },
+                                        set: { newValue in
+                                            viewModel.config.itemSpacing = newValue
+                                            viewModel.saveConfig()
+                                        }
+                                    ),
+                                    in: 4...28,
+                                    step: 1
+                                )
+
+                                HStack(spacing: 8) {
+                                    ForEach([8, 10, 12, 16, 20], id: \.self) { spacing in
+                                        Button("\(spacing) pt") {
+                                            viewModel.config.itemSpacing = Double(spacing)
+                                            viewModel.saveConfig()
+                                        }
+                                        .buttonStyle(.bordered)
+                                        .controlSize(.small)
+                                        .tint(Int(viewModel.config.itemSpacing) == spacing ? Color.accentColor : Color.secondary)
+                                    }
+                                }
+                            }
+
+                            Divider()
+
+                            // Marge des extrémités du dock (horizontal padding)
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("Marge des extrémités du dock (padding)")
                                         .font(.system(size: 13, weight: .medium))
                                     Spacer()
                                     Text("\(Int(viewModel.config.horizontalPadding)) pt")
@@ -215,9 +256,21 @@ public struct FoldyDockSettingsView: View {
                                             viewModel.saveConfig()
                                         }
                                     ),
-                                    in: 0...32,
+                                    in: 0...40,
                                     step: 1
                                 )
+
+                                HStack(spacing: 8) {
+                                    ForEach([8, 12, 16, 24], id: \.self) { pad in
+                                        Button("\(pad) pt") {
+                                            viewModel.config.horizontalPadding = Double(pad)
+                                            viewModel.saveConfig()
+                                        }
+                                        .buttonStyle(.bordered)
+                                        .controlSize(.small)
+                                        .tint(Int(viewModel.config.horizontalPadding) == pad ? Color.accentColor : Color.secondary)
+                                    }
+                                }
                             }
 
                             Divider()

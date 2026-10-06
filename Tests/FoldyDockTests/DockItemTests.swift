@@ -76,4 +76,15 @@ final class DockItemTests: XCTestCase {
         let nonRunningSet: Set<String> = ["com.apple.Terminal"]
         XCTAssertFalse(app.isRunning(in: nonRunningSet))
     }
+
+    func testIsFinder() {
+        let finder = DockItem(type: .app, title: "Finder", bundleIdentifier: "com.apple.finder")
+        XCTAssertTrue(finder.isFinder)
+
+        let terminal = DockItem(type: .app, title: "Terminal", bundleIdentifier: "com.apple.Terminal")
+        XCTAssertFalse(terminal.isFinder)
+
+        let folder = DockItem(type: .folder, title: "Finder")
+        XCTAssertFalse(folder.isFinder)
+    }
 }
