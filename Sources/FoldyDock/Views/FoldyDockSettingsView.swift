@@ -35,7 +35,7 @@ public struct FoldyDockSettingsView: View {
 
                 Spacer()
 
-                Text("v1.1.0")
+                Text("v1.1.1")
                     .font(.system(size: 11, weight: .medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)

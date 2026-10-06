@@ -240,7 +240,7 @@ public struct DockItemView: View {
             }
         }
         .frame(width: isTerminating && !item.isPinned ? 0 : itemWidth, height: dockHeight, alignment: .center)
-        .clipped()
+        .zIndex(isHovered ? 10 : (dropPlacement != nil ? 5 : 1))
         .animation(.spring(response: 0.20, dampingFraction: 0.75), value: isTerminating)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: isExpandedFolder)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: runningSubItems.count)

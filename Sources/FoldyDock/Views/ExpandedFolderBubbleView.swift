@@ -346,7 +346,6 @@ private struct RunningSubAppItemView: View {
             Spacer(minLength: 1)
         }
         .frame(width: isTerminating ? 0 : subAppSlotWidth, height: bubbleHeight)
-        .clipped()
         .contentShape(Rectangle())
         .animation(.spring(response: 0.20, dampingFraction: 0.75), value: isTerminating)
         .onHover { hovering in

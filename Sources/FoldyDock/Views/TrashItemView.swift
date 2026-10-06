@@ -102,6 +102,7 @@ public struct TrashItemView: View {
             }
         }
         .frame(width: itemWidth, height: dockHeight, alignment: .center)
+        .zIndex(isHovered || isDropTargeted ? 10 : 1)
         .contentShape(Rectangle())
         .help("Corbeille")
         .onHover { hovering in

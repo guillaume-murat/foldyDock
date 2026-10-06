@@ -55,6 +55,7 @@ public struct AppLauncherView: View {
             }
         }
         .frame(width: itemWidth, height: dockHeight, alignment: .center)
+        .zIndex(isHovered ? 10 : 1)
         .contentShape(Rectangle())
         .help("Foldy")
         .onHover { hovering in
