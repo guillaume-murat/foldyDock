@@ -26,6 +26,10 @@ while [[ $# -gt 0 ]]; do
       ACTION="run"
       shift
       ;;
+    install|deploy)
+      ACTION="install"
+      shift
+      ;;
     *)
       shift
       ;;
@@ -119,7 +123,15 @@ EOF
 
 echo "✅ $APP_NAME assembled successfully in $DIST_DIR!"
 
-if [ "$ACTION" = "run" ]; then
+if [ "$ACTION" = "install" ]; then
+    echo "📲 Installing $APP_NAME into /Applications..."
+    killall -9 FoldyDock 2>/dev/null || true
+    rm -rf "/Applications/$APP_NAME"
+    cp -R "$APP_BUNDLE" "/Applications/"
+    echo "🌟 Launching /Applications/$APP_NAME..."
+    sleep 0.5
+    open "/Applications/$APP_NAME"
+elif [ "$ACTION" = "run" ]; then
     echo "🌟 Launching $APP_NAME..."
     killall -9 FoldyDock 2>/dev/null || true
     open "$APP_BUNDLE"
