@@ -47,3 +47,8 @@ _Avoid_: Media buttons, player actions, playback buttons
 **Launch at Login**:
 A system integration service managing automatic startup of FoldyDock on macOS user login using Apple's modern `SMAppService` framework.
 _Avoid_: Autostart helper, login item daemon
+
+**Window Cycling**:
+The round-robin focus rotation among eligible standard windows of an already frontmost application upon repeated dock item clicks. Restores minimized windows upon focus.
+_Avoid_: Alt-tabbing, window flipping, task switcher
+

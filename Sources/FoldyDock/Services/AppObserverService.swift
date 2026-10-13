@@ -17,6 +17,10 @@ public final class AppObserverService: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
     private var syncTimer: Timer?
+    private var stableWindowOrderPerPid: [pid_t: [CGWindowID]] = [:]
+
+    @_silgen_name("_AXUIElementGetWindow")
+    private static func _AXUIElementGetWindow(_ element: AXUIElement, _ wid: UnsafeMutablePointer<CGWindowID>) -> AXError
 
     public init() {
         refreshRunningApps()
@@ -147,6 +151,7 @@ public final class AppObserverService: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] app in
                 guard let self = self, let bid = app.bundleIdentifier else { return }
+                self.stableWindowOrderPerPid.removeValue(forKey: app.processIdentifier)
                 self.runningBundleIds.remove(bid)
                 self.refreshWindowCounts()
                 self.refreshHiddenApps()
@@ -231,8 +236,106 @@ public final class AppObserverService: ObservableObject {
         }
     }
 
+    private func windowID(for element: AXUIElement) -> CGWindowID {
+        var wid: CGWindowID = 0
+        if Self._AXUIElementGetWindow(element, &wid) == .success, wid > 0 {
+            return wid
+        }
+        return CGWindowID(bitPattern: Int32(truncatingIfNeeded: CFHash(element)))
+    }
+
+    private func unminimizeWindow(_ window: AXUIElement) {
+        var minVal: CFTypeRef?
+        if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &minVal) == .success,
+           let isMin = minVal as? Bool, isMin {
+            AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+        }
+    }
+
+    private func raiseWindow(_ window: AXUIElement, appElement: AXUIElement) {
+        unminimizeWindow(window)
+        AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+        AXUIElementSetAttributeValue(window, kAXMainAttribute as CFString, kCFBooleanTrue)
+        AXUIElementSetAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, window)
+    }
+
+    private func executeAppleScript(bundleIdentifier: String?, command: String) {
+        guard let bid = bundleIdentifier?.replacingOccurrences(of: "\"", with: ""), !bid.isEmpty else { return }
+        Task.detached(priority: .userInitiated) {
+            let script = """
+            tell application id "\(bid)"
+                \(command)
+            end tell
+            """
+            var error: NSDictionary?
+            NSAppleScript(source: script)?.executeAndReturnError(&error)
+        }
+    }
+
     /// Brings an already-open application to focus, unhiding, unminimizing, and switching Spaces if necessary.
+    /// When the application is already the frontmost active application and has multiple open windows,
+    /// cycles focus sequentially through each window in round-robin order without ping-ponging.
     public func activateRunningApp(_ runningApp: NSRunningApplication, bundleIdentifier: String?, item: DockItem? = nil) {
+        let isAlreadyFrontmost = (runningApp.isActive || NSWorkspace.shared.frontmostApplication?.processIdentifier == runningApp.processIdentifier) && !runningApp.isHidden
+
+        let appElem = AXUIElementCreateApplication(runningApp.processIdentifier)
+        var winListRef: CFTypeRef?
+        _ = AXUIElementCopyAttributeValue(appElem, kAXWindowsAttribute as CFString, &winListRef)
+        let wins = (winListRef as? [AXUIElement]) ?? []
+
+        // Filter strictly for eligible standard user windows (standard document windows or dialogs)
+        let eligibleWindows = wins.filter { w in
+            var roleRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(w, kAXRoleAttribute as CFString, &roleRef) == .success,
+                  let role = roleRef as? String, role == (kAXWindowRole as String) else {
+                return false
+            }
+            var subroleRef: CFTypeRef?
+            if AXUIElementCopyAttributeValue(w, kAXSubroleAttribute as CFString, &subroleRef) == .success,
+               let subrole = subroleRef as? String {
+                return subrole == (kAXStandardWindowSubrole as String) || subrole == (kAXDialogSubrole as String)
+            }
+            return false
+        }
+
+        // Window Cycling: When already frontmost and multi-window, cycle to the next window
+        if WindowCycleHelper.shouldCycleWindows(isFrontmost: isAlreadyFrontmost, eligibleWindowCount: eligibleWindows.count) {
+            let winMap: [CGWindowID: AXUIElement] = Dictionary(uniqueKeysWithValues: eligibleWindows.map { (windowID(for: $0), $0) })
+            let currentWindowIDs = eligibleWindows.map { windowID(for: $0) }
+
+            let previousOrder = stableWindowOrderPerPid[runningApp.processIdentifier] ?? []
+            let stableOrder = WindowCycleHelper.reconcileStableOrder(existingOrder: previousOrder, currentWindowIDs: currentWindowIDs)
+            stableWindowOrderPerPid[runningApp.processIdentifier] = stableOrder
+
+            var focusedWinRef: CFTypeRef?
+            _ = AXUIElementCopyAttributeValue(appElem, kAXFocusedWindowAttribute as CFString, &focusedWinRef)
+
+            var focusedID: CGWindowID? = nil
+            if let focused = focusedWinRef, CFGetTypeID(focused) == AXUIElementGetTypeID() {
+                focusedID = windowID(for: focused as! AXUIElement)
+            }
+
+            let currentIndex = focusedID.flatMap { stableOrder.firstIndex(of: $0) }
+            let nextIndex = WindowCycleHelper.nextWindowIndex(currentIndex: currentIndex, windowCount: stableOrder.count)
+            let targetID = stableOrder[nextIndex]
+
+            if let targetWindow = winMap[targetID] {
+                raiseWindow(targetWindow, appElement: appElem)
+            }
+
+            // Cooperative activation without reshuffling all windows
+            if #available(macOS 14.0, *) {
+                NSApp.yieldActivation(to: runningApp)
+                runningApp.activate(options: [])
+            } else {
+                runningApp.activate(options: [.activateIgnoringOtherApps])
+            }
+
+            executeAppleScript(bundleIdentifier: bundleIdentifier ?? runningApp.bundleIdentifier, command: "reopen\nactivate")
+            return
+        }
+
+        // Standard 1st-click activation: bring application to foreground
         // 1. Unhide if hidden
         if runningApp.isHidden {
             runningApp.unhide()
@@ -246,39 +349,14 @@ public final class AppObserverService: ObservableObject {
             runningApp.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
         }
 
-        // 3. Unminimize and raise windows via Accessibility API to trigger Space switch
-        let appElem = AXUIElementCreateApplication(runningApp.processIdentifier)
-        var winListRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(appElem, kAXWindowsAttribute as CFString, &winListRef) == .success,
-           let wins = winListRef as? [AXUIElement], !wins.isEmpty {
-            for w in wins.reversed() {
-                var minVal: CFTypeRef?
-                if AXUIElementCopyAttributeValue(w, kAXMinimizedAttribute as CFString, &minVal) == .success,
-                   let isMin = minVal as? Bool, isMin {
-                    AXUIElementSetAttributeValue(w, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
-                }
-                AXUIElementPerformAction(w, kAXRaiseAction as CFString)
-            }
-            if let frontWindow = wins.first {
-                AXUIElementPerformAction(frontWindow, kAXRaiseAction as CFString)
-            }
+        // 3. Raise the frontmost window (restoring it if it was minimized).
+        // Other minimized windows remain safely in dock until their turn in rotation (Q3: Option B).
+        if let frontWindow = eligibleWindows.first ?? wins.first {
+            raiseWindow(frontWindow, appElement: appElem)
         }
 
         // 4. Send AppleScript reopen & activate to ensure macOS Mission Control switches to the Space of the open window
-        let targetBid = (bundleIdentifier ?? runningApp.bundleIdentifier)?
-            .replacingOccurrences(of: "\"", with: "")
-        if let safeBid = targetBid, !safeBid.isEmpty {
-            DispatchQueue.global(qos: .userInitiated).async {
-                let script = """
-                tell application id "\(safeBid)"
-                    reopen
-                    activate
-                end tell
-                """
-                var error: NSDictionary?
-                NSAppleScript(source: script)?.executeAndReturnError(&error)
-            }
-        }
+        executeAppleScript(bundleIdentifier: bundleIdentifier ?? runningApp.bundleIdentifier, command: "reopen\nactivate")
     }
 
     /// Terminates an application by bundle identifier (used on middle-click or context menu)
@@ -292,6 +370,7 @@ public final class AppObserverService: ObservableObject {
         }
 
         for app in matchingApps {
+            self.stableWindowOrderPerPid.removeValue(forKey: app.processIdentifier)
             let initiated = app.terminate()
             // If graceful terminate failed or app is stubborn (e.g. background continuity app), force terminate
             if !initiated || !app.isTerminated {
