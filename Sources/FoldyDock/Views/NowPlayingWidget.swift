@@ -17,23 +17,23 @@ public struct NowPlayingWidget: View {
     }
 
     private var capsuleHeight: CGFloat {
-        iconSize * 0.82
+        iconSize
     }
 
     private var artworkSize: CGFloat {
-        iconSize * 0.62
+        iconSize * 0.70
     }
 
     private var titleFontSize: CGFloat {
-        max(9.5, min(12.0, iconSize * 0.19))
+        max(10.0, min(12.5, iconSize * 0.21))
     }
 
     private var artistFontSize: CGFloat {
-        max(8.0, min(10.5, iconSize * 0.16))
+        max(8.5, min(11.0, iconSize * 0.17))
     }
 
     private var buttonIconSize: CGFloat {
-        max(9.0, min(13.0, iconSize * 0.20))
+        max(10.0, min(14.0, iconSize * 0.22))
     }
 
     public var body: some View {
@@ -47,11 +47,11 @@ public struct NowPlayingWidget: View {
         }
         .frame(height: capsuleHeight)
         .background(
-            RoundedRectangle(cornerRadius: capsuleHeight * 0.35, style: .continuous)
+            RoundedRectangle(cornerRadius: capsuleHeight * 0.22, style: .continuous)
                 .fill(Color.white.opacity(isHovered ? 0.08 : 0.04))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: capsuleHeight * 0.35, style: .continuous)
+            RoundedRectangle(cornerRadius: capsuleHeight * 0.22, style: .continuous)
                 .stroke(Color.white.opacity(isHovered ? 0.20 : 0.10), lineWidth: 0.8)
         )
         .onHover { hovering in
@@ -88,7 +88,7 @@ public struct NowPlayingWidget: View {
                     .foregroundColor(.white.opacity(0.35))
                     .frame(width: artworkSize, height: artworkSize)
                     .background(
-                        RoundedRectangle(cornerRadius: artworkSize * 0.28, style: .continuous)
+                        RoundedRectangle(cornerRadius: artworkSize * 0.24, style: .continuous)
                             .fill(Color.white.opacity(0.06))
                     )
 
@@ -96,10 +96,11 @@ public struct NowPlayingWidget: View {
                     .font(.system(size: titleFontSize, weight: .medium))
                     .foregroundColor(.white.opacity(0.40))
                     .lineLimit(1)
-                    .padding(.trailing, 6)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(.trailing, 8)
             }
-            .padding(.horizontal, 6)
-            .frame(minWidth: iconSize * 1.9)
+            .padding(.horizontal, 7)
+            .frame(minWidth: iconSize * 2.35)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -115,7 +116,7 @@ public struct NowPlayingWidget: View {
                 HStack(spacing: 8) {
                     artworkView
                         .frame(width: artworkSize, height: artworkSize)
-                        .clipShape(RoundedRectangle(cornerRadius: artworkSize * 0.28, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: artworkSize * 0.24, style: .continuous))
                         .shadow(color: Color.black.opacity(0.35), radius: 3, x: 0, y: 1.5)
 
                     VStack(alignment: .leading, spacing: 1) {
