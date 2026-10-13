@@ -23,3 +23,9 @@ At the end of every code change/modification:
    ```
    This automatically compiles the release bundle, replaces `/Applications/FoldyDock.app`, terminates any older running process, and relaunches the application from `/Applications/FoldyDock.app`.
 
+## Documentation & Releases Guidelines
+
+- **Conciseness**: Keep feature descriptions, changelogs, and release notes concise, direct, and focused on essential value without unnecessary fluff.
+- **French Translation**: Always provide a French translation for releases and the app README (bilingual EN/FR or paired concise translations).
+
+

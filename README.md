@@ -29,58 +29,72 @@
 
 ## 📖 Overview / Présentation
 
-**FoldyDock** is a modern, lightweight, native macOS dock alternative designed to replace or complement the default macOS Dock with powerful productivity features:
+**FoldyDock** is a lightweight, native macOS dock alternative with iOS-style folders, music playback control, and smart window management.  
+*FoldyDock est un dock flottant natif et léger pour macOS, intégrant des dossiers façon iOS, un contrôle musical universel et une gestion avancée des fenêtres.*
 
-- 📂 **iOS-Style App Folders** with real-time responsive miniatures, popover management, and drag-and-drop merging.
-- 🪟 **Floating Frosted Glass Bar** powered by native `NSVisualEffectView` blur and unobtrusive floating window level.
-- 🌐 **Full Multi-Space Support** (`.canJoinAllSpaces`), appearing seamlessly across all virtual desktops.
-- ⚡ **Smart Window Tracking & Multi-Dot Indicators** showing exact running instances and open window counts.
-- 🖱️ **Rapid Middle-Click App Quit** with smooth exit animations.
-- 🚀 **Built-in App Launcher & Instant Search** to quickly find and launch any application on your Mac.
-- ⚙️ **Comprehensive Settings Window (`⌘,`)** with real-time adjustments for sizes, paddings, autohide delays, and start at login.
+- 📂 **iOS-Style Folders / Dossiers iOS** : Miniatures réactives, popover dédié et fusion par glisser-déposer.
+- 🎵 **Now Playing Widget / Widget Musical** : Contrôle universel de la musique (YouTube Music, Spotify, Apple Music...) avec boutons play/pause/skip.
+- 🔄 **Window Cycling / Rotation du Focus** : Clics successifs sur l'icône pour alterner entre les fenêtres d'une même application.
+- 🪟 **Frosted Glass / Verre Dépoli** : Barre flottante avec flou natif (`NSVisualEffectView`) sans vol de focus.
+- 🌐 **Multi-Space** : Visibilité fluide sur tous les Bureaux virtuels (`.canJoinAllSpaces`).
+- ⚡ **Multi-Window Dots / Indicateurs de Fenêtres** : Pastilles indiquant le nombre exact de fenêtres ouvertes par application.
+- 🖱️ **Middle-Click Quit / Fermeture Rapide** : Clic molette pour quitter instantanément une application.
+- 🚀 **App Launcher / Lanceur d'Apps** : Recherche et lancement ultra-rapides de toutes les applications du Mac.
+- ⚙️ **Settings (`⌘,`) / Réglages** : Personnalisation en direct des tailles, marges, masque automatique et lancement au démarrage.
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features / Fonctionnalités
 
-### 1. 🪟 Native Frosted Glass Floating Dock
-- Positioned horizontally and centered at the bottom of your screen.
-- Real-time hardware-accelerated background blur (`NSVisualEffectView` with `.hudWindow` vibrancy) integrating gracefully with wallpapers and windows.
-- Non-activating `NSPanel` (`.floating` level), ensuring clicks and hover animations never steal keyboard focus from your foreground application.
-- Active across **all virtual desktops (Spaces)** and full-screen environments.
+### 1. 🎵 Now Playing Widget / Widget Musical
+- **Universal Detection**: Detects playing media across macOS 15.4+, including YouTube Music, Spotify, and Apple Music.  
+  *Détection universelle de la musique compatible macOS 15.4+, incluant YouTube Music, Spotify et Apple Music.*
+- **Controls & Opener**: Play/Pause, Next/Previous controls, and 1-click app activation.  
+  *Boutons Lecture/Pause, Suivant/Précédent, et clic pour ouvrir l'application en cours.*
+- **Adaptive Artwork**: Displays album cover or official app icon.  
+  *Affichage automatique de la pochette ou de l'icône de l'application source.*
 
-### 2. 📁 iOS-Style App Folders
-- **Dynamic Miniatures Grid:** Folders display live thumbnails of contained apps without item count limits. The preview grid automatically scales down icon sizes (2×2, 3×3, 4×4...) with clean cell alignment.
-- **Folder Capsule & Running Preview:** When applications inside a closed folder are running, the folder displays a compact horizontal capsule preview for 1-click focus.
-- **Folder Popover:** Clicking a folder deploys a full popover with large icons (52 pt), drag-and-drop reordering, and direct double-click inline renaming.
-- **Drag-to-Merge:** Simply drag an application onto another to instantly group them into a new folder.
+### 2. 🔄 Window Cycling / Rotation des Fenêtres
+- **Round-Robin Focus**: Sequential cycling through all open windows of an app on dock icon clicks.  
+  *Rotation séquentielle du focus entre les fenêtres ouvertes à chaque clic sur l'icône du dock.*
+- **Restore Minimized**: Automatically unminimizes windows when reached in the cycle.  
+  *Restaure automatiquement les fenêtres minimisées lorsqu'elles arrivent dans le cycle.*
+- **Multi-Space Support**: Automatically switches to the virtual Desktop of the target window.  
+  *Bascule automatique sur le Bureau virtuel (Space) hébergeant la fenêtre ciblée.*
 
-### 3. ⚡ Multi-Window Tracking & Dimmed Hidden Apps
-- **Window Count Indicators:** Custom indicator dots reflect how many windows each running app has open:
-  - 1 window: 1 centered dot.
-  - 2 windows: 2 side-by-side dots.
-  - 3 windows: 3 dots.
-  - 4+ windows: 2 dots accompanied by a clean `+` badge (`MiniPlusShape`).
-- **Dimmed Hidden/Minimized Apps:** When an app is hidden (`⌘H`) or minimized, its dock icon dims automatically (customizable opacity between 10% and 100%, default 50%) and subtly brightens on hover.
+### 3. 📂 iOS-Style App Folders / Dossiers d'Applications iOS
+- **Live Miniatures Grid**: Dynamic miniature icons (2×2, 3×3, 4×4...) for all contained apps.  
+  *Miniatures dynamiques en grille pour visualiser le contenu des dossiers fermés.*
+- **Drag-to-Merge**: Drop an application over another to instantly create a folder.  
+  *Glissez une app sur une autre pour créer instantanément un dossier.*
+- **Folder Popover**: Expandable drawer with large icons, drag-and-drop reordering, and inline renaming.  
+  *Tiroir d'applications avec icônes agrandies, réorganisation et renommage rapide.*
 
-### 4. 🖱️ Advanced Mouse & Gesture Controls
-- **Left-Click:** Launch or bring application to the foreground with an authentic bouncing animation (`BouncingModifier`).
-- **Middle-Click (Scroll Wheel):** Instantly closes/terminates the targeted application (`NSRunningApplication.terminate()`) with an immediate exit animation. Works on dock items and sub-apps inside folders.
-- **Right-Click Context Menus:** Full options to open, quit, keep in dock, rename folders, separate sections, or open settings.
-- **Trash Can Integration:** Dedicated macOS trash item on the right supporting direct click to open, right-click to empty, and drag-and-drop to move files to trash.
+### 4. 🪟 Native Frosted Glass Dock / Dock Flottant en Verre Dépoli
+- **Floating Panel**: Hardware-accelerated blur (`NSVisualEffectView`) at `.floating` level without stealing keyboard focus.  
+  *Panneau flottant avec flou accéléré matériellement sans jamais voler le focus clavier.*
+- **All Spaces**: Visible across all virtual desktops and full-screen environments.  
+  *Actif sur tous les Bureaux virtuels (Spaces) et modes plein écran.*
 
-### 5. 🚀 Foldy App Launcher (`AppLauncherView`)
-- Anchored on the left of the dock with the official Foldy mascot logo.
-- Opens an ultra-fast searchable drawer indexing all apps in `/Applications`, `/System/Applications`, and `~/Applications`.
-- 1-click launch, Finder reveal (`⌘`-click or context menu), and quick pin to dock.
+### 5. ⚡ Smart Window Indicators / Indicateurs de Fenêtres
+- **Multi-Dot Badges**: 1 dot (1 window), 2 dots (2 windows), 3 dots (3 windows), or `2 dots +` (4+ windows).  
+  *Pastilles dynamiques indiquant le nombre de fenêtres ouvertes.*
+- **Dimmed Hidden Apps**: Hidden (`⌘H`) or minimized apps automatically dim with hover highlight.  
+  *Atténuation automatique des applications masquées ou minimisées.*
 
-### 6. 🔄 Launch at Login (`SMAppService`)
-- Modern, reliable macOS startup integration using Apple's official `SMAppService` API (no legacy launch daemons).
-- Can be toggled on/off at any time in Settings.
+### 6. 🖱️ Mouse Controls & Trash / Contrôles Souris & Corbeille
+- **Left-Click**: Launch or focus application with native spring bounce animation.  
+  *Lancement ou focus avec animation de rebond fluide.*
+- **Middle-Click**: Instantly terminate applications directly from the dock or folders.  
+  *Clic molette pour fermer instantanément une application.*
+- **Trash Integration**: Dedicated trash icon with file drop-to-delete and right-click to empty.  
+  *Corbeille intégrée avec glisser-déposer pour supprimer des fichiers.*
 
-### 7. 🎨 Foldy Mascot & Adaptive Menu Bar Icon
-- Crisp high-resolution mascot branding.
-- Dedicated macOS menu bar status item: built as a native Apple template image (`isTemplate = true`), it automatically adapts to **Dark Mode** (clean white monochrome) and **Light Mode** (clean black monochrome).
+### 7. 🚀 Launcher & Settings / Lanceur & Réglages
+- **Foldy Launcher**: Search drawer indexing all applications on your Mac.  
+  *Tiroir de recherche rapide pour toutes les applications installées.*
+- **Settings Panel (`⌘,`)**: Real-time adjustment of dock height, icon sizes, autohide, and launch at login.  
+  *Panneau complet pour ajuster la taille, l'automasquage et le lancement au démarrage.*
 
 ---
 
@@ -141,9 +155,13 @@ foldyDock/
 │   ├── Models/
 │   │   ├── DockItem.swift           # Unified model (.app, .folder, .separator)
 │   │   ├── DockConfig.swift         # User configuration, size, autohide, paddings
+│   │   ├── NowPlayingState.swift    # Now Playing state model (MediaTrack, Play/Pause/Idle)
 │   │   └── DockHierarchyEngine.swift# Deterministic folder merge/dissolve & reorder logic
 │   ├── Services/
 │   │   ├── AppObserverService.swift # Running applications & window count tracking via AXUIElement
+│   │   ├── WindowCycleHelper.swift  # Deterministic round-robin window focus rotation
+│   │   ├── MediaRemoteNowPlayingService.swift # Universal media detection & control bridge
+│   │   ├── NowPlayingScriptParser.swift       # Resilient script output parser for Now Playing
 │   │   ├── AppDiscoveryService.swift# Fast async discovery of installed Mac applications
 │   │   ├── DockPersistenceService.swift # Atomic JSON persistence in Application Support
 │   │   ├── LaunchAtLoginService.swift   # macOS SMAppService startup manager
@@ -154,6 +172,7 @@ foldyDock/
 │   ├── Views/
 │   │   ├── DockContainerView.swift  # Main dock horizontal stack & padding layout
 │   │   ├── DockItemView.swift       # Single dock item view with titles and badges
+│   │   ├── NowPlayingWidget.swift   # Embedded media capsule with controls & app opener
 │   │   ├── FolderPopoverView.swift  # Expanded folder popover grid
 │   │   ├── FolderIconGrid.swift     # Closed folder miniature icon grid
 │   │   ├── ExpandedFolderBubbleView.swift # Capsule for folder running applications
