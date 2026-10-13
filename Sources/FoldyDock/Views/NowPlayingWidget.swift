@@ -36,24 +36,54 @@ public struct NowPlayingWidget: View {
         max(10.0, min(14.0, iconSize * 0.22))
     }
 
+    private var labelFontSize: CGFloat {
+        max(9.0, min(11.5, iconSize * 0.17))
+    }
+
     public var body: some View {
-        Group {
-            switch viewModel.nowPlayingState {
-            case .idle:
-                idleView
-            case .playing, .paused:
-                activeView
+        ZStack(alignment: .center) {
+            // 1. Main Capsule (idle or active) - centered vertically
+            Group {
+                switch viewModel.nowPlayingState {
+                case .idle:
+                    idleView
+                case .playing, .paused:
+                    activeView
+                }
+            }
+            .frame(height: capsuleHeight)
+            .background(
+                RoundedRectangle(cornerRadius: capsuleHeight * 0.22, style: .continuous)
+                    .fill(Color.white.opacity(isHovered ? 0.08 : 0.04))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: capsuleHeight * 0.22, style: .continuous)
+                    .stroke(Color.white.opacity(isHovered ? 0.20 : 0.10), lineWidth: 0.8)
+            )
+
+            // 2. Title "Music" positioned above the capsule at fixed distance
+            if viewModel.config.showAppTitles {
+                Text("Music")
+                    .font(.system(size: labelFontSize, weight: .medium, design: .rounded))
+                    .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
+                    .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .offset(y: -(iconSize / 2 + viewModel.config.labelDistance))
+            }
+
+            // 3. Indicator dot positioned below the capsule when music is currently playing
+            if viewModel.nowPlayingState.isPlaying {
+                Circle()
+                    .fill(Color.white.opacity(0.95))
+                    .frame(width: 4, height: 4)
+                    .shadow(color: Color.white.opacity(0.8), radius: 2)
+                    .offset(y: iconSize / 2 + viewModel.config.labelDistance)
+                    .transition(.scale.combined(with: .opacity))
             }
         }
-        .frame(height: capsuleHeight)
-        .background(
-            RoundedRectangle(cornerRadius: capsuleHeight * 0.22, style: .continuous)
-                .fill(Color.white.opacity(isHovered ? 0.08 : 0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: capsuleHeight * 0.22, style: .continuous)
-                .stroke(Color.white.opacity(isHovered ? 0.20 : 0.10), lineWidth: 0.8)
-        )
+        .frame(height: dockHeight, alignment: .center)
+        .zIndex(isHovered ? 10 : 1)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.18)) {
                 isHovered = hovering
@@ -65,6 +95,7 @@ public struct NowPlayingWidget: View {
         .onAppear {
             updateCachedArtwork()
         }
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: viewModel.nowPlayingState.isPlaying)
     }
 
     private func updateCachedArtwork() {

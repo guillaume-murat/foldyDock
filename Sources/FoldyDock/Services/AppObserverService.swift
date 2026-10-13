@@ -18,6 +18,7 @@ public final class AppObserverService: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var syncTimer: Timer?
     private var stableWindowOrderPerPid: [pid_t: [CGWindowID]] = [:]
+    private var lastCycledIndexPerPid: [pid_t: Int] = [:]
 
     @_silgen_name("_AXUIElementGetWindow")
     private static func _AXUIElementGetWindow(_ element: AXUIElement, _ wid: UnsafeMutablePointer<CGWindowID>) -> AXError
@@ -152,6 +153,7 @@ public final class AppObserverService: ObservableObject {
             .sink { [weak self] app in
                 guard let self = self, let bid = app.bundleIdentifier else { return }
                 self.stableWindowOrderPerPid.removeValue(forKey: app.processIdentifier)
+                self.lastCycledIndexPerPid.removeValue(forKey: app.processIdentifier)
                 self.runningBundleIds.remove(bid)
                 self.refreshWindowCounts()
                 self.refreshHiddenApps()
@@ -259,13 +261,127 @@ public final class AppObserverService: ObservableObject {
         AXUIElementSetAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, window)
     }
 
+    private func copyAXAttribute(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {
+        var val: CFTypeRef?
+        if AXUIElementCopyAttributeValue(element, attribute as CFString, &val) == .success {
+            return val
+        }
+        return nil
+    }
+
+    /// Cycles through open windows using the application's native Window menu.
+    /// This is the most reliable native macOS mechanism: it cleanly shifts focus across different virtual desktops (Spaces),
+    /// restores minimized windows, raises occluded windows, and works consistently for browsers (Firefox, Chrome, Safari) and standard apps.
+    private func cycleViaWindowMenu(appElem: AXUIElement, pid: pid_t, eligibleWindows: [AXUIElement]) -> Bool {
+        guard let menuBarRef = copyAXAttribute(appElem, kAXMenuBarAttribute as String),
+              CFGetTypeID(menuBarRef) == AXUIElementGetTypeID() else {
+            return false
+        }
+        let menuBar = menuBarRef as! AXUIElement
+        guard let menuBarItems = copyAXAttribute(menuBar, kAXChildrenAttribute as String) as? [AXUIElement] else {
+            return false
+        }
+
+        for (idx, item) in menuBarItems.enumerated() {
+            let title = (copyAXAttribute(item, kAXTitleAttribute as String) as? String) ?? ""
+            guard WindowCycleHelper.isWindowMenu(title: title, index: idx, totalMenuItems: menuBarItems.count) else {
+                continue
+            }
+
+            guard let menus = copyAXAttribute(item, kAXChildrenAttribute as String) as? [AXUIElement],
+                  let menu = menus.first,
+                  let subItems = copyAXAttribute(menu, kAXChildrenAttribute as String) as? [AXUIElement] else {
+                continue
+            }
+
+            let menuTuples: [(title: String, isSeparator: Bool, isMarked: Bool)] = subItems.map { sub in
+                let subTitle = (copyAXAttribute(sub, kAXTitleAttribute as String) as? String) ?? ""
+                let mark = copyAXAttribute(sub, "AXMenuItemMarkChar") as? String
+                let isMarked = mark != nil && !mark!.isEmpty
+                return (title: subTitle, isSeparator: subTitle.isEmpty, isMarked: isMarked)
+            }
+
+            let candidateIndices = WindowCycleHelper.candidateWindowIndices(items: menuTuples)
+            guard candidateIndices.count > 1 else { continue }
+
+            // 1. Detect current window index via checkmark (✓)
+            var currentRelativeIndex: Int? = nil
+            for (relIdx, itemIdx) in candidateIndices.enumerated() {
+                if menuTuples[itemIdx].isMarked {
+                    currentRelativeIndex = relIdx
+                    break
+                }
+            }
+
+            // 2. If checkmark is missing or pending async update, detect via focused window title
+            if currentRelativeIndex == nil {
+                var focusedWinRef: CFTypeRef?
+                if AXUIElementCopyAttributeValue(appElem, kAXFocusedWindowAttribute as CFString, &focusedWinRef) == .success,
+                   let focusedWin = focusedWinRef,
+                   CFGetTypeID(focusedWin) == AXUIElementGetTypeID() {
+                    let focusedTitle = (copyAXAttribute(focusedWin as! AXUIElement, kAXTitleAttribute as String) as? String) ?? ""
+                    if !focusedTitle.isEmpty {
+                        for (relIdx, itemIdx) in candidateIndices.enumerated() {
+                            let itemTitle = menuTuples[itemIdx].title
+                            if itemTitle == focusedTitle || itemTitle.contains(focusedTitle) || focusedTitle.contains(itemTitle) {
+                                currentRelativeIndex = relIdx
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. If still unknown, fall back to lastCycledIndexPerPid
+            let fallbackIndex = lastCycledIndexPerPid[pid]
+            let effectiveIndex = currentRelativeIndex ?? fallbackIndex
+
+            // Calculate next index in rotation
+            let nextRelativeIndex = WindowCycleHelper.nextWindowIndex(currentIndex: effectiveIndex, windowCount: candidateIndices.count)
+            lastCycledIndexPerPid[pid] = nextRelativeIndex
+
+            let targetMenuIndex = candidateIndices[nextRelativeIndex]
+            let targetItem = subItems[targetMenuIndex]
+            let targetTitle = menuTuples[targetMenuIndex].title
+
+            let err = AXUIElementPerformAction(targetItem, kAXPressAction as CFString)
+            if err == .success {
+                // If a matching window exists on the current Space, raise it immediately for zero-lag response
+                if let matchingWin = eligibleWindows.first(where: {
+                    let wTitle = (self.copyAXAttribute($0, kAXTitleAttribute as String) as? String) ?? ""
+                    return !wTitle.isEmpty && (wTitle == targetTitle || targetTitle.contains(wTitle) || wTitle.contains(targetTitle))
+                }) {
+                    self.raiseWindow(matchingWin, appElement: appElem)
+                }
+                return true
+            }
+        }
+        return false
+    }
+
+    /// Triggers the native macOS window cycle keyboard shortcut (Cmd + `) directly to the target application PID.
+    private func triggerWindowCycleKeyboardShortcut(for pid: pid_t) {
+        let src = CGEventSource(stateID: .combinedSessionState)
+        let down = CGEvent(keyboardEventSource: src, virtualKey: 50, keyDown: true)
+        down?.flags = .maskCommand
+        down?.postToPid(pid)
+
+        let up = CGEvent(keyboardEventSource: src, virtualKey: 50, keyDown: false)
+        up?.flags = .maskCommand
+        up?.postToPid(pid)
+    }
+
     private func executeAppleScript(bundleIdentifier: String?, command: String) {
         guard let bid = bundleIdentifier?.replacingOccurrences(of: "\"", with: ""), !bid.isEmpty else { return }
+        // Exclude Firefox or other apps known to hang or ignore AppleEvents
+        if bid == "org.mozilla.firefox" || bid.contains("firefox") { return }
         Task.detached(priority: .userInitiated) {
             let script = """
-            tell application id "\(bid)"
-                \(command)
-            end tell
+            with timeout of 1 seconds
+                tell application id "\(bid)"
+                    \(command)
+                end tell
+            end timeout
             """
             var error: NSDictionary?
             NSAppleScript(source: script)?.executeAndReturnError(&error)
@@ -276,7 +392,9 @@ public final class AppObserverService: ObservableObject {
     /// When the application is already the frontmost active application and has multiple open windows,
     /// cycles focus sequentially through each window in round-robin order without ping-ponging.
     public func activateRunningApp(_ runningApp: NSRunningApplication, bundleIdentifier: String?, item: DockItem? = nil) {
-        let isAlreadyFrontmost = (runningApp.isActive || NSWorkspace.shared.frontmostApplication?.processIdentifier == runningApp.processIdentifier) && !runningApp.isHidden
+        let isAlreadyFrontmost = (runningApp.isActive ||
+                                  NSWorkspace.shared.frontmostApplication?.processIdentifier == runningApp.processIdentifier ||
+                                  self.activeAppBundleId == runningApp.bundleIdentifier) && !runningApp.isHidden
 
         let appElem = AXUIElementCreateApplication(runningApp.processIdentifier)
         var winListRef: CFTypeRef?
@@ -298,44 +416,64 @@ public final class AppObserverService: ObservableObject {
             return false
         }
 
+        let bid = bundleIdentifier ?? runningApp.bundleIdentifier ?? ""
+        let knownWindowCount = max(windowCountsByBundleId[bid] ?? 0, eligibleWindows.count)
+
         // Window Cycling: When already frontmost and multi-window, cycle to the next window
-        if WindowCycleHelper.shouldCycleWindows(isFrontmost: isAlreadyFrontmost, eligibleWindowCount: eligibleWindows.count) {
-            let winMap: [CGWindowID: AXUIElement] = Dictionary(uniqueKeysWithValues: eligibleWindows.map { (windowID(for: $0), $0) })
-            let currentWindowIDs = eligibleWindows.map { windowID(for: $0) }
-
-            let previousOrder = stableWindowOrderPerPid[runningApp.processIdentifier] ?? []
-            let stableOrder = WindowCycleHelper.reconcileStableOrder(existingOrder: previousOrder, currentWindowIDs: currentWindowIDs)
-            stableWindowOrderPerPid[runningApp.processIdentifier] = stableOrder
-
-            var focusedWinRef: CFTypeRef?
-            _ = AXUIElementCopyAttributeValue(appElem, kAXFocusedWindowAttribute as CFString, &focusedWinRef)
-
-            var focusedID: CGWindowID? = nil
-            if let focused = focusedWinRef, CFGetTypeID(focused) == AXUIElementGetTypeID() {
-                focusedID = windowID(for: focused as! AXUIElement)
+        if WindowCycleHelper.shouldCycleWindows(isFrontmost: isAlreadyFrontmost, isHidden: runningApp.isHidden, eligibleWindowCount: knownWindowCount) {
+            // Strategy 1: Attempt cycling via the application's Window menu.
+            // This is the most robust native macOS mechanism: it handles windows across different Spaces,
+            // unminimizes minimized windows, raises occluded windows, and preserves application state.
+            if cycleViaWindowMenu(appElem: appElem, pid: runningApp.processIdentifier, eligibleWindows: eligibleWindows) {
+                if #available(macOS 14.0, *) {
+                    NSApp.yieldActivation(to: runningApp)
+                }
+                return
             }
 
-            let currentIndex = focusedID.flatMap { stableOrder.firstIndex(of: $0) }
-            let nextIndex = WindowCycleHelper.nextWindowIndex(currentIndex: currentIndex, windowCount: stableOrder.count)
-            let targetID = stableOrder[nextIndex]
+            // Strategy 2: If Window menu is not available, perform AXUIElement round-robin raising
+            // for windows on the current Space.
+            if eligibleWindows.count >= 2 {
+                let winMap: [CGWindowID: AXUIElement] = Dictionary(uniqueKeysWithValues: eligibleWindows.map { (windowID(for: $0), $0) })
+                let currentWindowIDs = eligibleWindows.map { windowID(for: $0) }
 
-            if let targetWindow = winMap[targetID] {
-                raiseWindow(targetWindow, appElement: appElem)
+                let previousOrder = stableWindowOrderPerPid[runningApp.processIdentifier] ?? []
+                let stableOrder = WindowCycleHelper.reconcileStableOrder(existingOrder: previousOrder, currentWindowIDs: currentWindowIDs)
+                stableWindowOrderPerPid[runningApp.processIdentifier] = stableOrder
+
+                var focusedWinRef: CFTypeRef?
+                _ = AXUIElementCopyAttributeValue(appElem, kAXFocusedWindowAttribute as CFString, &focusedWinRef)
+
+                var focusedID: CGWindowID? = nil
+                if let focused = focusedWinRef, CFGetTypeID(focused) == AXUIElementGetTypeID() {
+                    focusedID = windowID(for: focused as! AXUIElement)
+                }
+
+                let currentIndex = focusedID.flatMap { stableOrder.firstIndex(of: $0) }
+                let nextIndex = WindowCycleHelper.nextWindowIndex(currentIndex: currentIndex, windowCount: stableOrder.count)
+                let targetID = stableOrder[nextIndex]
+
+                if let targetWindow = winMap[targetID] {
+                    raiseWindow(targetWindow, appElement: appElem)
+                }
+
+                if #available(macOS 14.0, *) {
+                    NSApp.yieldActivation(to: runningApp)
+                }
+                return
             }
 
-            // Cooperative activation without reshuffling all windows
+            // Strategy 3: Standard macOS window cycling shortcut (Cmd + `)
+            triggerWindowCycleKeyboardShortcut(for: runningApp.processIdentifier)
             if #available(macOS 14.0, *) {
                 NSApp.yieldActivation(to: runningApp)
-                runningApp.activate(options: [])
-            } else {
-                runningApp.activate(options: [.activateIgnoringOtherApps])
             }
-
-            executeAppleScript(bundleIdentifier: bundleIdentifier ?? runningApp.bundleIdentifier, command: "reopen\nactivate")
             return
         }
 
         // Standard 1st-click activation: bring application to foreground
+        self.activeAppBundleId = runningApp.bundleIdentifier
+
         // 1. Unhide if hidden
         if runningApp.isHidden {
             runningApp.unhide()
@@ -371,6 +509,7 @@ public final class AppObserverService: ObservableObject {
 
         for app in matchingApps {
             self.stableWindowOrderPerPid.removeValue(forKey: app.processIdentifier)
+            self.lastCycledIndexPerPid.removeValue(forKey: app.processIdentifier)
             let initiated = app.terminate()
             // If graceful terminate failed or app is stubborn (e.g. background continuity app), force terminate
             if !initiated || !app.isTerminated {

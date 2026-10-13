@@ -79,4 +79,38 @@ struct WindowCyclingTests {
         // Must cycle sequentially: 202 -> 203 -> 201 -> 202 -> 203 -> 201
         #expect(visitedTargets == [202, 203, 201, 202, 203, 201])
     }
+
+    @Test("WindowCycleHelper recognizes Window menu titles across multiple languages and positions")
+    func testIsWindowMenu() {
+        #expect(WindowCycleHelper.isWindowMenu(title: "Window", index: 3, totalMenuItems: 8) == true)
+        #expect(WindowCycleHelper.isWindowMenu(title: "Fenêtre", index: 3, totalMenuItems: 8) == true)
+        #expect(WindowCycleHelper.isWindowMenu(title: "fenêtre", index: 3, totalMenuItems: 8) == true)
+        #expect(WindowCycleHelper.isWindowMenu(title: "Fenster", index: 3, totalMenuItems: 8) == true)
+        #expect(WindowCycleHelper.isWindowMenu(title: "Ventana", index: 3, totalMenuItems: 8) == true)
+        
+        // Second to last item fallback
+        #expect(WindowCycleHelper.isWindowMenu(title: "CustomMenu", index: 8, totalMenuItems: 10) == true)
+        #expect(WindowCycleHelper.isWindowMenu(title: "File", index: 1, totalMenuItems: 10) == false)
+    }
+
+    @Test("WindowCycleHelper extracts candidate window indices from menu items")
+    func testCandidateWindowIndices() {
+        // Typical macOS menu: commands, separator, windows (one checked)
+        let menuItems: [(title: String, isSeparator: Bool, isMarked: Bool)] = [
+            (title: "Minimize", isSeparator: false, isMarked: false),
+            (title: "Zoom", isSeparator: false, isMarked: false),
+            (title: "", isSeparator: true, isMarked: false),
+            (title: "Window 1 - Doc A", isSeparator: false, isMarked: true),
+            (title: "Window 2 - Doc B", isSeparator: false, isMarked: false),
+            (title: "Window 3 - Doc C", isSeparator: false, isMarked: false)
+        ]
+
+        let indices = WindowCycleHelper.candidateWindowIndices(items: menuItems)
+        #expect(indices == [3, 4, 5])
+
+        // When checked is index 3 (relative 0), next index is relative 1 -> target is 4 (Window 2)
+        let checkedRelativeIndex = indices.firstIndex(of: 3)
+        let nextRelativeIndex = WindowCycleHelper.nextWindowIndex(currentIndex: checkedRelativeIndex, windowCount: indices.count)
+        #expect(indices[nextRelativeIndex] == 4)
+    }
 }
