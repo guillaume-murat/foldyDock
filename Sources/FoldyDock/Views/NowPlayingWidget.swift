@@ -59,19 +59,24 @@ public struct NowPlayingWidget: View {
                 isHovered = hovering
             }
         }
-        .onChange(of: viewModel.nowPlayingState.artworkData) { _, newData in
-            updateCachedArtwork(newData)
+        .onChange(of: viewModel.nowPlayingState) { _, _ in
+            updateCachedArtwork()
         }
         .onAppear {
-            updateCachedArtwork(viewModel.nowPlayingState.artworkData)
+            updateCachedArtwork()
         }
     }
 
-    private func updateCachedArtwork(_ data: Data?) {
-        guard data != lastArtworkData else { return }
-        lastArtworkData = data
-        if let data {
-            cachedArtwork = NSImage(data: data)
+    private func updateCachedArtwork() {
+        if let data = viewModel.nowPlayingState.artworkData, let img = NSImage(data: data) {
+            cachedArtwork = img
+        } else if let bundleId = viewModel.nowPlayingState.bundleIdentifier,
+                  let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
+            cachedArtwork = NSWorkspace.shared.icon(forFile: appURL.path)
+        } else if let pid = viewModel.nowPlayingState.pid,
+                  let app = NSRunningApplication(processIdentifier: pid),
+                  let appURL = app.bundleURL {
+            cachedArtwork = NSWorkspace.shared.icon(forFile: appURL.path)
         } else {
             cachedArtwork = nil
         }

@@ -36,6 +36,8 @@ public final class MediaRemoteNowPlayingService: NowPlayingServiceProviding {
 
     private var currentPID: pid_t?
     private var pollTimer: Timer?
+    private var isFetching: Bool = false
+    private let serialQueue = DispatchQueue(label: "com.foldydock.mediaremote.serial", qos: .userInitiated)
 
     public init() {
         loadMediaRemoteSymbols()
@@ -95,64 +97,149 @@ public final class MediaRemoteNowPlayingService: NowPlayingServiceProviding {
     }
 
     @objc public func refreshNowPlaying() {
-        guard let mrGetInfo else { return }
+        serialQueue.async { [weak self] in
+            guard let self else { return }
+            if self.isFetching { return }
+            self.isFetching = true
 
-        // Query active PID
-        mrGetPID?(DispatchQueue.main) { [weak self] pid in
-            if pid > 0 {
-                self?.currentPID = pid
+            self.fetchViaOsascript { [weak self] scriptState in
+                guard let self else { return }
+                defer {
+                    self.serialQueue.async {
+                        self.isFetching = false
+                    }
+                }
+
+                if case .idle = scriptState, let mrGetInfo = self.mrGetInfo {
+                    // Fallback to legacy in-process MediaRemote API if script returned idle
+                    mrGetInfo(DispatchQueue.main) { [weak self] dict in
+                        guard let self else { return }
+                        if let dict = dict as? [String: Any], !dict.isEmpty {
+                            self.parseLegacyDict(dict)
+                        } else {
+                            self.currentPID = nil
+                            self.subject.send(.idle)
+                        }
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self.currentPID = scriptState.pid
+                        self.subject.send(scriptState)
+                    }
+                }
             }
         }
+    }
 
-        mrGetInfo(DispatchQueue.main) { [weak self] dict in
-            guard let self else { return }
+    private func fetchViaOsascript(completion: @escaping (NowPlayingState) -> Void) {
+        let script = """
+        use scripting additions
+        use framework "/System/Library/PrivateFrameworks/MediaRemote.framework"
 
-            guard let dict = dict as? [String: Any], !dict.isEmpty else {
-                self.currentPID = nil
-                self.subject.send(.idle)
-                return
-            }
+        set MRNowPlayingRequest to current application's NSClassFromString("MRNowPlayingRequest")
 
-            let title = dict["kMRMediaRemoteNowPlayingInfoTitle"] as? String
-                ?? dict["title"] as? String
-            let artist = dict["kMRMediaRemoteNowPlayingInfoArtist"] as? String
-                ?? dict["artist"] as? String
-            let artworkData = dict["kMRMediaRemoteNowPlayingInfoArtworkData"] as? Data
-                ?? dict["artworkData"] as? Data
+        if MRNowPlayingRequest is missing value or MRNowPlayingRequest's localNowPlayingItem() is missing value then
+            return "IDLE"
+        end if
 
-            let playbackRate = (dict["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? NSNumber)?.doubleValue
-                ?? (dict["playbackRate"] as? NSNumber)?.doubleValue
-                ?? 0.0
+        if MRNowPlayingRequest's localIsPlaying() then
+            set status to "Playing"
+        else
+            set status to "Paused"
+        end if
 
-            let isPlaying = playbackRate > 0.0
+        set infoDict to MRNowPlayingRequest's localNowPlayingItem()'s nowPlayingInfo()
+        set bundleObj to MRNowPlayingRequest's localNowPlayingPlayerPath()'s client()
 
-            if let title, !title.isEmpty {
-                let resolvedArtist = if let artist, !artist.isEmpty { artist } else { "Unknown Artist" }
-                let track = MediaTrack(
-                    title: title,
-                    artist: resolvedArtist,
-                    artworkData: artworkData,
-                    pid: self.currentPID
-                )
-                self.subject.send(isPlaying ? .playing(track) : .paused(track))
-            } else if isPlaying {
-                let track = MediaTrack(
-                    title: "Playing Media",
-                    artist: artist ?? "macOS Audio",
-                    artworkData: artworkData,
-                    pid: self.currentPID
-                )
-                self.subject.send(.playing(track))
-            } else {
-                self.currentPID = nil
-                self.subject.send(.idle)
-            }
+        set trackTitle to ""
+        set trackArtist to ""
+        set trackAlbum to ""
+        set bundleId to ""
+        set appName to ""
+        set pid to 0
+
+        try
+            set trackTitle to (infoDict's valueForKey:"kMRMediaRemoteNowPlayingInfoTitle") as text
+        end try
+        try
+            set trackArtist to (infoDict's valueForKey:"kMRMediaRemoteNowPlayingInfoArtist") as text
+        end try
+        try
+            set trackAlbum to (infoDict's valueForKey:"kMRMediaRemoteNowPlayingInfoAlbum") as text
+        end try
+        try
+            set bundleId to (bundleObj's bundleIdentifier()) as text
+        end try
+        try
+            set appName to (bundleObj's displayName()) as text
+        end try
+        try
+            set pid to (bundleObj's processIdentifier()) as integer
+        end try
+
+        return status & linefeed & trackTitle & linefeed & trackArtist & linefeed & trackAlbum & linefeed & bundleId & linefeed & appName & linefeed & pid
+        """
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", script]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            let state = NowPlayingScriptParser.parse(output: output)
+            completion(state)
+        } catch {
+            completion(.idle)
+        }
+    }
+
+    private func parseLegacyDict(_ dict: [String: Any]) {
+        let title = dict["kMRMediaRemoteNowPlayingInfoTitle"] as? String
+            ?? dict["title"] as? String
+        let artist = dict["kMRMediaRemoteNowPlayingInfoArtist"] as? String
+            ?? dict["artist"] as? String
+        let artworkData = dict["kMRMediaRemoteNowPlayingInfoArtworkData"] as? Data
+            ?? dict["artworkData"] as? Data
+
+        let playbackRate = (dict["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? NSNumber)?.doubleValue
+            ?? (dict["playbackRate"] as? NSNumber)?.doubleValue
+            ?? 0.0
+
+        let isPlaying = playbackRate > 0.0
+
+        if let title, !title.isEmpty {
+            let resolvedArtist = if let artist, !artist.isEmpty { artist } else { "Unknown Artist" }
+            let track = MediaTrack(
+                title: title,
+                artist: resolvedArtist,
+                artworkData: artworkData,
+                pid: self.currentPID
+            )
+            self.subject.send(isPlaying ? .playing(track) : .paused(track))
+        } else if isPlaying {
+            let track = MediaTrack(
+                title: "Playing Media",
+                artist: artist ?? "macOS Audio",
+                artworkData: artworkData,
+                pid: self.currentPID
+            )
+            self.subject.send(.playing(track))
+        } else {
+            self.currentPID = nil
+            self.subject.send(.idle)
         }
     }
 
     private func startPeriodicCheck() {
         // Fallback safety poll for applications that defer Darwin notifications
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             self?.refreshNowPlaying()
         }
     }
@@ -165,9 +252,42 @@ public final class MediaRemoteNowPlayingService: NowPlayingServiceProviding {
     }
 
     // MARK: - Transport Commands
+    private func postMediaKey(_ key: Int32) {
+        func doKey(down: Bool) {
+            let flags = down ? 0xa00 : 0xb00
+            let data1 = (Int(key) << 16) | (flags & 0xff00)
+            let ev = NSEvent.otherEvent(
+                with: .systemDefined,
+                location: .zero,
+                modifierFlags: NSEvent.ModifierFlags(rawValue: UInt(flags)),
+                timestamp: 0,
+                windowNumber: 0,
+                context: nil,
+                subtype: 8,
+                data1: data1,
+                data2: -1
+            )
+            ev?.cgEvent?.post(tap: .cghidEventTap)
+        }
+        doKey(down: true)
+        doKey(down: false)
+    }
+
     private func sendCommand(_ command: MediaRemoteCommand) {
         _ = mrSendCommand?(command.rawValue, nil)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+
+        switch command {
+        case .togglePlayPause, .play, .pause:
+            postMediaKey(16) // NX_KEYTYPE_PLAY
+        case .nextTrack:
+            postMediaKey(19) // NX_KEYTYPE_FAST (Next)
+        case .previousTrack:
+            postMediaKey(20) // NX_KEYTYPE_REWIND (Previous)
+        case .stop:
+            postMediaKey(16)
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             self?.refreshNowPlaying()
         }
     }
@@ -184,19 +304,44 @@ public final class MediaRemoteNowPlayingService: NowPlayingServiceProviding {
         sendCommand(.previousTrack)
     }
 
+    private func activateApp(_ app: NSRunningApplication) {
+        if #available(macOS 14.0, *) {
+            NSApp?.yieldActivation(to: app)
+            app.activate()
+        } else {
+            app.activate(options: [.activateIgnoringOtherApps])
+        }
+    }
+
     // MARK: - Source Activation
     public func activateSource() {
         let targetPID = currentPID ?? currentState.pid
         if let targetPID, targetPID > 0, let app = NSRunningApplication(processIdentifier: targetPID) {
-            app.activate()
+            activateApp(app)
+            return
+        }
+
+        if let bundleId = currentState.bundleIdentifier,
+           let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).first {
+            activateApp(app)
+            return
+        }
+
+        if let bundleId = currentState.bundleIdentifier,
+           let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
+            NSWorkspace.shared.openApplication(at: appURL, configuration: NSWorkspace.OpenConfiguration())
             return
         }
 
         // In idle state with no active stream, try activating an already running media app
-        let bundleIds = ["com.apple.Music", "com.spotify.client"]
+        let bundleIds = [
+            "com.google.ios.youtubemusic",
+            "com.apple.Music",
+            "com.spotify.client"
+        ]
         for bundleId in bundleIds {
             if let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).first {
-                app.activate()
+                activateApp(app)
                 return
             }
         }
