@@ -40,6 +40,13 @@ public final class DockViewModel: ObservableObject {
     public var onOpenSettingsWindow: (() -> Void)?
     public var onConfigUpdated: ((DockConfig) -> Void)?
 
+    // Window Picker Popover State
+    @Published public var activeWindowPickerItem: DockItem? = nil
+    @Published public var activeWindowPickerList: [AppWindowInfo] = []
+    public var onWindowPickerChanged: ((DockItem?) -> Void)?
+    private var windowPickerHoverWorkItem: DispatchWorkItem?
+    private var windowPickerDismissWorkItem: DispatchWorkItem?
+
     public func openSettingsWindow() {
         onOpenSettingsWindow?()
     }
@@ -235,6 +242,7 @@ public final class DockViewModel: ObservableObject {
     // MARK: - Actions
 
     public func launch(item: DockItem) {
+        closeWindowPicker()
         if item.type == .folder {
             toggleFolderPopover(item)
         } else {
@@ -443,6 +451,98 @@ public final class DockViewModel: ObservableObject {
             lastClosedFolderTime = Date()
         }
         activeFolder = nil
+    }
+
+    // MARK: - Window Picker Popover
+
+    public var isWindowPickerOpen: Bool {
+        activeWindowPickerItem != nil
+    }
+
+    public func handleItemHoverStart(item: DockItem) {
+        // If another item's picker is open, close it immediately so it doesn't linger
+        if activeWindowPickerItem != nil && activeWindowPickerItem?.id != item.id {
+            closeWindowPicker()
+        }
+
+        guard config.showWindowPickerOnHover,
+              item.type == .app,
+              let bid = item.bundleIdentifier else {
+            return
+        }
+
+        // Only applications that are currently running can have open windows
+        guard appObserver.runningBundleIds.contains(bid) else { return }
+
+        windowPickerDismissWorkItem?.cancel()
+        windowPickerDismissWorkItem = nil
+
+        if activeWindowPickerItem?.id == item.id { return }
+
+        windowPickerHoverWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                guard self.hoveredItemId == item.id else { return }
+                let windows = await self.appObserver.fetchOpenWindowsAsync(for: bid)
+                guard self.hoveredItemId == item.id else { return }
+                if windows.count >= 2 {
+                    self.activeWindowPickerItem = item
+                    self.activeWindowPickerList = windows
+                    self.onWindowPickerChanged?(item)
+                } else {
+                    self.closeWindowPicker()
+                }
+            }
+        }
+        windowPickerHoverWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + config.windowPickerHoverDelay, execute: workItem)
+    }
+
+    public func handleItemHoverEnd(item: DockItem) {
+        windowPickerHoverWorkItem?.cancel()
+        windowPickerHoverWorkItem = nil
+
+        if isWindowPickerOpen {
+            scheduleWindowPickerDismissal()
+        }
+    }
+
+    public func handleWindowPickerHoverStart() {
+        windowPickerDismissWorkItem?.cancel()
+        windowPickerDismissWorkItem = nil
+    }
+
+    public func handleWindowPickerHoverEnd() {
+        scheduleWindowPickerDismissal()
+    }
+
+    private func scheduleWindowPickerDismissal() {
+        windowPickerDismissWorkItem?.cancel()
+        let dismissWork = DispatchWorkItem { [weak self] in
+            self?.closeWindowPicker()
+        }
+        windowPickerDismissWorkItem = dismissWork
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22, execute: dismissWork)
+    }
+
+    public func closeWindowPicker() {
+        windowPickerHoverWorkItem?.cancel()
+        windowPickerHoverWorkItem = nil
+        windowPickerDismissWorkItem?.cancel()
+        windowPickerDismissWorkItem = nil
+        if activeWindowPickerItem != nil {
+            activeWindowPickerItem = nil
+            activeWindowPickerList = []
+            onWindowPickerChanged?(nil)
+        }
+    }
+
+    public func selectWindow(_ window: AppWindowInfo, for item: DockItem) {
+        guard let bid = item.bundleIdentifier else { return }
+        closeWindowPicker()
+        appObserver.selectWindow(window, for: bid)
     }
 
     public func toggleApplicationsLauncher() {

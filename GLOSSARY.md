@@ -52,3 +52,7 @@ _Avoid_: Autostart helper, login item daemon
 The round-robin focus rotation among eligible standard windows of an already frontmost application upon repeated dock item clicks. Restores minimized windows upon focus.
 _Avoid_: Alt-tabbing, window flipping, task switcher
 
+**Window Picker Popover**:
+A contextual popover displayed upon hovering an application icon with 2 or more open windows, listing their titles and states (active/minimized) to let the user select and focus a specific window directly.
+_Avoid_: Window switcher, Alt-tab preview, thumbnail bar
+

@@ -197,8 +197,12 @@ public struct DockItemView: View {
                 if hovering {
                     viewModel.hoveredItemId = item.id
                     viewModel.refreshWindowCounts()
-                } else if viewModel.hoveredItemId == item.id {
-                    viewModel.hoveredItemId = nil
+                    viewModel.handleItemHoverStart(item: item)
+                } else {
+                    if viewModel.hoveredItemId == item.id {
+                        viewModel.hoveredItemId = nil
+                    }
+                    viewModel.handleItemHoverEnd(item: item)
                 }
             }
             .onTapGesture {

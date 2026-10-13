@@ -35,3 +35,7 @@ _Avoid_: Drop position, insert mode
 **Launch at Login**:
 A system integration service managing automatic startup of FoldyDock on macOS user login using Apple's modern `SMAppService` framework.
 _Avoid_: Autostart helper, login item daemon
+
+**Window Picker Popover**:
+A contextual popover displayed upon hovering an application icon with 2 or more open windows, listing their titles and states (active/minimized) to let the user select and focus a specific window directly.
+_Avoid_: Window switcher, Alt-tab preview, thumbnail bar

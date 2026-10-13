@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var hostingView: NSView?
     private var folderPopover: NSPopover?
+    private var windowPickerPopover: NSPopover?
 
     static func main() {
         let app = NSApplication.shared
@@ -50,6 +51,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        vm.onWindowPickerChanged = { [weak self, weak vm] item in
+            guard let self = self, let vm = vm else { return }
+            if let item = item {
+                self.showWindowPickerPopover(for: item, viewModel: vm)
+            } else {
+                self.closeWindowPickerPopover()
+            }
+        }
+
         let panel = DockPanel(contentView: hostingView, initialDockHeight: initialDockHeight)
         panel.autohideEnabled = vm.config.autohideEnabled
         panel.autohideDelay = vm.config.autohideDelay
@@ -77,7 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if NSEvent.pressedMouseButtons == 0 && vm.dragSourceId != nil {
                 vm.clearDropState()
             }
-            return vm.activeFolder != nil || vm.isApplicationsLauncherOpen || vm.dragSourceId != nil || vm.activeDropTargetId != nil || vm.isResizing
+            return vm.activeFolder != nil || vm.isApplicationsLauncherOpen || vm.isWindowPickerOpen || vm.dragSourceId != nil || vm.activeDropTargetId != nil || vm.isResizing
         }
 
         self.dockPanel = panel
@@ -126,24 +136,66 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.delegate = self
         popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .maxY)
         self.folderPopover = popover
-
-        // Ensure popover window never overlaps the dock bar vertically
-        DispatchQueue.main.async {
-            for w in NSApp.windows where NSStringFromClass(type(of: w)).contains("Popover") {
-                let targetMinY = panel.frame.maxY
-                if w.frame.minY < targetMinY {
-                    var f = w.frame
-                    f.origin.y = targetMinY
-                    w.setFrame(f, display: true)
-                }
-            }
-        }
+        adjustPopoverWindowAboveDock(popover, panel: panel)
     }
 
     private func closeFolderPopover() {
         if let popover = folderPopover {
             popover.close()
             folderPopover = nil
+        }
+    }
+
+    private func showWindowPickerPopover(for item: DockItem, viewModel: DockViewModel) {
+        closeWindowPickerPopover()
+        guard let panel = self.dockPanel, let anchorView = panel.contentView else { return }
+
+        let dockHeight = panel.frame.height
+        let itemRect: CGRect
+        if let frame = viewModel.itemFrames[item.id] {
+            itemRect = CGRect(x: frame.origin.x, y: dockHeight - 2, width: frame.width, height: 1)
+        } else {
+            itemRect = CGRect(x: anchorView.bounds.midX - 40, y: dockHeight - 2, width: 80, height: 1)
+        }
+
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = true
+        let popoverView = WindowPickerPopoverView(viewModel: viewModel, item: item)
+        let hostingController = NSHostingController(rootView: popoverView)
+        popover.contentViewController = hostingController
+        popover.delegate = self
+        popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .maxY)
+        self.windowPickerPopover = popover
+        adjustPopoverWindowAboveDock(popover, panel: panel)
+    }
+
+    private func adjustPopoverWindowAboveDock(_ popover: NSPopover, panel: DockPanel) {
+        // Ensure popover window never overlaps the dock bar vertically
+        DispatchQueue.main.async {
+            let targetMinY = panel.frame.maxY
+            if let popoverWindow = popover.contentViewController?.view.window {
+                if popoverWindow.frame.minY < targetMinY {
+                    var f = popoverWindow.frame
+                    f.origin.y = targetMinY
+                    popoverWindow.setFrame(f, display: true)
+                }
+            } else {
+                for w in NSApp.windows where NSStringFromClass(type(of: w)).contains("Popover") {
+                    if w.frame.minY < targetMinY {
+                        var f = w.frame
+                        f.origin.y = targetMinY
+                        w.setFrame(f, display: true)
+                    }
+                }
+            }
+        }
+    }
+
+    private func closeWindowPickerPopover() {
+        if let popover = windowPickerPopover {
+            popover.close()
+            windowPickerPopover = nil
         }
     }
 
@@ -284,9 +336,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 extension AppDelegate: NSPopoverDelegate {
     public func popoverDidClose(_ notification: Notification) {
-        if let popover = notification.object as? NSPopover, popover == self.folderPopover {
-            self.folderPopover = nil
-            self.viewModel?.closeFolderPopover()
+        if let popover = notification.object as? NSPopover {
+            if popover == self.folderPopover {
+                self.folderPopover = nil
+                self.viewModel?.closeFolderPopover()
+            } else if popover == self.windowPickerPopover {
+                self.windowPickerPopover = nil
+                self.viewModel?.closeWindowPicker()
+            }
         }
     }
 }

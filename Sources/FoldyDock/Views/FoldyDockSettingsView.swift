@@ -141,6 +141,51 @@ public struct FoldyDockSettingsView: View {
                                     )
                                 }
                             }
+
+                            Divider()
+
+                            Toggle("Sélecteur de fenêtres au survol", isOn: Binding(
+                                get: { viewModel.config.showWindowPickerOnHover },
+                                set: { newValue in
+                                    viewModel.config.showWindowPickerOnHover = newValue
+                                    viewModel.saveConfig()
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .font(.system(size: 13, weight: .medium))
+
+                            Text("Affiche la liste des fenêtres ouvertes au survol de la souris sur l'icône d'une application (à partir de 2 fenêtres).")
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.secondary)
+
+                            if viewModel.config.showWindowPickerOnHover {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Text("Délai d'apparition au survol")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        Text("\(Int(viewModel.config.windowPickerHoverDelay * 1000)) ms")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.accentColor.opacity(0.12))
+                                            .cornerRadius(4)
+                                    }
+
+                                    Slider(
+                                        value: Binding(
+                                            get: { viewModel.config.windowPickerHoverDelay },
+                                            set: { newValue in
+                                                viewModel.config.windowPickerHoverDelay = newValue
+                                                viewModel.saveConfig()
+                                            }
+                                        ),
+                                        in: 0.15...1.0,
+                                        step: 0.05
+                                    )
+                                }
+                            }
                         }
                         .padding(8)
                     } label: {
