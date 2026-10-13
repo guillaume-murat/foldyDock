@@ -16,6 +16,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
     public var hiddenAppOpacity: Double // Opacity of hidden/minimized apps (default: 0.5)
     public var launchAtLogin: Bool // Launch FoldyDock at macOS startup (default: false)
     public var itemSpacing: Double // Spacing between dock items in points (default: 12.0)
+    public var showNowPlayingWidget: Bool // Show Now Playing media widget in dock (default: true)
 
     public var hideDelay: Double {
         get { autohideDelay }
@@ -42,6 +43,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         case hiddenAppOpacity
         case launchAtLogin
         case itemSpacing
+        case showNowPlayingWidget
     }
 
     public init(
@@ -59,7 +61,8 @@ public struct DockConfig: Codable, Equatable, Sendable {
         showAppLauncher: Bool = true,
         hiddenAppOpacity: Double = 0.5,
         launchAtLogin: Bool = false,
-        itemSpacing: Double = 12.0
+        itemSpacing: Double = 12.0,
+        showNowPlayingWidget: Bool = true
     ) {
         self.autohideEnabled = autohideEnabled
         self.autohideDelay = autohideDelay
@@ -76,6 +79,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.hiddenAppOpacity = hiddenAppOpacity
         self.launchAtLogin = launchAtLogin
         self.itemSpacing = itemSpacing
+        self.showNowPlayingWidget = showNowPlayingWidget
     }
 
     public init(from decoder: Decoder) throws {
@@ -95,6 +99,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.hiddenAppOpacity = try container.decodeIfPresent(Double.self, forKey: .hiddenAppOpacity) ?? 0.5
         self.launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
         self.itemSpacing = try container.decodeIfPresent(Double.self, forKey: .itemSpacing) ?? 12.0
+        self.showNowPlayingWidget = try container.decodeIfPresent(Bool.self, forKey: .showNowPlayingWidget) ?? true
     }
 
     /// Default dock configuration with standard macOS applications and an example folder.

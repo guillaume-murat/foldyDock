@@ -50,6 +50,8 @@ public final class DockViewModel: ObservableObject {
 
     @Published public var isResizing: Bool = false
     @Published public var isTrashEmpty: Bool = true
+    @Published public var nowPlayingState: NowPlayingState = .idle
+    public let nowPlayingService: NowPlayingServiceProviding
     public static let minIconSize: Double = 32.0
     public static let maxIconSize: Double = 96.0
     private var initialDragIconSize: Double?
@@ -59,30 +61,85 @@ public final class DockViewModel: ObservableObject {
     public let launchAtLoginService: LaunchAtLoginProviding
     private var cancellables = Set<AnyCancellable>()
 
-    public convenience init() {
-        self.init(persistenceService: .shared, appObserver: .shared, launchAtLoginService: SMAppLaunchAtLoginProvider())
+    public convenience init(
+        nowPlayingService: NowPlayingServiceProviding = MediaRemoteNowPlayingService.shared
+    ) {
+        self.init(
+            persistenceService: .shared,
+            appObserver: .shared,
+            launchAtLoginService: SMAppLaunchAtLoginProvider(),
+            nowPlayingService: nowPlayingService
+        )
     }
 
-    public convenience init(persistenceService: DockPersistenceService) {
-        self.init(persistenceService: persistenceService, appObserver: .shared, launchAtLoginService: SMAppLaunchAtLoginProvider())
+    public convenience init(
+        persistenceService: DockPersistenceService,
+        nowPlayingService: NowPlayingServiceProviding = MediaRemoteNowPlayingService.shared
+    ) {
+        self.init(
+            persistenceService: persistenceService,
+            appObserver: .shared,
+            launchAtLoginService: SMAppLaunchAtLoginProvider(),
+            nowPlayingService: nowPlayingService
+        )
     }
 
     public init(
         persistenceService: DockPersistenceService,
         appObserver: AppObserverService,
-        launchAtLoginService: LaunchAtLoginProviding = SMAppLaunchAtLoginProvider()
+        launchAtLoginService: LaunchAtLoginProviding = SMAppLaunchAtLoginProvider(),
+        nowPlayingService: NowPlayingServiceProviding = MediaRemoteNowPlayingService.shared
     ) {
         self.persistenceService = persistenceService
         self.appObserver = appObserver
         self.launchAtLoginService = launchAtLoginService
+        self.nowPlayingService = nowPlayingService
         self.config = persistenceService.loadConfig()
         self.config.launchAtLogin = launchAtLoginService.isEnabled
         self.items = self.config.items.filter { $0.type != .settings }
+        self.nowPlayingState = nowPlayingService.currentState
 
         setupAppObserverCallbacks()
+        setupNowPlayingSubscription()
         synchronizeRunningUnpinnedApps()
         updateTrashStatus()
         setupTrashTimer()
+    }
+
+    private func setupNowPlayingSubscription() {
+        nowPlayingService.statePublisher
+            .sink { [weak self] state in
+                guard let self else { return }
+                if Thread.isMainThread {
+                    self.nowPlayingState = state
+                } else {
+                    DispatchQueue.main.async {
+                        self.nowPlayingState = state
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    public func togglePlayPause() {
+        nowPlayingService.playPause()
+    }
+
+    public func nextTrack() {
+        nowPlayingService.nextTrack()
+    }
+
+    public func previousTrack() {
+        nowPlayingService.previousTrack()
+    }
+
+    public func activateNowPlayingSource() {
+        nowPlayingService.activateSource()
+    }
+
+    public func toggleNowPlayingWidget() {
+        config.showNowPlayingWidget.toggle()
+        saveConfig()
     }
 
     private func setupAppObserverCallbacks() {

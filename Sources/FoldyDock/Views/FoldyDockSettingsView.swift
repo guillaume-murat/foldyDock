@@ -454,6 +454,23 @@ public struct FoldyDockSettingsView: View {
 
                             Divider()
 
+                            Toggle("Afficher le widget de musique", isOn: Binding(
+                                get: { viewModel.config.showNowPlayingWidget },
+                                set: { _ in
+                                    withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                                        viewModel.toggleNowPlayingWidget()
+                                    }
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .font(.system(size: 13, weight: .medium))
+
+                            Text("Affiche le widget multimédia Now Playing entre les applications et la corbeille.")
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.secondary)
+
+                            Divider()
+
                             Toggle("Afficher la corbeille", isOn: Binding(
                                 get: { viewModel.config.showTrash },
                                 set: { _ in
