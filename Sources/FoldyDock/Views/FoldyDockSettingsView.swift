@@ -35,7 +35,8 @@ public struct FoldyDockSettingsView: View {
 
                 Spacer()
 
-                Text("v1.1.1")
+                let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.0"
+                Text("v\(appVersion)")
                     .font(.system(size: 11, weight: .medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)

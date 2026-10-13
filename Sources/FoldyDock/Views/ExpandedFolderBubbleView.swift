@@ -354,8 +354,12 @@ private struct RunningSubAppItemView: View {
             if hovering {
                 viewModel.hoveredItemId = subApp.id
                 viewModel.refreshWindowCounts()
-            } else if viewModel.hoveredItemId == subApp.id {
-                viewModel.hoveredItemId = nil
+                viewModel.handleItemHoverStart(item: subApp)
+            } else {
+                if viewModel.hoveredItemId == subApp.id {
+                    viewModel.hoveredItemId = nil
+                }
+                viewModel.handleItemHoverEnd(item: subApp)
             }
         }
         .onTapGesture {

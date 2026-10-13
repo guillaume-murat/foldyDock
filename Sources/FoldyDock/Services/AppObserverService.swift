@@ -670,29 +670,6 @@ public final class AppObserverService: ObservableObject {
         _ = AXUIElementCopyAttributeValue(appElem, kAXWindowsAttribute as CFString, &winListRef)
         let wins = (winListRef as? [AXUIElement]) ?? []
 
-        // Strategy 1: If Window menu item matches, perform kAXPressAction to switch Space
-        let targetMenuTitle = window.menuTitle ?? (window.title.isEmpty ? nil : window.title)
-        if let target = targetMenuTitle, let subItems = Self.findWindowMenuItems(appElem: appElem) {
-            for sub in subItems {
-                let sTitle = (Self.copyAXAttribute(sub, kAXTitleAttribute as String) as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                if sTitle == target || sTitle.hasPrefix(target) || target.hasPrefix(sTitle) {
-                    if AXUIElementPerformAction(sub, kAXPressAction as CFString) == .success {
-                        break
-                    }
-                }
-            }
-        }
-
-        // Strategy 2: If the window is on the current Space, unminimize and raise directly
-        if let matchingAXWindow = wins.first(where: { w in
-            if let wid = window.windowID, Self.windowID(for: w) == wid { return true }
-            let t = (Self.copyAXAttribute(w, kAXTitleAttribute as String) as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return !t.isEmpty && (t == window.title || t.hasPrefix(window.title) || window.title.hasPrefix(t))
-        }) {
-            Self.unminimizeWindow(matchingAXWindow)
-            Self.raiseWindow(matchingAXWindow, appElement: appElem)
-        }
-
         // 1. Unhide if hidden
         if runningApp.isHidden {
             runningApp.unhide()
@@ -702,13 +679,42 @@ public final class AppObserverService: ObservableObject {
         self.activeAppBundleId = runningApp.bundleIdentifier
         if #available(macOS 14.0, *) {
             NSApp.yieldActivation(to: runningApp)
-            runningApp.activate(options: [.activateAllWindows])
+            runningApp.activate(options: [])
         } else {
-            runningApp.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+            runningApp.activate(options: [.activateIgnoringOtherApps])
         }
 
-        // 3. AppleScript reopen & activate to ensure Mission Control switches Spaces if needed
-        executeAppleScript(bundleIdentifier: bundleIdentifier, command: "reopen\nactivate")
+        // 3. Strategy 1: If Window menu item matches, perform kAXPressAction to switch Space and select the window
+        var menuActionSucceeded = false
+        let targetMenuTitle = window.menuTitle ?? (window.title.isEmpty ? nil : window.title)
+        if let target = targetMenuTitle, let subItems = Self.findWindowMenuItems(appElem: appElem) {
+            for sub in subItems {
+                let sTitle = (Self.copyAXAttribute(sub, kAXTitleAttribute as String) as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if !sTitle.isEmpty && (sTitle == target || sTitle.hasPrefix(target) || target.hasPrefix(sTitle)) {
+                    if AXUIElementPerformAction(sub, kAXPressAction as CFString) == .success {
+                        menuActionSucceeded = true
+                        break
+                    }
+                }
+            }
+        }
+
+        // 4. Strategy 2: If the window is on the current Space, unminimize and raise directly
+        var axRaised = false
+        if let matchingAXWindow = wins.first(where: { w in
+            if let wid = window.windowID, Self.windowID(for: w) == wid { return true }
+            let t = (Self.copyAXAttribute(w, kAXTitleAttribute as String) as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return !t.isEmpty && (t == window.title || t.hasPrefix(window.title) || window.title.hasPrefix(t))
+        }) {
+            Self.unminimizeWindow(matchingAXWindow)
+            Self.raiseWindow(matchingAXWindow, appElement: appElem)
+            axRaised = true
+        }
+
+        // 5. Fallback only if neither Window menu nor direct AX window raise succeeded
+        if !menuActionSucceeded && !axRaised {
+            executeAppleScript(bundleIdentifier: bundleIdentifier, command: "reopen\nactivate")
+        }
     }
 
     #if DEBUG
