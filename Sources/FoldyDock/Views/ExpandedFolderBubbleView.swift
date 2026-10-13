@@ -392,7 +392,7 @@ private struct RunningSubAppItemView: View {
             GeometryReader { geo in
                 Color.clear.preference(
                     key: ItemFramesPreferenceKey.self,
-                    value: isTerminating ? [:] : [subApp.id: geo.frame(in: .named("dockContainer"))]
+                    value: isTerminating ? [:] : [subApp.id: geo.frame(in: .global)]
                 )
             }
         )

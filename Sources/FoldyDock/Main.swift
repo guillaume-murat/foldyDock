@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowPickerPopover: NSPopover?
 
     static func main() {
+        setlinebuf(stdout)
         let app = NSApplication.shared
         let delegate = AppDelegate()
         app.delegate = delegate
@@ -107,9 +108,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showFolderPopover(for folder: DockItem, viewModel: DockViewModel) {
         closeFolderPopover()
-        guard let panel = self.dockPanel, let anchorView = panel.contentView else { return }
+        guard let panel = self.dockPanel, let anchorView = self.hostingView ?? panel.contentView else { return }
 
-        let dockHeight = panel.frame.height
         let itemRect: CGRect
         if let frame = viewModel.itemFrames[folder.id] {
             let runningSubItems = viewModel.runningSubItems(for: folder)
@@ -122,9 +122,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 folderWidth = frame.width
                 folderX = frame.origin.x
             }
-            itemRect = CGRect(x: folderX, y: dockHeight - 2, width: folderWidth, height: 1)
+            itemRect = CGRect(x: folderX, y: 0, width: folderWidth, height: 1)
         } else {
-            itemRect = CGRect(x: anchorView.bounds.midX - 40, y: dockHeight - 2, width: 80, height: 1)
+            itemRect = CGRect(x: anchorView.bounds.midX - 40, y: 0, width: 80, height: 1)
         }
 
         let popover = NSPopover()
@@ -134,9 +134,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingController = NSHostingController(rootView: popoverView)
         popover.contentViewController = hostingController
         popover.delegate = self
-        popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .maxY)
+        popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .minY)
         self.folderPopover = popover
-        adjustPopoverWindowAboveDock(popover, panel: panel)
     }
 
     private func closeFolderPopover() {
@@ -148,14 +147,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showWindowPickerPopover(for item: DockItem, viewModel: DockViewModel) {
         closeWindowPickerPopover()
-        guard let panel = self.dockPanel, let anchorView = panel.contentView else { return }
+        guard let panel = self.dockPanel, let anchorView = self.hostingView ?? panel.contentView else { return }
 
-        let dockHeight = panel.frame.height
         let itemRect: CGRect
         if let frame = viewModel.itemFrames[item.id] {
-            itemRect = CGRect(x: frame.origin.x, y: dockHeight - 2, width: frame.width, height: 1)
+            itemRect = CGRect(x: frame.origin.x, y: 0, width: frame.width, height: 1)
         } else {
-            itemRect = CGRect(x: anchorView.bounds.midX - 40, y: dockHeight - 2, width: 80, height: 1)
+            itemRect = CGRect(x: anchorView.bounds.midX - 40, y: 0, width: 80, height: 1)
         }
 
         let popover = NSPopover()
@@ -165,31 +163,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hostingController = NSHostingController(rootView: popoverView)
         popover.contentViewController = hostingController
         popover.delegate = self
-        popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .maxY)
+        popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .minY)
         self.windowPickerPopover = popover
-        adjustPopoverWindowAboveDock(popover, panel: panel)
-    }
-
-    private func adjustPopoverWindowAboveDock(_ popover: NSPopover, panel: DockPanel) {
-        // Ensure popover window never overlaps the dock bar vertically
-        DispatchQueue.main.async {
-            let targetMinY = panel.frame.maxY
-            if let popoverWindow = popover.contentViewController?.view.window {
-                if popoverWindow.frame.minY < targetMinY {
-                    var f = popoverWindow.frame
-                    f.origin.y = targetMinY
-                    popoverWindow.setFrame(f, display: true)
-                }
-            } else {
-                for w in NSApp.windows where NSStringFromClass(type(of: w)).contains("Popover") {
-                    if w.frame.minY < targetMinY {
-                        var f = w.frame
-                        f.origin.y = targetMinY
-                        w.setFrame(f, display: true)
-                    }
-                }
-            }
-        }
     }
 
     private func closeWindowPickerPopover() {
