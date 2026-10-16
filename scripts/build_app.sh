@@ -121,6 +121,8 @@ cat <<EOF > "$CONTENTS/Info.plist"
 </plist>
 EOF
 
+codesign --force --deep --sign - --identifier "com.foldydock.FoldyDock" "$APP_BUNDLE" 2>/dev/null || true
+
 echo "✅ $APP_NAME assembled successfully in $DIST_DIR!"
 
 if [ "$ACTION" = "install" ]; then

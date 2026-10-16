@@ -108,9 +108,34 @@ struct WindowCyclingTests {
         let indices = WindowCycleHelper.candidateWindowIndices(items: menuItems)
         #expect(indices == [3, 4, 5])
 
-        // When checked is index 3 (relative 0), next index is relative 1 -> target is 4 (Window 2)
+        // Whenchecked is index 3 (relative 0), next index is relative 1 -> target is 4 (Window 2)
         let checkedRelativeIndex = indices.firstIndex(of: 3)
         let nextRelativeIndex = WindowCycleHelper.nextWindowIndex(currentIndex: checkedRelativeIndex, windowCount: indices.count)
         #expect(indices[nextRelativeIndex] == 4)
+    }
+
+    @Test("WindowCycleHelper reconciles stable string keys across z-order shifts without ping-ponging")
+    func testReconcileStableKeys() {
+        var stableKeys: [String] = []
+        let zOrderedSnapshots = [
+            ["wid-10", "wid-20", "wid-30"],
+            ["wid-20", "wid-10", "wid-30"],
+            ["wid-30", "wid-20", "wid-10"]
+        ]
+
+        var lastKey: String? = "wid-10"
+        var visited: [String] = []
+
+        for snapshot in zOrderedSnapshots {
+            stableKeys = WindowCycleHelper.reconcileStableKeys(existingKeys: stableKeys, currentKeys: snapshot)
+            let currentIdx = lastKey.flatMap { stableKeys.firstIndex(of: $0) }
+            let nextIdx = WindowCycleHelper.nextWindowIndex(currentIndex: currentIdx, windowCount: stableKeys.count)
+            let nextKey = stableKeys[nextIdx]
+            visited.append(nextKey)
+            lastKey = nextKey
+        }
+
+        #expect(stableKeys == ["wid-10", "wid-20", "wid-30"])
+        #expect(visited == ["wid-20", "wid-30", "wid-10"])
     }
 }

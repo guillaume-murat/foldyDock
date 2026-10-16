@@ -12,6 +12,16 @@ public enum WindowCycleHelper {
         return (current + 1) % windowCount
     }
 
+    /// Reconciles a stable sequence of arbitrary identifiers (such as window titles or stable keys)
+    /// across z-order changes so round-robin rotation never ping-pongs between the top 2 windows.
+    public static func reconcileStableKeys(existingKeys: [String], currentKeys: [String]) -> [String] {
+        var updated = existingKeys.filter { currentKeys.contains($0) }
+        for key in currentKeys where !updated.contains(key) {
+            updated.append(key)
+        }
+        return updated
+    }
+
     /// Evaluates whether an application activation should trigger window focus cycling.
     /// Cycling only triggers when the application is already the frontmost active app, is not hidden,
     /// and has multiple eligible windows open.
