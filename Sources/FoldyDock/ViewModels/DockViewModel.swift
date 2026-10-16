@@ -58,6 +58,16 @@ public final class DockViewModel: ObservableObject {
     @Published public var isResizing: Bool = false
     @Published public var isTrashEmpty: Bool = true
     @Published public var nowPlayingState: NowPlayingState = .idle
+    @Published public var isSystemDark: Bool = DockTheme.currentSystemIsDark()
+
+    public var theme: DockTheme {
+        DockTheme.resolve(mode: config.appearanceMode, isSystemDark: isSystemDark)
+    }
+
+    public func setAppearanceMode(_ mode: AppearanceMode) {
+        config.appearanceMode = mode
+        saveConfig()
+    }
     public let nowPlayingService: NowPlayingServiceProviding
     public static let minIconSize: Double = 32.0
     public static let maxIconSize: Double = 96.0
@@ -108,9 +118,21 @@ public final class DockViewModel: ObservableObject {
 
         setupAppObserverCallbacks()
         setupNowPlayingSubscription()
+        setupAppearanceObservation()
         synchronizeRunningUnpinnedApps()
         updateTrashStatus()
         setupTrashTimer()
+    }
+
+    private func setupAppearanceObservation() {
+        DistributedNotificationCenter.default().publisher(for: Notification.Name("AppleInterfaceThemeChangedNotification"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                self.isSystemDark = DockTheme.currentSystemIsDark()
+                self.onConfigUpdated?(self.config)
+            }
+            .store(in: &cancellables)
     }
 
     private func setupNowPlayingSubscription() {

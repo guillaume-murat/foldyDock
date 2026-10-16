@@ -13,6 +13,7 @@ public struct DockContainerView: View {
     public var body: some View {
         let dockHeight = viewModel.dockHeight
         let cornerRadius = dockHeight * 0.285
+        let theme = viewModel.theme
 
         HStack(spacing: viewModel.config.itemSpacing) {
             // FoldyDock Applications Launcher at the far left
@@ -37,7 +38,7 @@ public struct DockContainerView: View {
             // Divider between pinned items and unpinned running applications
             if !viewModel.unpinnedRunningItems.isEmpty {
                 Rectangle()
-                    .fill(Color.white.opacity(0.25))
+                    .fill(theme.separatorColor)
                     .frame(width: 1, height: viewModel.config.iconSize * 0.65)
                     .padding(.horizontal, 2)
                     .contentShape(Rectangle().inset(by: -6))
@@ -68,7 +69,7 @@ public struct DockContainerView: View {
             // NowPlayingWidget immediately to the left of Trash, surrounded by dividers
             if viewModel.config.showNowPlayingWidget {
                 Rectangle()
-                    .fill(Color.white.opacity(0.25))
+                    .fill(theme.separatorColor)
                     .frame(width: 1, height: viewModel.config.iconSize * 0.65)
                     .padding(.horizontal, 2)
 
@@ -80,7 +81,7 @@ public struct DockContainerView: View {
 
                 if viewModel.config.showTrash {
                     Rectangle()
-                        .fill(Color.white.opacity(0.25))
+                        .fill(theme.separatorColor)
                         .frame(width: 1, height: viewModel.config.iconSize * 0.65)
                         .padding(.horizontal, 2)
                 }
@@ -101,7 +102,7 @@ public struct DockContainerView: View {
 
                 if !hasPrecedingSeparator {
                     Rectangle()
-                        .fill(Color.white.opacity(0.25))
+                        .fill(theme.separatorColor)
                         .frame(width: 1, height: viewModel.config.iconSize * 0.65)
                         .padding(.horizontal, 2)
                 }
@@ -128,7 +129,8 @@ public struct DockContainerView: View {
                 VisualEffectBackground(
                     material: .hudWindow,
                     blendingMode: .behindWindow,
-                    cornerRadius: cornerRadius
+                    cornerRadius: cornerRadius,
+                    isDark: theme.isDark
                 )
 
                 // Elegant subtle border
@@ -136,8 +138,8 @@ public struct DockContainerView: View {
                     .stroke(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.35),
-                                Color.white.opacity(0.12)
+                                theme.dockBorderTop,
+                                theme.dockBorderBottom
                             ],
                             startPoint: .top,
                             endPoint: .bottom

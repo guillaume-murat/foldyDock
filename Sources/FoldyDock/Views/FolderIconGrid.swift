@@ -11,6 +11,7 @@ public struct FolderIconGrid: View {
     public var subItemWindowCounts: [UUID: Int]
     public var hiddenSubItemIds: Set<UUID>
     public var hiddenAppOpacity: Double
+    public var theme: DockTheme
 
     public init(
         item: DockItem,
@@ -21,7 +22,8 @@ public struct FolderIconGrid: View {
         runningSubItemIds: Set<UUID> = [],
         subItemWindowCounts: [UUID: Int] = [:],
         hiddenSubItemIds: Set<UUID> = [],
-        hiddenAppOpacity: Double = 0.5
+        hiddenAppOpacity: Double = 0.5,
+        theme: DockTheme = DockTheme(isDark: true)
     ) {
         self.item = item
         self.size = size
@@ -32,6 +34,7 @@ public struct FolderIconGrid: View {
         self.subItemWindowCounts = subItemWindowCounts
         self.hiddenSubItemIds = hiddenSubItemIds
         self.hiddenAppOpacity = hiddenAppOpacity
+        self.theme = theme
     }
 
     private var subItems: [DockItem] {
@@ -55,8 +58,8 @@ public struct FolderIconGrid: View {
                         )
                         : LinearGradient(
                             colors: [
-                                Color(white: 0.22).opacity(0.72),
-                                Color(white: 0.14).opacity(0.65)
+                                theme.folderSurfaceTop,
+                                theme.folderSurfaceBottom
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -87,7 +90,7 @@ public struct FolderIconGrid: View {
                                     endPoint: .bottomTrailing
                                 )
                                 : LinearGradient(
-                                    colors: [Color.white.opacity(0.28), Color.white.opacity(0.14)],
+                                    colors: [theme.folderStrokeTop, theme.folderStrokeBottom],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 ),
@@ -95,7 +98,7 @@ public struct FolderIconGrid: View {
                         )
                 )
                 .shadow(
-                    color: isHighlighted ? Color.blue.opacity(0.95) : Color.black.opacity(0.2),
+                    color: isHighlighted ? Color.blue.opacity(0.95) : Color.black.opacity(theme.isDark ? 0.2 : 0.10),
                     radius: isHighlighted ? 12 : 3,
                     x: 0,
                     y: isHighlighted ? 0 : 1.5
@@ -115,7 +118,7 @@ public struct FolderIconGrid: View {
                     .font(.system(size: size * 0.42))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.65), Color.white.opacity(0.35)],
+                            colors: [theme.emptyFolderIconTop, theme.emptyFolderIconBottom],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -164,7 +167,9 @@ public struct FolderIconGrid: View {
                         MultiWindowIndicatorView(
                             windowCount: wCount,
                             dotSize: layout.dotSize,
-                            spacing: max(0.6, layout.dotSpacing * 0.8)
+                            spacing: max(0.6, layout.dotSpacing * 0.8),
+                            color: theme.indicatorDotColor,
+                            shadowColor: theme.indicatorDotShadowColor
                         )
                     }
                 }

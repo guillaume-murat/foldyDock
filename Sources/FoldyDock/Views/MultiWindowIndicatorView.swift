@@ -35,11 +35,21 @@ public struct MultiWindowIndicatorView: View {
     public let windowCount: Int
     public let dotSize: CGFloat
     public let spacing: CGFloat
+    public let color: Color
+    public let shadowColor: Color
 
-    public init(windowCount: Int, dotSize: CGFloat = 4.0, spacing: CGFloat = 3.0) {
+    public init(
+        windowCount: Int,
+        dotSize: CGFloat = 4.0,
+        spacing: CGFloat = 3.0,
+        color: Color = Color.white.opacity(0.95),
+        shadowColor: Color = Color.white.opacity(0.8)
+    ) {
         self.windowCount = windowCount
         self.dotSize = dotSize
         self.spacing = spacing
+        self.color = color
+        self.shadowColor = shadowColor
     }
 
     public var body: some View {
@@ -47,41 +57,41 @@ public struct MultiWindowIndicatorView: View {
             if windowCount >= 4 {
                 // Au-delà de 3 fenêtres : 2 pastilles côte à côte et une petite icône +
                 Circle()
-                    .fill(Color.white.opacity(0.95))
+                    .fill(color)
                     .frame(width: dotSize * 0.88, height: dotSize * 0.88)
-                    .shadow(color: Color.white.opacity(0.8), radius: dotSize * 0.4)
+                    .shadow(color: shadowColor, radius: dotSize * 0.4)
 
                 Circle()
-                    .fill(Color.white.opacity(0.95))
+                    .fill(color)
                     .frame(width: dotSize * 0.88, height: dotSize * 0.88)
-                    .shadow(color: Color.white.opacity(0.8), radius: dotSize * 0.4)
+                    .shadow(color: shadowColor, radius: dotSize * 0.4)
 
                 MiniPlusShape()
-                    .fill(Color.white.opacity(0.95))
+                    .fill(color)
                     .frame(width: dotSize * 0.88, height: dotSize * 0.88)
-                    .shadow(color: Color.white.opacity(0.8), radius: dotSize * 0.4)
+                    .shadow(color: shadowColor, radius: dotSize * 0.4)
             } else if windowCount == 3 {
                 // 3 fenêtres : 3 pastilles côte à côte
                 ForEach(0..<3, id: \.self) { _ in
                     Circle()
-                        .fill(Color.white.opacity(0.95))
+                        .fill(color)
                         .frame(width: dotSize * 0.88, height: dotSize * 0.88)
-                        .shadow(color: Color.white.opacity(0.8), radius: dotSize * 0.4)
+                        .shadow(color: shadowColor, radius: dotSize * 0.4)
                 }
             } else if windowCount == 2 {
                 // 2 fenêtres : 2 pastilles côte à côte
                 ForEach(0..<2, id: \.self) { _ in
                     Circle()
-                        .fill(Color.white.opacity(0.95))
+                        .fill(color)
                         .frame(width: dotSize, height: dotSize)
-                        .shadow(color: Color.white.opacity(0.8), radius: dotSize * 0.5)
+                        .shadow(color: shadowColor, radius: dotSize * 0.5)
                 }
             } else {
                 // 1 fenêtre (ou sans fenêtre ouverte) : 1 pastille
                 Circle()
-                    .fill(Color.white.opacity(0.95))
+                    .fill(color)
                     .frame(width: dotSize, height: dotSize)
-                    .shadow(color: Color.white.opacity(0.8), radius: dotSize * 0.5)
+                    .shadow(color: shadowColor, radius: dotSize * 0.5)
             }
         }
         .frame(height: dotSize, alignment: .center)

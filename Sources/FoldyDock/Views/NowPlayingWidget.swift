@@ -40,6 +40,10 @@ public struct NowPlayingWidget: View {
         max(9.0, min(11.5, iconSize * 0.17))
     }
 
+    private var theme: DockTheme {
+        viewModel.theme
+    }
+
     public var body: some View {
         ZStack(alignment: .center) {
             // 1. Main Capsule (idle or active) - centered vertically
@@ -54,19 +58,19 @@ public struct NowPlayingWidget: View {
             .frame(height: capsuleHeight)
             .background(
                 RoundedRectangle(cornerRadius: capsuleHeight * 0.22, style: .continuous)
-                    .fill(Color.white.opacity(isHovered ? 0.08 : 0.04))
+                    .fill(theme.widgetBackground(isHovered: isHovered))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: capsuleHeight * 0.22, style: .continuous)
-                    .stroke(Color.white.opacity(isHovered ? 0.20 : 0.10), lineWidth: 0.8)
+                    .stroke(theme.widgetStroke(isHovered: isHovered), lineWidth: 0.8)
             )
 
             // 2. Title "Music" positioned above the capsule at fixed distance
             if viewModel.config.showAppTitles {
                 Text("Music")
                     .font(.system(size: labelFontSize, weight: .medium, design: .rounded))
-                    .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
-                    .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
+                    .foregroundColor(theme.labelColor(isHovered: isHovered))
+                    .shadow(color: theme.labelShadowColor, radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .offset(y: -(iconSize / 2 + viewModel.config.labelDistance))
@@ -75,9 +79,9 @@ public struct NowPlayingWidget: View {
             // 3. Indicator dot positioned below the capsule when music is currently playing
             if viewModel.nowPlayingState.isPlaying {
                 Circle()
-                    .fill(Color.white.opacity(0.95))
+                    .fill(theme.indicatorDotColor)
                     .frame(width: 4, height: 4)
-                    .shadow(color: Color.white.opacity(0.8), radius: 2)
+                    .shadow(color: theme.indicatorDotShadowColor, radius: 2)
                     .offset(y: iconSize / 2 + viewModel.config.labelDistance)
                     .transition(.scale.combined(with: .opacity))
             }
@@ -121,16 +125,16 @@ public struct NowPlayingWidget: View {
             HStack(spacing: 8) {
                 Image(systemName: "music.note")
                     .font(.system(size: buttonIconSize * 1.15, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.35))
+                    .foregroundColor(theme.widgetIdleIconColor)
                     .frame(width: artworkSize, height: artworkSize)
                     .background(
                         RoundedRectangle(cornerRadius: artworkSize * 0.24, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(theme.widgetIdleIconBackground)
                     )
 
                 Text("No Music")
                     .font(.system(size: titleFontSize, weight: .medium))
-                    .foregroundColor(.white.opacity(0.40))
+                    .foregroundColor(theme.widgetIdleTextColor)
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
                     .padding(.trailing, 8)
@@ -158,13 +162,13 @@ public struct NowPlayingWidget: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(viewModel.nowPlayingState.title ?? "Unknown Title")
                             .font(.system(size: titleFontSize, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.95))
+                            .foregroundColor(theme.widgetTitleColor)
                             .lineLimit(1)
                             .truncationMode(.tail)
 
                         Text(viewModel.nowPlayingState.artist ?? "Unknown Artist")
                             .font(.system(size: artistFontSize, weight: .medium))
-                            .foregroundColor(.white.opacity(0.55))
+                            .foregroundColor(theme.widgetArtistColor)
                             .lineLimit(1)
                             .truncationMode(.tail)
                     }
@@ -182,7 +186,7 @@ public struct NowPlayingWidget: View {
                 }) {
                     Image(systemName: "backward.fill")
                         .font(.system(size: buttonIconSize * 0.85, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.80))
+                        .foregroundColor(theme.widgetTransportSecondaryColor)
                         .frame(width: buttonIconSize * 1.8, height: buttonIconSize * 1.8)
                         .contentShape(Rectangle())
                 }
@@ -194,11 +198,11 @@ public struct NowPlayingWidget: View {
                 }) {
                     Image(systemName: viewModel.nowPlayingState.isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: buttonIconSize * 1.05, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(theme.widgetPlayIconColor)
                         .frame(width: buttonIconSize * 2.0, height: buttonIconSize * 2.0)
                         .background(
                             Circle()
-                                .fill(Color.white.opacity(0.18))
+                                .fill(theme.widgetPlayCircleBackground)
                         )
                         .contentShape(Circle())
                 }
@@ -210,7 +214,7 @@ public struct NowPlayingWidget: View {
                 }) {
                     Image(systemName: "forward.fill")
                         .font(.system(size: buttonIconSize * 0.85, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.80))
+                        .foregroundColor(theme.widgetTransportSecondaryColor)
                         .frame(width: buttonIconSize * 1.8, height: buttonIconSize * 1.8)
                         .contentShape(Rectangle())
                 }

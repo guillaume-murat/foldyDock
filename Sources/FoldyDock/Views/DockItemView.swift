@@ -62,6 +62,10 @@ public struct DockItemView: View {
         viewModel.terminatingItemIds.contains(item.id)
     }
 
+    private var theme: DockTheme {
+        viewModel.theme
+    }
+
     public var body: some View {
         ZStack(alignment: .center) {
             if isExpandedFolder {
@@ -136,23 +140,24 @@ public struct DockItemView: View {
                             runningSubItemIds: viewModel.runningSubItemIds(for: item),
                             subItemWindowCounts: viewModel.subItemWindowCounts(for: item),
                             hiddenSubItemIds: viewModel.hiddenSubItemIds(for: item),
-                            hiddenAppOpacity: viewModel.config.hiddenAppOpacity
+                            hiddenAppOpacity: viewModel.config.hiddenAppOpacity,
+                            theme: theme
                         )
                     case .separator:
                         Rectangle()
                             .fill(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(0.12),
-                                        Color.white.opacity(0.40),
-                                        Color.white.opacity(0.12)
+                                        theme.separatorEdgeColor,
+                                        theme.separatorCenterColor,
+                                        theme.separatorEdgeColor
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 )
                             )
                             .frame(width: 1.5, height: iconSize * 0.65)
-                            .shadow(color: Color.white.opacity(0.25), radius: 1)
+                            .shadow(color: theme.isDark ? Color.white.opacity(0.25) : Color.clear, radius: 1)
                     case .settings:
                         EmptyView()
                         .frame(width: iconSize, height: iconSize)
@@ -220,8 +225,8 @@ public struct DockItemView: View {
             if item.type == .folder && viewModel.config.showFolderTitles {
                 Text(item.title.uppercased())
                     .font(.system(size: folderFontSize, weight: .medium, design: .rounded))
-                    .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
-                    .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
+                    .foregroundColor(theme.labelColor(isHovered: isHovered))
+                    .shadow(color: theme.labelShadowColor, radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: max(itemWidth + 18, 92))
@@ -229,8 +234,8 @@ public struct DockItemView: View {
             } else if item.type == .app && viewModel.config.showAppTitles {
                 Text(item.title)
                     .font(.system(size: folderFontSize, weight: .medium, design: .rounded))
-                    .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
-                    .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
+                    .foregroundColor(theme.labelColor(isHovered: isHovered))
+                    .shadow(color: theme.labelShadowColor, radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: max(itemWidth + 18, 92))
@@ -327,13 +332,19 @@ public struct DockItemView: View {
         if item.type == .folder {
             // Sous les dossiers sur le dock, une simple pastille suffit
             Circle()
-                .fill(Color.white.opacity(0.95))
+                .fill(theme.indicatorDotColor)
                 .frame(width: 4, height: 4)
-                .shadow(color: Color.white.opacity(0.8), radius: 2)
+                .shadow(color: theme.indicatorDotShadowColor, radius: 2)
                 .offset(y: indicatorOffset)
         } else {
-            MultiWindowIndicatorView(windowCount: windowCount, dotSize: 4.0, spacing: 3.0)
-                .offset(y: indicatorOffset)
+            MultiWindowIndicatorView(
+                windowCount: windowCount,
+                dotSize: 4.0,
+                spacing: 3.0,
+                color: theme.indicatorDotColor,
+                shadowColor: theme.indicatorDotShadowColor
+            )
+            .offset(y: indicatorOffset)
         }
     }
 

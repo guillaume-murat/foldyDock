@@ -27,6 +27,10 @@ public struct ApplicationsPopoverView: View {
         }
     }
 
+    private var theme: DockTheme {
+        viewModel.theme
+    }
+
     public var body: some View {
         VStack(spacing: 12) {
             // Header: Logo, Title, Count, Search bar, and Actions
@@ -39,14 +43,14 @@ public struct ApplicationsPopoverView: View {
 
                 Text("Applications")
                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.popoverPrimaryText)
 
                 Text("\(filteredApps.count)")
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(theme.popoverSecondaryText)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
-                    .background(Capsule().fill(Color.white.opacity(0.16)))
+                    .background(Capsule().fill(theme.popoverControlFill))
 
                 Spacer()
 
@@ -54,12 +58,12 @@ public struct ApplicationsPopoverView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(theme.popoverSecondaryText)
 
                     TextField("Rechercher…", text: $searchText)
                         .textFieldStyle(.plain)
                         .font(.system(size: 12))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.popoverPrimaryText)
                         .focused($isSearchFocused)
                         .onSubmit {
                             if let firstApp = filteredApps.first {
@@ -71,7 +75,7 @@ public struct ApplicationsPopoverView: View {
                         Button(action: { searchText = "" }) {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 11))
-                                .foregroundStyle(.white.opacity(0.6))
+                                .foregroundStyle(theme.popoverSecondaryText)
                         }
                         .buttonStyle(.plain)
                     }
@@ -80,7 +84,7 @@ public struct ApplicationsPopoverView: View {
                 .padding(.vertical, 5)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.white.opacity(0.12))
+                        .fill(theme.popoverControlFill)
                 )
                 .frame(width: 140)
                 .contentShape(Rectangle())
@@ -95,7 +99,7 @@ public struct ApplicationsPopoverView: View {
                 }) {
                     Image(systemName: "arrow.up.right.square")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(theme.popoverSecondaryText)
                 }
                 .buttonStyle(.plain)
                 .help("Ouvrir le dossier Applications dans le Finder")
@@ -106,7 +110,7 @@ public struct ApplicationsPopoverView: View {
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(theme.popoverSecondaryText)
                 }
                 .buttonStyle(.plain)
                 .help("Fermer")
@@ -114,7 +118,7 @@ public struct ApplicationsPopoverView: View {
             .padding(.horizontal, 4)
 
             Divider()
-                .background(Color.white.opacity(0.15))
+                .background(theme.popoverDivider)
 
             // Grid of installed applications
             if discoveryService.isLoading && discoveryService.installedApps.isEmpty {
@@ -123,17 +127,17 @@ public struct ApplicationsPopoverView: View {
                         .scaleEffect(0.9)
                     Text("Chargement des applications…")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(theme.popoverSecondaryText)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if filteredApps.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 28))
-                        .foregroundStyle(.white.opacity(0.35))
+                        .foregroundStyle(theme.popoverSecondaryText)
                     Text("Aucune application trouvée")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(theme.popoverSecondaryText)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -156,15 +160,16 @@ public struct ApplicationsPopoverView: View {
                 VisualEffectBackground(
                     material: .hudWindow,
                     blendingMode: .behindWindow,
-                    cornerRadius: 16
+                    cornerRadius: 16,
+                    isDark: theme.isDark
                 )
 
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.35),
-                                Color.white.opacity(0.12)
+                                theme.dockBorderTop,
+                                theme.dockBorderBottom
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -199,6 +204,7 @@ public struct ApplicationsPopoverView: View {
             app: app,
             iconSize: appIconSize,
             isRunning: isRunning,
+            theme: theme,
             onLaunch: {
                 viewModel.launchInstalledApp(app)
             },
@@ -213,6 +219,7 @@ private struct AppGridItemCell: View {
     let app: InstalledApp
     let iconSize: CGFloat
     let isRunning: Bool
+    let theme: DockTheme
     let onLaunch: () -> Void
     let onPin: () -> Void
 
@@ -230,9 +237,9 @@ private struct AppGridItemCell: View {
 
                 if isRunning {
                     Circle()
-                        .fill(Color.white.opacity(0.95))
+                        .fill(theme.indicatorDotColor)
                         .frame(width: 4.5, height: 4.5)
-                        .shadow(color: Color.white.opacity(0.9), radius: 3)
+                        .shadow(color: theme.indicatorDotShadowColor, radius: 3)
                         .offset(y: 6)
                 }
             }
@@ -241,8 +248,8 @@ private struct AppGridItemCell: View {
 
             Text(app.name)
                 .font(.system(size: 11, weight: .medium, design: .rounded))
-                .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
-                .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
+                .foregroundColor(theme.labelColor(isHovered: isHovered))
+                .shadow(color: theme.labelShadowColor, radius: 1.5, x: 0, y: 1)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .truncationMode(.tail)
@@ -253,7 +260,7 @@ private struct AppGridItemCell: View {
         .padding(.horizontal, 4)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isHovered ? Color.white.opacity(0.12) : Color.clear)
+                .fill(isHovered ? theme.popoverControlFill : Color.clear)
         )
         .contentShape(Rectangle())
         .onHover { hovering in

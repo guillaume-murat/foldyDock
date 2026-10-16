@@ -16,6 +16,10 @@ public struct WindowPickerPopoverView: View {
         viewModel.activeWindowPickerList
     }
 
+    private var theme: DockTheme {
+        viewModel.theme
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Header: App Icon & Title
@@ -27,7 +31,7 @@ public struct WindowPickerPopoverView: View {
 
                 Text(item.title)
                     .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(theme.popoverPrimaryText)
                     .lineLimit(1)
 
                 Spacer(minLength: 4)
@@ -37,6 +41,7 @@ public struct WindowPickerPopoverView: View {
             .padding(.bottom, 2)
 
             Divider()
+                .background(theme.popoverDivider)
                 .padding(.horizontal, 6)
 
             // Window list
@@ -60,7 +65,7 @@ public struct WindowPickerPopoverView: View {
                                         .frame(width: 7, height: 7)
                                 } else {
                                     Circle()
-                                        .fill(Color.secondary.opacity(0.35))
+                                        .fill(theme.popoverSecondaryText.opacity(0.5))
                                         .frame(width: 5, height: 5)
                                 }
                             }
@@ -69,7 +74,7 @@ public struct WindowPickerPopoverView: View {
                             // Window title
                             Text(win.title)
                                 .font(.system(size: 12, weight: win.isMain ? .medium : .regular))
-                                .foregroundStyle(win.isMain ? .primary : (isRowHovered ? .primary : .secondary))
+                                .foregroundStyle(win.isMain || isRowHovered ? theme.popoverPrimaryText : theme.popoverSecondaryText)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
                                 .truncationMode(.tail)
@@ -79,7 +84,7 @@ public struct WindowPickerPopoverView: View {
                         .padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(isRowHovered ? Color.primary.opacity(0.08) : Color.clear)
+                                .fill(isRowHovered ? theme.popoverControlFill : Color.clear)
                         )
                     }
                     .buttonStyle(.plain)

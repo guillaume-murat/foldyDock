@@ -5,15 +5,18 @@ public struct VisualEffectBackground: NSViewRepresentable {
     public var material: NSVisualEffectView.Material
     public var blendingMode: NSVisualEffectView.BlendingMode
     public var cornerRadius: CGFloat
+    public var isDark: Bool?
 
     public init(
         material: NSVisualEffectView.Material = .hudWindow,
         blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
-        cornerRadius: CGFloat = 24.0
+        cornerRadius: CGFloat = 24.0,
+        isDark: Bool? = nil
     ) {
         self.material = material
         self.blendingMode = blendingMode
         self.cornerRadius = cornerRadius
+        self.isDark = isDark
     }
 
     public func makeNSView(context: Context) -> MaskedVisualEffectView {
@@ -21,6 +24,9 @@ public struct VisualEffectBackground: NSViewRepresentable {
         view.material = material
         view.blendingMode = blendingMode
         view.state = .active
+        if let isDark {
+            view.appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)
+        }
         return view
     }
 
@@ -28,6 +34,11 @@ public struct VisualEffectBackground: NSViewRepresentable {
         nsView.material = material
         nsView.blendingMode = blendingMode
         nsView.cornerRadius = cornerRadius
+        if let isDark {
+            nsView.appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)
+        } else {
+            nsView.appearance = nil
+        }
     }
 }
 

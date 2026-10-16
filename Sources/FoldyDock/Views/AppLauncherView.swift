@@ -22,6 +22,10 @@ public struct AppLauncherView: View {
         max(9.0, min(11.5, iconSize * 0.17))
     }
 
+    private var theme: DockTheme {
+        viewModel.theme
+    }
+
     public var body: some View {
         ZStack(alignment: .center) {
             // 1. FoldyDock Logo Icon
@@ -46,8 +50,8 @@ public struct AppLauncherView: View {
             if viewModel.config.showAppTitles {
                 Text("Foldy")
                     .font(.system(size: labelFontSize, weight: .medium, design: .rounded))
-                    .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
-                    .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
+                    .foregroundColor(theme.labelColor(isHovered: isHovered))
+                    .shadow(color: theme.labelShadowColor, radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: max(itemWidth + 18, 92))
@@ -100,6 +104,7 @@ public struct AppLauncherView: View {
             arrowEdge: .top
         ) {
             ApplicationsPopoverView(viewModel: viewModel)
+                .preferredColorScheme(theme.isDark ? .dark : .light)
         }
     }
 }

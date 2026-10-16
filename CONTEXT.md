@@ -39,3 +39,7 @@ _Avoid_: Autostart helper, login item daemon
 **Window Picker Popover**:
 A contextual popover displayed upon hovering an application icon with 2 or more open windows, listing their titles and states (active/minimized) to let the user select and focus a specific window directly.
 _Avoid_: Window switcher, Alt-tab preview, thumbnail bar
+
+**Appearance Mode**:
+The visual theme governing the dock and its popovers (`system`, `light`, or `dark`), either synchronizing automatically with macOS appearance or enforcing an explicit light or dark frosted glass palette.
+_Avoid_: Color scheme, skin, UI style

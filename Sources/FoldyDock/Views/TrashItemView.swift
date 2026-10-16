@@ -29,6 +29,10 @@ public struct TrashItemView: View {
         max(9.0, min(11.5, iconSize * 0.17))
     }
 
+    private var theme: DockTheme {
+        viewModel.theme
+    }
+
     private var trashIcon: NSImage {
         let isFull = !viewModel.isTrashEmpty
 
@@ -93,8 +97,8 @@ public struct TrashItemView: View {
             if viewModel.config.showAppTitles {
                 Text("Corbeille")
                     .font(.system(size: folderFontSize, weight: .medium, design: .rounded))
-                    .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
-                    .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
+                    .foregroundColor(theme.labelColor(isHovered: isHovered))
+                    .shadow(color: theme.labelShadowColor, radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: max(itemWidth + 18, 92))

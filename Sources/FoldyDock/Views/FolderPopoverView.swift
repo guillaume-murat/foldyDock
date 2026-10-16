@@ -33,6 +33,10 @@ public struct FolderPopoverView: View {
         currentFolder.subItems ?? []
     }
 
+    private var theme: DockTheme {
+        viewModel.theme
+    }
+
     public var body: some View {
         VStack(spacing: 12) {
             // Header: Folder Title + Close Button
@@ -44,15 +48,15 @@ public struct FolderPopoverView: View {
                     })
                     .textFieldStyle(.plain)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.popoverPrimaryText)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.12))
+                    .background(theme.popoverControlFill)
                     .cornerRadius(6)
                 } else {
                     Text(currentFolder.title.uppercased())
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.popoverPrimaryText)
                         .onTapGesture(count: 2) {
                             isEditingTitle = true
                         }
@@ -69,7 +73,7 @@ public struct FolderPopoverView: View {
                 }) {
                     Image(systemName: isEditingTitle ? "checkmark.circle.fill" : "pencil.circle")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(theme.popoverSecondaryText)
                 }
                 .buttonStyle(.plain)
 
@@ -79,24 +83,24 @@ public struct FolderPopoverView: View {
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(theme.popoverSecondaryText)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 6)
 
             Divider()
-                .background(Color.white.opacity(0.15))
+                .background(theme.popoverDivider)
 
             // Grid of applications
             if subItems.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "tray")
                         .font(.system(size: 28))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.popoverSecondaryText)
                     Text("Dossier vide")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(theme.popoverSecondaryText)
                 }
                 .frame(minWidth: 240, minHeight: 110)
             } else {
@@ -122,7 +126,7 @@ public struct FolderPopoverView: View {
         .fixedSize(horizontal: false, vertical: true)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(white: 0.14).opacity(0.35))
+                .fill(theme.folderPopoverBackground)
         )
         .coordinateSpace(name: "folderPopover")
         .onPreferenceChange(FolderItemFramesPreferenceKey.self) { frames in
@@ -158,6 +162,7 @@ private struct FolderSubItemView: View {
         let labelDistance = viewModel.config.labelDistance
         let isAppHidden = isRunning && viewModel.isItemHidden(item)
         let effectiveOpacity = isTerminating ? 0.0 : (isAppHidden ? (isHovered ? min(1.0, viewModel.config.hiddenAppOpacity + 0.25) : viewModel.config.hiddenAppOpacity) : 1.0)
+        let theme = viewModel.theme
 
         ZStack(alignment: .center) {
             // Drop insertion indicator on the left
@@ -212,8 +217,8 @@ private struct FolderSubItemView: View {
             if viewModel.config.showAppTitles {
                 Text(item.title)
                     .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
-                    .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
+                    .foregroundColor(theme.labelColor(isHovered: isHovered))
+                    .shadow(color: theme.labelShadowColor, radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: itemWidth)
@@ -224,8 +229,14 @@ private struct FolderSubItemView: View {
 
             // Active multi-window indicator positioned below the icon at fixed distance (identical to Dock)
             if isRunning && !isTerminating {
-                MultiWindowIndicatorView(windowCount: windowCount, dotSize: 4.5, spacing: 3.5)
-                    .offset(y: appIconSize / 2 + labelDistance)
+                MultiWindowIndicatorView(
+                    windowCount: windowCount,
+                    dotSize: 4.5,
+                    spacing: 3.5,
+                    color: theme.indicatorDotColor,
+                    shadowColor: theme.indicatorDotShadowColor
+                )
+                .offset(y: appIconSize / 2 + labelDistance)
             }
         }
         .frame(width: itemWidth, height: cellHeight, alignment: .center)

@@ -19,6 +19,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
     public var showNowPlayingWidget: Bool // Show Now Playing media widget in dock (default: true)
     public var showWindowPickerOnHover: Bool // Show Window Picker popover on app hover with >= 2 windows (default: true)
     public var windowPickerHoverDelay: Double // Delay in seconds before Window Picker popover appears (default: 0.35)
+    public var appearanceMode: AppearanceMode // Visual theme of the dock (.system, .light, .dark)
 
     public var hideDelay: Double {
         get { autohideDelay }
@@ -48,6 +49,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         case showNowPlayingWidget
         case showWindowPickerOnHover
         case windowPickerHoverDelay
+        case appearanceMode
     }
 
     public init(
@@ -68,7 +70,8 @@ public struct DockConfig: Codable, Equatable, Sendable {
         itemSpacing: Double = 12.0,
         showNowPlayingWidget: Bool = true,
         showWindowPickerOnHover: Bool = true,
-        windowPickerHoverDelay: Double = 0.35
+        windowPickerHoverDelay: Double = 0.35,
+        appearanceMode: AppearanceMode = .system
     ) {
         self.autohideEnabled = autohideEnabled
         self.autohideDelay = autohideDelay
@@ -88,6 +91,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.showNowPlayingWidget = showNowPlayingWidget
         self.showWindowPickerOnHover = showWindowPickerOnHover
         self.windowPickerHoverDelay = windowPickerHoverDelay
+        self.appearanceMode = appearanceMode
     }
 
     public init(from decoder: Decoder) throws {
@@ -110,6 +114,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.showNowPlayingWidget = try container.decodeIfPresent(Bool.self, forKey: .showNowPlayingWidget) ?? true
         self.showWindowPickerOnHover = try container.decodeIfPresent(Bool.self, forKey: .showWindowPickerOnHover) ?? true
         self.windowPickerHoverDelay = try container.decodeIfPresent(Double.self, forKey: .windowPickerHoverDelay) ?? 0.35
+        self.appearanceMode = try container.decodeIfPresent(AppearanceMode.self, forKey: .appearanceMode) ?? .system
     }
 
     /// Default dock configuration with standard macOS applications and an example folder.

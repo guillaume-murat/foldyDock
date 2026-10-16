@@ -387,6 +387,33 @@ public struct FoldyDockSettingsView: View {
                     // Section 3: Affichage & Titres
                     GroupBox {
                         VStack(alignment: .leading, spacing: 12) {
+                            // Appearance Mode Picker
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Thème d'apparence (Mode Clair / Sombre)")
+                                    .font(.system(size: 13, weight: .medium))
+
+                                Picker("", selection: Binding(
+                                    get: { viewModel.config.appearanceMode },
+                                    set: { newMode in
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            viewModel.setAppearanceMode(newMode)
+                                        }
+                                    }
+                                )) {
+                                    ForEach(AppearanceMode.allCases, id: \.self) { mode in
+                                        Text(mode.localizedTitle).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                .labelsHidden()
+
+                                Text("Suit automatiquement l'apparence de macOS ou force le thème clair/sombre pour le dock et ses popovers.")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Divider()
+
                             Toggle("Afficher les titres des applications", isOn: Binding(
                                 get: { viewModel.config.showAppTitles },
                                 set: { newValue in

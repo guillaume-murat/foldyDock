@@ -95,6 +95,10 @@ public struct ExpandedFolderBubbleView: View {
     @State private var isCapsuleHovered: Bool = false
     @State private var isFolderHovered: Bool = false
 
+    private var theme: DockTheme {
+        viewModel.theme
+    }
+
     public var body: some View {
         ZStack(alignment: .center) {
             // Insertion bar indicator on the left
@@ -136,7 +140,8 @@ public struct ExpandedFolderBubbleView: View {
                         runningSubItemIds: viewModel.runningSubItemIds(for: folder),
                         subItemWindowCounts: viewModel.subItemWindowCounts(for: folder),
                         hiddenSubItemIds: viewModel.hiddenSubItemIds(for: folder),
-                        hiddenAppOpacity: viewModel.config.hiddenAppOpacity
+                        hiddenAppOpacity: viewModel.config.hiddenAppOpacity,
+                        theme: theme
                     )
                     .dockBounce(isBouncing: viewModel.isItemBouncing(folder))
                 }
@@ -160,9 +165,9 @@ public struct ExpandedFolderBubbleView: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.06),
-                                    Color.white.opacity(0.24),
-                                    Color.white.opacity(0.06)
+                                    theme.separatorEdgeColor,
+                                    theme.separatorCenterColor,
+                                    theme.separatorEdgeColor
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -203,8 +208,8 @@ public struct ExpandedFolderBubbleView: View {
                             )
                             : LinearGradient(
                                 colors: [
-                                    Color(white: 0.22).opacity(0.72),
-                                    Color(white: 0.14).opacity(0.65)
+                                    theme.folderSurfaceTop,
+                                    theme.folderSurfaceBottom
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -220,7 +225,7 @@ public struct ExpandedFolderBubbleView: View {
                                         endPoint: .bottomTrailing
                                     )
                                     : LinearGradient(
-                                        colors: [Color.white.opacity(0.28), Color.white.opacity(0.14)],
+                                        colors: [theme.folderStrokeTop, theme.folderStrokeBottom],
                                         startPoint: .top,
                                         endPoint: .bottom
                                     ),
@@ -228,7 +233,7 @@ public struct ExpandedFolderBubbleView: View {
                             )
                     )
                     .shadow(
-                        color: isMergeTarget ? Color.blue.opacity(0.95) : Color.black.opacity(0.2),
+                        color: isMergeTarget ? Color.blue.opacity(0.95) : Color.black.opacity(theme.isDark ? 0.2 : 0.10),
                         radius: isMergeTarget ? 12 : 3,
                         x: 0,
                         y: isMergeTarget ? 0 : 1.5
@@ -248,8 +253,8 @@ public struct ExpandedFolderBubbleView: View {
             if viewModel.config.showFolderTitles {
                 Text(folder.title.uppercased())
                     .font(.system(size: folderFontSize, weight: .medium, design: .rounded))
-                    .foregroundColor((isCapsuleHovered || isFolderHovered) ? .white : Color.white.opacity(0.92))
-                    .shadow(color: Color.black.opacity(0.8), radius: 1.5, x: 0, y: 1)
+                    .foregroundColor(theme.labelColor(isHovered: isCapsuleHovered || isFolderHovered))
+                    .shadow(color: theme.labelShadowColor, radius: 1.5, x: 0, y: 1)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: max(40, capsuleWidth - 8))
@@ -258,9 +263,9 @@ public struct ExpandedFolderBubbleView: View {
 
             // 5. Pastille d'activité centrée sous toute la capsule
             Circle()
-                .fill(Color.white.opacity(0.95))
+                .fill(theme.indicatorDotColor)
                 .frame(width: 4, height: 4)
-                .shadow(color: Color.white.opacity(0.8), radius: 2)
+                .shadow(color: theme.indicatorDotShadowColor, radius: 2)
                 .offset(y: iconSize / 2 + viewModel.config.labelDistance)
         }
     }
@@ -305,6 +310,10 @@ private struct RunningSubAppItemView: View {
         viewModel.windowCount(for: subApp)
     }
 
+    private var theme: DockTheme {
+        viewModel.theme
+    }
+
     var body: some View {
         VStack(spacing: 2) {
             Spacer(minLength: 1)
@@ -313,8 +322,8 @@ private struct RunningSubAppItemView: View {
             if viewModel.config.showAppTitles {
                 Text(subApp.title)
                     .font(.system(size: subFontSize, weight: .medium, design: .rounded))
-                    .foregroundColor(isHovered ? .white : Color.white.opacity(0.92))
-                    .shadow(color: Color.black.opacity(0.8), radius: 1.0, x: 0, y: 0.5)
+                    .foregroundColor(theme.labelColor(isHovered: isHovered))
+                    .shadow(color: theme.labelShadowColor, radius: 1.0, x: 0, y: 0.5)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
                     .truncationMode(.tail)
@@ -339,7 +348,9 @@ private struct RunningSubAppItemView: View {
             MultiWindowIndicatorView(
                 windowCount: windowCount,
                 dotSize: 2.3,
-                spacing: 1.6
+                spacing: 1.6,
+                color: theme.indicatorDotColor,
+                shadowColor: theme.indicatorDotShadowColor
             )
             .opacity(isTerminating ? 0.0 : 1.0)
 
