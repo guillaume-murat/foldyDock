@@ -34,6 +34,8 @@
 
 - 📂 **iOS-Style Folders / Dossiers iOS** : Miniatures réactives, popover dédié et fusion par glisser-déposer.
 - 🎵 **Now Playing Widget / Widget Musical** : Contrôle universel de la musique (YouTube Music, Spotify, Apple Music...) avec boutons play/pause/skip.
+- 🗂️ **Window Picker Popover / Sélecteur de Fenêtres** : Survol d'une icône (2+ fenêtres) pour lister et sélectionner directement la fenêtre souhaitée.
+- 🌗 **Light & Dark Mode / Mode Clair & Sombre** : Thème adaptatif (Système, Clair, Sombre) avec contraste optimal sur tous les éléments et popovers.
 - 🔄 **Window Cycling / Rotation du Focus** : Clics successifs sur l'icône pour alterner entre les fenêtres d'une même application.
 - 🪟 **Frosted Glass / Verre Dépoli** : Barre flottante avec flou natif (`NSVisualEffectView`) sans vol de focus.
 - 🌐 **Multi-Space** : Visibilité fluide sur tous les Bureaux virtuels (`.canJoinAllSpaces`).
@@ -54,11 +56,13 @@
 - **Adaptive Artwork**: Displays album cover or official app icon.  
   *Affichage automatique de la pochette ou de l'icône de l'application source.*
 
-### 2. 🔄 Window Cycling / Rotation des Fenêtres
+### 2. 🔄 Window Cycling & Hover Picker / Rotation & Sélecteur de Fenêtres
+- **Hover Window Picker**: Hovering an application with 2+ open windows displays a frosted glass popover listing all window titles and states (active/minimized) for 1-click selection.  
+  *Sélecteur de fenêtres au survol (dès 2 fenêtres ouvertes) listant les titres et états (active/minimisée) pour cibler une fenêtre en un clic.*
 - **Round-Robin Focus**: Sequential cycling through all open windows of an app on dock icon clicks.  
   *Rotation séquentielle du focus entre les fenêtres ouvertes à chaque clic sur l'icône du dock.*
-- **Restore Minimized**: Automatically unminimizes windows when reached in the cycle.  
-  *Restaure automatiquement les fenêtres minimisées lorsqu'elles arrivent dans le cycle.*
+- **Restore Minimized**: Automatically unminimizes windows when reached in the cycle or selected in the picker.  
+  *Restaure automatiquement les fenêtres minimisées lorsqu'elles sont sélectionnées ou atteintes dans le cycle.*
 - **Multi-Space Support**: Automatically switches to the virtual Desktop of the target window.  
   *Bascule automatique sur le Bureau virtuel (Space) hébergeant la fenêtre ciblée.*
 
@@ -71,6 +75,8 @@
   *Tiroir d'applications avec icônes agrandies, réorganisation et renommage rapide.*
 
 ### 4. 🪟 Native Frosted Glass Dock / Dock Flottant en Verre Dépoli
+- **Light & Dark Themes**: Follows macOS system appearance automatically or forces Light / Dark mode across the dock, music widget, folders, and popovers.  
+  *Thèmes Clair & Sombre : suit automatiquement l'apparence de macOS ou force le mode Clair / Sombre sur le dock, le widget musical, les dossiers et les popovers.*
 - **Floating Panel**: Hardware-accelerated blur (`NSVisualEffectView`) at `.floating` level without stealing keyboard focus.  
   *Panneau flottant avec flou accéléré matériellement sans jamais voler le focus clavier.*
 - **All Spaces**: Visible across all virtual desktops and full-screen environments.  
