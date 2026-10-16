@@ -158,6 +158,14 @@ public struct ExpandedFolderBubbleView: View {
                 .contextMenu {
                     contextMenuItems
                 }
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(
+                            key: FolderAnchorFramesPreferenceKey.self,
+                            value: [folder.id: geo.frame(in: .global)]
+                        )
+                    }
+                )
 
                 // 2. Subtle Vertical Divider
                 if activeCount > 0 {

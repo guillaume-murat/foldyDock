@@ -114,6 +114,56 @@ struct WindowPickerTests {
         #expect(vm.isWindowPickerOpen == false)
     }
 
+    @Test("DockPopoverCoordinator enforces mutual exclusion between Folder, Window Picker, and Applications Launcher popovers and resolves anchor rects")
+    func testDockPopoverCoordinatorMutualExclusionAndAnchors() {
+        var coordinator = DockPopoverCoordinator()
+        let folder = DockItem(type: .folder, title: "DEV")
+        let app = DockItem(type: .app, title: "Firefox", bundleIdentifier: "org.mozilla.firefox")
+        let wins = [
+            AppWindowInfo(id: "1", title: "Win 1", isMinimized: false, isMain: true),
+            AppWindowInfo(id: "2", title: "Win 2", isMinimized: false, isMain: false)
+        ]
+
+        // 1. Open Window Picker
+        coordinator.openWindowPicker(item: app, windows: wins)
+        #expect(coordinator.activePopover == .windowPicker(item: app, windows: wins))
+        #expect(coordinator.hasActivePopover == true)
+
+        // 2. Opening Folder closes Window Picker automatically
+        let now = Date()
+        coordinator.toggleFolder(folder, now: now)
+        #expect(coordinator.activePopover == .folder(folder))
+        #expect(coordinator.activeWindowPickerItem == nil)
+
+        // 3. Opening Applications Launcher closes Folder automatically
+        coordinator.toggleApplicationsLauncher(now: now)
+        #expect(coordinator.activePopover == .applicationsLauncher)
+        #expect(coordinator.activeFolder == nil)
+
+        // 4. Outside-click dismissal debounce prevents immediate reopen within 0.4s
+        coordinator.closeFolder(now: now)
+        coordinator.openFolder(folder)
+        coordinator.closeFolder(now: now)
+        coordinator.toggleFolder(folder, now: now.addingTimeInterval(0.15))
+        #expect(coordinator.activeFolder == nil)
+
+        // After 0.45s, toggling opens the folder again
+        coordinator.toggleFolder(folder, now: now.addingTimeInterval(0.45))
+        #expect(coordinator.activeFolder == folder)
+
+        // 5. Anchor rect calculation uses exact FolderIconGrid frame when available
+        let itemFrames: [UUID: CGRect] = [
+            folder.id: CGRect(x: 200, y: 0, width: 160, height: 76)
+        ]
+        let anchorRect = DockPopoverCoordinator.anchorRect(
+            for: folder.id,
+            itemFrames: itemFrames,
+            dockHeight: 76,
+            fallbackMidX: 300
+        )
+        #expect(anchorRect == CGRect(x: 200, y: 74, width: 160, height: 1))
+    }
+
     @Test("fetchOpenWindowsAsync returns empty array for non-existent bundle")
     func testFetchOpenWindowsAsyncNonExistent() async {
         let observer = await AppObserverService()

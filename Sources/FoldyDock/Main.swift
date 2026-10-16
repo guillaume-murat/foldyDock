@@ -93,7 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if NSEvent.pressedMouseButtons == 0 && vm.dragSourceId != nil {
                 vm.clearDropState()
             }
-            return vm.activeFolder != nil || vm.isApplicationsLauncherOpen || vm.isWindowPickerOpen || vm.dragSourceId != nil || vm.activeDropTargetId != nil || vm.isResizing
+            return vm.hasActivePopover || vm.dragSourceId != nil || vm.activeDropTargetId != nil || vm.isResizing
         }
 
         self.dockPanel = panel
@@ -115,36 +115,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         closeFolderPopover()
         guard let panel = self.dockPanel, let anchorView = panel.contentView else { return }
 
-        let dockHeight = panel.frame.height
-        let itemRect: CGRect
-        if let frame = viewModel.itemFrames[folder.id] {
-            let runningSubItems = viewModel.runningSubItems(for: folder)
-            let folderX: CGFloat
-            let folderWidth: CGFloat
-            if !runningSubItems.isEmpty {
-                folderWidth = max(32.0, viewModel.config.iconSize * 0.72)
-                folderX = frame.origin.x + 8.0
-            } else {
-                folderWidth = frame.width
-                folderX = frame.origin.x
-            }
-            itemRect = CGRect(x: folderX, y: dockHeight - 2, width: folderWidth, height: 1)
-        } else {
-            itemRect = CGRect(x: anchorView.bounds.midX - 40, y: dockHeight - 2, width: 80, height: 1)
-        }
+        let itemRect = DockPopoverCoordinator.anchorRect(
+            for: folder.id,
+            itemFrames: viewModel.itemFrames,
+            folderAnchorFrames: viewModel.folderAnchorFrames,
+            dockHeight: panel.frame.height,
+            fallbackMidX: anchorView.bounds.midX
+        )
 
-        let popover = NSPopover()
-        popover.behavior = .transient
-        popover.animates = true
-        popover.appearance = viewModel.theme.nsAppearance
         let popoverView = FolderPopoverView(viewModel: viewModel, folder: folder)
             .preferredColorScheme(viewModel.theme.isDark ? .dark : .light)
-        let hostingController = NSHostingController(rootView: popoverView)
-        popover.contentViewController = hostingController
-        popover.delegate = self
-        popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .maxY)
-        self.folderPopover = popover
-        adjustPopoverWindowAboveDock(popover, panel: panel)
+        self.folderPopover = presentPopover(content: popoverView, relativeTo: itemRect, of: anchorView, panel: panel, viewModel: viewModel)
     }
 
     private func closeFolderPopover() {
@@ -158,26 +139,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         closeWindowPickerPopover()
         guard let panel = self.dockPanel, let anchorView = panel.contentView else { return }
 
-        let dockHeight = panel.frame.height
-        let itemRect: CGRect
-        if let frame = viewModel.itemFrames[item.id] {
-            itemRect = CGRect(x: frame.origin.x, y: dockHeight - 2, width: frame.width, height: 1)
-        } else {
-            itemRect = CGRect(x: anchorView.bounds.midX - 40, y: dockHeight - 2, width: 80, height: 1)
-        }
+        let itemRect = DockPopoverCoordinator.anchorRect(
+            for: item.id,
+            itemFrames: viewModel.itemFrames,
+            dockHeight: panel.frame.height,
+            fallbackMidX: anchorView.bounds.midX
+        )
 
+        let popoverView = WindowPickerPopoverView(viewModel: viewModel, item: item)
+            .preferredColorScheme(viewModel.theme.isDark ? .dark : .light)
+        self.windowPickerPopover = presentPopover(content: popoverView, relativeTo: itemRect, of: anchorView, panel: panel, viewModel: viewModel)
+    }
+
+    private func presentPopover<Content: View>(
+        content: Content,
+        relativeTo itemRect: CGRect,
+        of anchorView: NSView,
+        panel: DockPanel,
+        viewModel: DockViewModel
+    ) -> NSPopover {
         let popover = NSPopover()
         popover.behavior = .transient
         popover.animates = true
         popover.appearance = viewModel.theme.nsAppearance
-        let popoverView = WindowPickerPopoverView(viewModel: viewModel, item: item)
-            .preferredColorScheme(viewModel.theme.isDark ? .dark : .light)
-        let hostingController = NSHostingController(rootView: popoverView)
-        popover.contentViewController = hostingController
+        popover.contentViewController = NSHostingController(rootView: content)
         popover.delegate = self
         popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .maxY)
-        self.windowPickerPopover = popover
         adjustPopoverWindowAboveDock(popover, panel: panel)
+        return popover
     }
 
     private func adjustPopoverWindowAboveDock(_ popover: NSPopover, panel: DockPanel) {

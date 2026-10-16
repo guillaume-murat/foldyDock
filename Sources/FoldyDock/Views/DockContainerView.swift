@@ -176,6 +176,9 @@ public struct DockContainerView: View {
         .onPreferenceChange(ItemFramesPreferenceKey.self) { frames in
             viewModel.itemFrames = frames
         }
+        .onPreferenceChange(FolderAnchorFramesPreferenceKey.self) { frames in
+            viewModel.folderAnchorFrames = frames
+        }
         .onPreferenceChange(DockSizePreferenceKey.self) { newSize in
             onSizeChange?(newSize)
         }

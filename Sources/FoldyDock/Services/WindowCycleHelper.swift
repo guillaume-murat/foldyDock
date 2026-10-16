@@ -1,6 +1,281 @@
 import Foundation
 import CoreGraphics
 
+public struct WindowMenuEntry: Equatable, Sendable {
+    public let index: Int
+    public let title: String
+    public let isSeparator: Bool
+    public let isMarked: Bool
+
+    public init(index: Int, title: String, isSeparator: Bool, isMarked: Bool) {
+        self.index = index
+        self.title = title
+        self.isSeparator = isSeparator
+        self.isMarked = isMarked
+    }
+}
+
+public struct AXWindowEntry: Equatable, Sendable {
+    public let windowID: CGWindowID
+    public let title: String
+    public let isMinimized: Bool
+    public let isMain: Bool
+
+    public init(windowID: CGWindowID, title: String, isMinimized: Bool, isMain: Bool) {
+        self.windowID = windowID
+        self.title = title
+        self.isMinimized = isMinimized
+        self.isMain = isMain
+    }
+}
+
+public enum WindowCycleDecision: Equatable, Sendable {
+    case activateFirstWindow
+    case pressMenuIndex(menuIndex: Int, matchingWindowID: CGWindowID?)
+    case raiseWindowID(CGWindowID)
+    case sendKeyboardShortcut
+}
+
+/// Deep state-machine module governing per-PID window order reconciliation, Window Picker snapshot normalization,
+/// and sequential round-robin focus cycling across AX windows and macOS Window menus.
+public struct AppWindowCyclingEngine: Sendable {
+    private var stableWindowOrderPerPid: [pid_t: [CGWindowID]] = [:]
+    private var lastCycledMenuRelativeIndexPerPid: [pid_t: Int] = [:]
+    private var lastCycledWindowIDPerPid: [pid_t: CGWindowID] = [:]
+
+    public init() {}
+
+    public mutating func removeState(for pid: pid_t) {
+        stableWindowOrderPerPid.removeValue(forKey: pid)
+        lastCycledMenuRelativeIndexPerPid.removeValue(forKey: pid)
+        lastCycledWindowIDPerPid.removeValue(forKey: pid)
+    }
+
+    public mutating func recordSelectedWindow(_ window: AppWindowInfo, pid: pid_t, menuEntries: [WindowMenuEntry]) -> Int? {
+        if let wid = window.windowID, wid > 0 {
+            lastCycledWindowIDPerPid[pid] = wid
+        }
+        let targetTitle = (window.menuTitle ?? window.title).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !targetTitle.isEmpty else { return nil }
+        let candidateIndices = WindowCycleHelper.candidateWindowIndices(entries: menuEntries)
+        for (relIdx, itemIdx) in candidateIndices.enumerated() {
+            let sTitle = menuEntries[itemIdx].title.trimmingCharacters(in: .whitespacesAndNewlines)
+            if Self.titlesMatch(sTitle, targetTitle) {
+                lastCycledMenuRelativeIndexPerPid[pid] = relIdx
+                return itemIdx
+            }
+        }
+        return nil
+    }
+
+    public static func resolveAXWindowIndex(for window: AppWindowInfo, in axWindows: [AXWindowEntry]) -> Int? {
+        let targetTitle = window.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return axWindows.firstIndex { entry in
+            if let wid = window.windowID, wid > 0, entry.windowID == wid {
+                return true
+            }
+            let t = entry.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            return Self.titlesMatch(t, targetTitle)
+        }
+    }
+
+    public static func titlesMatch(_ a: String, _ b: String) -> Bool {
+        guard !a.isEmpty, !b.isEmpty else { return false }
+        return a == b || a.hasPrefix(b) || b.hasPrefix(a)
+    }
+
+    public static func isEligibleAXWindow(role: String?, subrole: String?, title: String, bundleIdentifier: String) -> Bool {
+        guard role == "AXWindow" else { return false }
+        if let sub = subrole, !sub.isEmpty {
+            guard sub == "AXStandardWindow" || sub == "AXDialog" else { return false }
+        }
+        if bundleIdentifier == "com.apple.finder" && title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return false
+        }
+        return true
+    }
+
+    public static func buildWindowInfos(
+        pid: pid_t,
+        axWindows: [AXWindowEntry],
+        menuEntries: [WindowMenuEntry]
+    ) -> [AppWindowInfo] {
+        var windowInfos: [AppWindowInfo] = []
+        var axTitleCounts: [String: Int] = [:]
+
+        for (idx, w) in axWindows.enumerated() {
+            let trimmed = w.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let displayTitle = trimmed.isEmpty ? "Fenêtre \(idx + 1)" : trimmed
+            axTitleCounts[displayTitle, default: 0] += 1
+
+            windowInfos.append(AppWindowInfo(
+                id: "\(pid)-\(w.windowID)-\(idx)",
+                title: displayTitle,
+                isMinimized: w.isMinimized,
+                isMain: w.isMain,
+                windowID: w.windowID,
+                menuTitle: trimmed.isEmpty ? nil : trimmed
+            ))
+        }
+
+        let candidateIndices = WindowCycleHelper.candidateWindowIndices(entries: menuEntries)
+        var menuTitleSeenCounts: [String: Int] = [:]
+
+        for (cIdx, itemIdx) in candidateIndices.enumerated() {
+            let entry = menuEntries[itemIdx]
+            let candidateTitle = entry.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !candidateTitle.isEmpty else { continue }
+
+            menuTitleSeenCounts[candidateTitle, default: 0] += 1
+            let seenSoFar = menuTitleSeenCounts[candidateTitle] ?? 1
+            let axCountForTitle = axTitleCounts[candidateTitle] ?? 0
+
+            if seenSoFar > axCountForTitle {
+                windowInfos.append(AppWindowInfo(
+                    id: "\(pid)-menu-\(itemIdx)-\(cIdx)",
+                    title: candidateTitle,
+                    isMinimized: false,
+                    isMain: entry.isMarked,
+                    windowID: nil,
+                    menuTitle: candidateTitle
+                ))
+            } else if entry.isMarked {
+                // Match the Nth occurrence of candidateTitle in windowInfos
+                var occurrence = 0
+                for i in windowInfos.indices where windowInfos[i].title == candidateTitle {
+                    occurrence += 1
+                    if occurrence == seenSoFar {
+                        let existing = windowInfos[i]
+                        windowInfos[i] = AppWindowInfo(
+                            id: existing.id,
+                            title: existing.title,
+                            isMinimized: existing.isMinimized,
+                            isMain: true,
+                            windowID: existing.windowID,
+                            menuTitle: existing.menuTitle
+                        )
+                        break
+                    }
+                }
+            }
+        }
+
+        return windowInfos
+    }
+
+    public mutating func decideActivation(
+        pid: pid_t,
+        isFrontmost: Bool,
+        isHidden: Bool,
+        cgWindowCount: Int,
+        axWindows: [AXWindowEntry],
+        menuEntries: [WindowMenuEntry],
+        focusedWindowTitle: String? = nil
+    ) -> WindowCycleDecision {
+        let candidateIndices = WindowCycleHelper.candidateWindowIndices(entries: menuEntries)
+        let knownWindowCount = max(cgWindowCount, max(axWindows.count, candidateIndices.count))
+
+        guard WindowCycleHelper.shouldCycleWindows(
+            isFrontmost: isFrontmost,
+            isHidden: isHidden,
+            eligibleWindowCount: knownWindowCount
+        ) else {
+            lastCycledMenuRelativeIndexPerPid.removeValue(forKey: pid)
+            lastCycledWindowIDPerPid.removeValue(forKey: pid)
+            return .activateFirstWindow
+        }
+
+        // Strategy 1: Window menu cycling (handles multi-Space, minimized windows, and Firefox/Chrome/Safari)
+        if candidateIndices.count >= 2 {
+            var checkedRelativeIndex: Int? = nil
+            for (relIdx, itemIdx) in candidateIndices.enumerated() {
+                if menuEntries[itemIdx].isMarked {
+                    checkedRelativeIndex = relIdx
+                    break
+                }
+            }
+
+            if checkedRelativeIndex == nil, let focusedTitle = focusedWindowTitle, !focusedTitle.isEmpty {
+                for (relIdx, itemIdx) in candidateIndices.enumerated() {
+                    let itemTitle = menuEntries[itemIdx].title
+                    if itemTitle == focusedTitle || itemTitle.contains(focusedTitle) || focusedTitle.contains(itemTitle) {
+                        checkedRelativeIndex = relIdx
+                        break
+                    }
+                }
+            }
+
+            let effectiveIndex: Int?
+            if let lastIdx = lastCycledMenuRelativeIndexPerPid[pid], lastIdx >= 0, lastIdx < candidateIndices.count {
+                effectiveIndex = lastIdx
+            } else {
+                effectiveIndex = checkedRelativeIndex ?? 0
+            }
+
+            let nextRelIdx = WindowCycleHelper.nextWindowIndex(currentIndex: effectiveIndex, windowCount: candidateIndices.count)
+            lastCycledMenuRelativeIndexPerPid[pid] = nextRelIdx
+
+            let targetMenuIndex = candidateIndices[nextRelIdx]
+            let targetTitle = menuEntries[targetMenuIndex].title.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Find matching AX window on current Space (if multiple share the same title, pick the corresponding occurrence)
+            var sameTitleOccurrence = 0
+            for idx in 0...nextRelIdx {
+                let t = menuEntries[candidateIndices[idx]].title.trimmingCharacters(in: .whitespacesAndNewlines)
+                if t == targetTitle {
+                    sameTitleOccurrence += 1
+                }
+            }
+
+            var matchedWindowID: CGWindowID? = nil
+            var seenAXMatching = 0
+            for w in axWindows {
+                let wTitle = w.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !wTitle.isEmpty && (wTitle == targetTitle || targetTitle.contains(wTitle) || wTitle.contains(targetTitle)) {
+                    seenAXMatching += 1
+                    matchedWindowID = w.windowID
+                    if seenAXMatching == sameTitleOccurrence {
+                        break
+                    }
+                }
+            }
+
+            return .pressMenuIndex(menuIndex: targetMenuIndex, matchingWindowID: matchedWindowID)
+        }
+
+        // Strategy 2: AXWindowEntry stable order cycling
+        if let wid = nextAXWindowIDToRaise(pid: pid, axWindows: axWindows) {
+            return .raiseWindowID(wid)
+        }
+
+        // Strategy 3: Keyboard shortcut fallback
+        return .sendKeyboardShortcut
+    }
+
+    public mutating func nextAXWindowIDToRaise(pid: pid_t, axWindows: [AXWindowEntry]) -> CGWindowID? {
+        guard axWindows.count >= 2 else { return nil }
+        let currentIDs = axWindows.map(\.windowID)
+        let previousOrder = stableWindowOrderPerPid[pid] ?? []
+        let stableOrder = WindowCycleHelper.reconcileStableOrder(existingOrder: previousOrder, currentWindowIDs: currentIDs)
+        stableWindowOrderPerPid[pid] = stableOrder
+        guard stableOrder.count >= 2 else { return nil }
+
+        let currentIndex: Int?
+        if let lastWID = lastCycledWindowIDPerPid[pid], let idx = stableOrder.firstIndex(of: lastWID) {
+            currentIndex = idx
+        } else if let mainWin = axWindows.first(where: { $0.isMain }), let idx = stableOrder.firstIndex(of: mainWin.windowID) {
+            currentIndex = idx
+        } else {
+            currentIndex = 0
+        }
+
+        let nextIndex = WindowCycleHelper.nextWindowIndex(currentIndex: currentIndex, windowCount: stableOrder.count)
+        let targetWID = stableOrder[nextIndex]
+        lastCycledWindowIDPerPid[pid] = targetWID
+        return targetWID
+    }
+}
+
 /// Pure logic helper for calculating window focus cycling order, stable ordering reconciliation, and activation conditions.
 public enum WindowCycleHelper {
     /// Determines the next window index in a round-robin rotation.
@@ -68,5 +343,9 @@ public enum WindowCycleHelper {
         } else {
             return items.indices.filter { items[$0].isMarked }
         }
+    }
+
+    public static func candidateWindowIndices(entries: [WindowMenuEntry]) -> [Int] {
+        candidateWindowIndices(items: entries.map { (title: $0.title, isSeparator: $0.isSeparator, isMarked: $0.isMarked) })
     }
 }

@@ -16,18 +16,51 @@ public final class DockViewModel: ObservableObject {
     public private(set) var hierarchyEngine: DockHierarchyEngine = DockHierarchyEngine()
     @Published public var unpinnedRunningItems: [DockItem] = []
 
-    public var onActiveFolderChanged: ((DockItem?) -> Void)?
-    @Published public var activeFolder: DockItem? {
+    @Published public private(set) var popoverCoordinator = DockPopoverCoordinator() {
         didSet {
-            onActiveFolderChanged?(activeFolder)
+            if oldValue.activeFolder != popoverCoordinator.activeFolder {
+                onActiveFolderChanged?(popoverCoordinator.activeFolder)
+            }
+            if oldValue.activeWindowPickerItem != popoverCoordinator.activeWindowPickerItem {
+                onWindowPickerChanged?(popoverCoordinator.activeWindowPickerItem)
+            }
         }
     }
-    @Published public var isApplicationsLauncherOpen: Bool = false
+    public var onActiveFolderChanged: ((DockItem?) -> Void)?
+    public var onWindowPickerChanged: ((DockItem?) -> Void)?
+
+    public var hasActivePopover: Bool {
+        popoverCoordinator.hasActivePopover
+    }
+
+    public var activeFolder: DockItem? {
+        get { popoverCoordinator.activeFolder }
+        set {
+            if let folder = newValue {
+                popoverCoordinator.openFolder(folder)
+            } else {
+                popoverCoordinator.closeFolder(recordDismissal: false)
+            }
+        }
+    }
+
+    public var isApplicationsLauncherOpen: Bool {
+        get { popoverCoordinator.isApplicationsLauncherOpen }
+        set {
+            if newValue {
+                _ = popoverCoordinator.toggleApplicationsLauncher()
+            } else {
+                popoverCoordinator.closeApplicationsLauncher()
+            }
+        }
+    }
+
     @Published public var hoveredItemId: UUID?
     @Published public var dragSourceId: UUID?
     @Published public var activeDropTargetId: UUID?
     @Published public var activeDropPlacement: DropPlacement?
     @Published public var itemFrames: [UUID: CGRect] = [:]
+    @Published public var folderAnchorFrames: [UUID: CGRect] = [:]
     public var folderItemFrames: [UUID: CGRect] = [:]
     @Published public var bouncingItemIds: Set<UUID> = []
     @Published public var terminatingItemIds: Set<UUID> = []
@@ -41,9 +74,26 @@ public final class DockViewModel: ObservableObject {
     public var onConfigUpdated: ((DockConfig) -> Void)?
 
     // Window Picker Popover State
-    @Published public var activeWindowPickerItem: DockItem? = nil
-    @Published public var activeWindowPickerList: [AppWindowInfo] = []
-    public var onWindowPickerChanged: ((DockItem?) -> Void)?
+    public var activeWindowPickerItem: DockItem? {
+        get { popoverCoordinator.activeWindowPickerItem }
+        set {
+            if let item = newValue {
+                popoverCoordinator.openWindowPicker(item: item, windows: popoverCoordinator.activeWindowPickerList)
+            } else {
+                popoverCoordinator.closeWindowPicker()
+            }
+        }
+    }
+
+    public var activeWindowPickerList: [AppWindowInfo] {
+        get { popoverCoordinator.activeWindowPickerList }
+        set {
+            if let item = popoverCoordinator.activeWindowPickerItem {
+                popoverCoordinator.openWindowPicker(item: item, windows: newValue)
+            }
+        }
+    }
+
     private var windowPickerHoverWorkItem: DispatchWorkItem?
     private var windowPickerDismissWorkItem: DispatchWorkItem?
 
@@ -436,49 +486,18 @@ public final class DockViewModel: ObservableObject {
         appObserver.refreshHiddenApps()
     }
 
-    private var lastClosedFolderId: UUID?
-    private var lastClosedFolderTime: Date?
-    private var lastClosedLauncherTime: Date?
-
     public func toggleFolderPopover(_ item: DockItem) {
-        if isApplicationsLauncherOpen {
-            closeApplicationsLauncher()
-        }
-
-        // If this exact folder was closed just now (e.g. by the popover outside-click dismiss),
-        // the click was intended to close it, so do not immediately re-open it.
-        if let lastId = lastClosedFolderId,
-           let lastTime = lastClosedFolderTime,
-           lastId == item.id,
-           Date().timeIntervalSince(lastTime) < 0.4 {
-            lastClosedFolderId = nil
-            lastClosedFolderTime = nil
-            activeFolder = nil
-            return
-        }
-
-        lastClosedFolderId = nil
-        lastClosedFolderTime = nil
-
-        if activeFolder?.id == item.id {
-            closeFolderPopover()
-        } else {
-            activeFolder = item
-        }
+        popoverCoordinator.toggleFolder(item)
     }
 
     public func closeFolderPopover() {
-        if let current = activeFolder {
-            lastClosedFolderId = current.id
-            lastClosedFolderTime = Date()
-        }
-        activeFolder = nil
+        popoverCoordinator.closeFolder(recordDismissal: true)
     }
 
     // MARK: - Window Picker Popover
 
     public var isWindowPickerOpen: Bool {
-        activeWindowPickerItem != nil
+        popoverCoordinator.activeWindowPickerItem != nil
     }
 
     public func handleItemHoverStart(item: DockItem) {
@@ -510,9 +529,7 @@ public final class DockViewModel: ObservableObject {
                 let windows = await self.appObserver.fetchOpenWindowsAsync(for: bid)
                 guard self.hoveredItemId == item.id else { return }
                 if windows.count >= 2 {
-                    self.activeWindowPickerItem = item
-                    self.activeWindowPickerList = windows
-                    self.onWindowPickerChanged?(item)
+                    self.popoverCoordinator.openWindowPicker(item: item, windows: windows)
                 } else {
                     self.closeWindowPicker()
                 }
@@ -554,11 +571,7 @@ public final class DockViewModel: ObservableObject {
         windowPickerHoverWorkItem = nil
         windowPickerDismissWorkItem?.cancel()
         windowPickerDismissWorkItem = nil
-        if activeWindowPickerItem != nil {
-            activeWindowPickerItem = nil
-            activeWindowPickerList = []
-            onWindowPickerChanged?(nil)
-        }
+        popoverCoordinator.closeWindowPicker()
     }
 
     public func selectWindow(_ window: AppWindowInfo, for item: DockItem) {
@@ -568,30 +581,15 @@ public final class DockViewModel: ObservableObject {
     }
 
     public func toggleApplicationsLauncher() {
-        if let lastTime = lastClosedLauncherTime,
-           Date().timeIntervalSince(lastTime) < 0.4 {
-            lastClosedLauncherTime = nil
-            isApplicationsLauncherOpen = false
-            return
-        }
-
-        lastClosedLauncherTime = nil
-
-        if isApplicationsLauncherOpen {
-            closeApplicationsLauncher()
-        } else {
-            closeFolderPopover()
-            isApplicationsLauncherOpen = true
+        let opened = popoverCoordinator.toggleApplicationsLauncher()
+        if opened {
             AppDiscoveryService.shared.refreshApps(force: false)
             NSApp.activate(ignoringOtherApps: true)
         }
     }
 
     public func closeApplicationsLauncher(recordDismissal: Bool = false) {
-        if recordDismissal && isApplicationsLauncherOpen {
-            lastClosedLauncherTime = Date()
-        }
-        isApplicationsLauncherOpen = false
+        popoverCoordinator.closeApplicationsLauncher(recordDismissal: recordDismissal)
     }
 
     public func launchInstalledApp(_ app: InstalledApp) {

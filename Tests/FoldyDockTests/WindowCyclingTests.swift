@@ -138,4 +138,92 @@ struct WindowCyclingTests {
         #expect(stableKeys == ["wid-10", "wid-20", "wid-30"])
         #expect(visited == ["wid-20", "wid-30", "wid-10"])
     }
+
+    @Test("AppWindowCyclingEngine activates background app on first click, then cycles sequentially on subsequent clicks including identical Firefox titles")
+    func testAppWindowCyclingEngineEndToEnd() {
+        var engine = AppWindowCyclingEngine()
+        let pid: pid_t = 4242
+
+        // Snapshot with 3 Firefox windows where two have identical "Mozilla Firefox" titles
+        let menuItems: [WindowMenuEntry] = [
+            WindowMenuEntry(index: 0, title: "Minimize", isSeparator: false, isMarked: false),
+            WindowMenuEntry(index: 1, title: "", isSeparator: true, isMarked: false),
+            WindowMenuEntry(index: 2, title: "Mozilla Firefox", isSeparator: false, isMarked: true),
+            WindowMenuEntry(index: 3, title: "Mozilla Firefox", isSeparator: false, isMarked: false),
+            WindowMenuEntry(index: 4, title: "GitHub - foldyDock", isSeparator: false, isMarked: false)
+        ]
+
+        let axWindows: [AXWindowEntry] = [
+            AXWindowEntry(windowID: 101, title: "Mozilla Firefox", isMinimized: false, isMain: true),
+            AXWindowEntry(windowID: 102, title: "Mozilla Firefox", isMinimized: false, isMain: false),
+            AXWindowEntry(windowID: 103, title: "GitHub - foldyDock", isMinimized: true, isMain: false)
+        ]
+
+        // 1st click when app is NOT frontmost -> activates app without cycling
+        let firstDecision = engine.decideActivation(
+            pid: pid,
+            isFrontmost: false,
+            isHidden: false,
+            cgWindowCount: 3,
+            axWindows: axWindows,
+            menuEntries: menuItems
+        )
+        #expect(firstDecision == .activateFirstWindow)
+
+        // 2nd click when app IS frontmost -> cycles to relative window 1 (menu index 3)
+        let secondDecision = engine.decideActivation(
+            pid: pid,
+            isFrontmost: true,
+            isHidden: false,
+            cgWindowCount: 3,
+            axWindows: axWindows,
+            menuEntries: menuItems
+        )
+        #expect(secondDecision == .pressMenuIndex(menuIndex: 3, matchingWindowID: 102))
+
+        // 3rd click (even if Firefox hasn't updated its checkmark asynchronously yet!) -> cycles to relative window 2 (menu index 4, windowID 103)
+        let thirdDecision = engine.decideActivation(
+            pid: pid,
+            isFrontmost: true,
+            isHidden: false,
+            cgWindowCount: 3,
+            axWindows: axWindows,
+            menuEntries: menuItems
+        )
+        #expect(thirdDecision == .pressMenuIndex(menuIndex: 4, matchingWindowID: 103))
+
+        // 4th click -> wraps around to relative window 0 (menu index 2, windowID 101)
+        let fourthDecision = engine.decideActivation(
+            pid: pid,
+            isFrontmost: true,
+            isHidden: false,
+            cgWindowCount: 3,
+            axWindows: axWindows,
+            menuEntries: menuItems
+        )
+        #expect(fourthDecision == .pressMenuIndex(menuIndex: 2, matchingWindowID: 101))
+    }
+
+    @Test("AppWindowCyclingEngine normalizes AX and Window menu snapshots into AppWindowInfo list without losing duplicate-titled AX windows")
+    func testBuildOpenWindowInfos() {
+        let axWindows: [AXWindowEntry] = [
+            AXWindowEntry(windowID: 101, title: "Nouvel onglet — Mozilla Firefox", isMinimized: false, isMain: true),
+            AXWindowEntry(windowID: 102, title: "Nouvel onglet — Mozilla Firefox", isMinimized: false, isMain: false)
+        ]
+        let menuItems: [WindowMenuEntry] = [
+            WindowMenuEntry(index: 0, title: "", isSeparator: true, isMarked: false),
+            WindowMenuEntry(index: 1, title: "Nouvel onglet — Mozilla Firefox", isSeparator: false, isMarked: true),
+            WindowMenuEntry(index: 2, title: "Nouvel onglet — Mozilla Firefox", isSeparator: false, isMarked: false),
+            WindowMenuEntry(index: 3, title: "Other Space Window", isSeparator: false, isMarked: false)
+        ]
+
+        let infos = AppWindowCyclingEngine.buildWindowInfos(pid: 99, axWindows: axWindows, menuEntries: menuItems)
+        #expect(infos.count == 3)
+        #expect(infos[0].windowID == 101)
+        #expect(infos[0].isMain == true)
+        #expect(infos[1].windowID == 102)
+        #expect(infos[1].isMain == false)
+        #expect(infos[2].windowID == nil)
+        #expect(infos[2].title == "Other Space Window")
+    }
 }
