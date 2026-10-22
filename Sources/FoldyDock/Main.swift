@@ -201,7 +201,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.toolTip = "FoldyDock"
         }
 
-        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3.1"
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.4.0"
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "FoldyDock v\(appVersion)", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())

@@ -42,6 +42,7 @@
 - ⚡ **Multi-Window Dots / Indicateurs de Fenêtres** : Pastilles indiquant le nombre exact de fenêtres ouvertes par application.
 - 🖱️ **Middle-Click Quit / Fermeture Rapide** : Clic molette pour quitter instantanément une application.
 - 🚀 **App Launcher / Lanceur d'Apps** : Recherche et lancement ultra-rapides de toutes les applications du Mac.
+- 🔐 **Accessibility Check / Vérification d'Accessibilité** : Alerte au lancement si l'autorisation manque, avec réparation en un clic (désactivable).
 - ⚙️ **Settings (`⌘,`) / Réglages** : Personnalisation en direct des tailles, marges, masque automatique et lancement au démarrage.
 
 ---
@@ -127,6 +128,8 @@
 ### Prerequisites
 - **macOS 14.0 Sonoma** or later (tested on macOS 14 & 15 Sequoia)
 - **Swift 5.9+** toolchain or **Xcode 15+**
+- **Accessibility permission** (System Settings › Privacy & Security) for window cycling and the window picker. FoldyDock asks for it at launch.  
+  *Autorisation d'Accessibilité requise pour la rotation et le sélecteur de fenêtres ; FoldyDock la demande au lancement.*
 
 ### Compile & Assemble the App Bundle
 Use the automated build script to compile in Release mode and assemble `build/FoldyDock.app`:
@@ -144,7 +147,7 @@ To compile and automatically run FoldyDock:
 
 ### Running Unit Tests
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+./scripts/run_tests.sh
 ```
 
 ---
@@ -155,17 +158,23 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
 foldyDock/
 ├── Package.swift                    # SPM manifest (macOS 14 target)
 ├── scripts/
-│   └── build_app.sh                 # Compilation, resource bundler & app launcher
+│   ├── build_app.sh                 # Compile, bundle, sign, install & relaunch
+│   └── run_tests.sh                 # Swift Testing + XCTest runner
 ├── Sources/FoldyDock/
 │   ├── Main.swift                   # @main entry point, NSApplicationDelegate, menu bar item
 │   ├── Models/
 │   │   ├── DockItem.swift           # Unified model (.app, .folder, .separator)
 │   │   ├── DockConfig.swift         # User configuration, size, autohide, paddings
 │   │   ├── NowPlayingState.swift    # Now Playing state model (MediaTrack, Play/Pause/Idle)
+│   │   ├── DockTheme.swift          # Appearance Mode & light/dark palette
 │   │   └── DockHierarchyEngine.swift# Deterministic folder merge/dissolve & reorder logic
 │   ├── Services/
-│   │   ├── AppObserverService.swift # Running applications & window count tracking via AXUIElement
+│   │   ├── AppObserverService.swift # Running apps, activation & window selection
+│   │   ├── AppWindowInventory.swift # App Window Inventory: one window list for dots, picker & cycling
+│   │   ├── SystemAppWindowSource.swift # AX & CGWindowList adapter
 │   │   ├── WindowCycleHelper.swift  # Deterministic round-robin window focus rotation
+│   │   ├── DockPopoverCoordinator.swift # Mutually exclusive popovers & anchors
+│   │   ├── AccessibilityPermissionService.swift # Accessibility check, prompt & reset
 │   │   ├── MediaRemoteNowPlayingService.swift # Universal media detection & control bridge
 │   │   ├── NowPlayingScriptParser.swift       # Resilient script output parser for Now Playing
 │   │   ├── AppDiscoveryService.swift# Fast async discovery of installed Mac applications
@@ -180,6 +189,7 @@ foldyDock/
 │   │   ├── DockItemView.swift       # Single dock item view with titles and badges
 │   │   ├── NowPlayingWidget.swift   # Embedded media capsule with controls & app opener
 │   │   ├── FolderPopoverView.swift  # Expanded folder popover grid
+│   │   ├── WindowPickerPopoverView.swift  # Hover list of an app's windows
 │   │   ├── FolderIconGrid.swift     # Closed folder miniature icon grid
 │   │   ├── ExpandedFolderBubbleView.swift # Capsule for folder running applications
 │   │   ├── MultiWindowIndicatorView.swift # Dynamic multi-window dot indicators & plus shape

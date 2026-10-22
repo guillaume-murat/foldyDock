@@ -43,9 +43,10 @@ Compile and run directly:
 ```
 
 ### Running Unit Tests
-If using Xcode:
+Runs both Swift Testing and XCTest suites (requires Xcode installed):
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+./scripts/run_tests.sh
+./scripts/run_tests.sh --filter DockViewModelTests   # one suite
 ```
 
 ---

@@ -23,6 +23,10 @@ At the end of every code change/modification:
    ```
    This automatically compiles the release bundle, replaces `/Applications/FoldyDock.app`, terminates any older running process, and relaunches the application from `/Applications/FoldyDock.app`.
 
+## Testing
+
+Run `./scripts/run_tests.sh` (never raw `swift test`: it silently skips XCTest cases). `--filter <Suite>` works for both Swift Testing suites and XCTest classes.
+
 ## Documentation & Releases Guidelines
 
 - **Conciseness**: Keep feature descriptions, changelogs, and release notes concise, direct, and focused on essential value without unnecessary fluff.

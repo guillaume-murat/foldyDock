@@ -20,3 +20,7 @@ We implement sequential round-robin window cycling using the macOS Accessibility
 1. **Accessibility API (`AXUIElement`)**: Operates directly at the Window Server level with sub-millisecond responsiveness and fine-grained control over window minimization and focus state.
 2. **Predictable user experience**: Cycling only when already frontmost prevents skipping the active window upon returning to an app.
 3. **Full multi-window visibility**: Restoring minimized windows ensures windows stored in the dock aren't orphaned from the user's workflow.
+
+## Update (2026-10-22, v1.4.0)
+
+Accessibility only reports windows on the current Space, so cycling now prefers the application's Window menu (all Spaces) and reads both sources through the **App Window Inventory** (`AppWindowInventory`), which pairs AX windows with Window menu entries (exact title first, then prefix). Cycling, the Window Picker Popover, the dock's window dots and the "all windows minimized" state share this single pairing; `SystemAppWindowSource` is the only adapter to AX and CGWindowList.
