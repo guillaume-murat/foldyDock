@@ -2133,6 +2133,23 @@
       width: fit-content;
     }
 
+    .feature-head {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .feature-icon {
+      display: grid;
+      place-items: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 12px;
+      background: rgba(48, 132, 228, 0.12);
+      border: 1px solid rgba(48, 132, 228, 0.28);
+      font-size: 1.3rem;
+    }
+
     .gesture-badge.is-feature {
       color: #4da3ff;
       background: rgba(10, 132, 255, 0.1);
@@ -3406,37 +3423,55 @@
 
     <div class="gestures-grid">
       <div class="gesture-box">
-        <span class="gesture-badge is-feature">Hover</span>
+        <div class="feature-head">
+          <span class="feature-icon"><svg class="lucide-duo" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/></svg></span>
+          <span class="gesture-badge is-feature">Hover</span>
+        </div>
         <div class="gesture-title">Window Picker</div>
         <div class="gesture-desc">Hover an app with two or more windows to list them by name, then jump straight to the one you need, even on another Space.</div>
       </div>
 
       <div class="gesture-box">
-        <span class="gesture-badge is-feature">Click again</span>
+        <div class="feature-head">
+          <span class="feature-icon"><svg class="lucide-duo" viewBox="0 0 24 24" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span>
+          <span class="gesture-badge is-feature">Click again</span>
+        </div>
         <div class="gesture-title">Window Cycling</div>
         <div class="gesture-desc">Click an app that is already in front to cycle through its windows, minimized ones included.</div>
       </div>
 
       <div class="gesture-box">
-        <span class="gesture-badge is-feature">Now Playing</span>
+        <div class="feature-head">
+          <span class="feature-icon"><svg class="lucide-duo" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+          <span class="gesture-badge is-feature">Now Playing</span>
+        </div>
         <div class="gesture-title">Music Widget</div>
         <div class="gesture-desc">See what is playing in Music, Spotify or YouTube Music, with play, pause and skip right in the dock.</div>
       </div>
 
       <div class="gesture-box">
-        <span class="gesture-badge is-feature">Appearance</span>
+        <div class="feature-head">
+          <span class="feature-icon"><svg class="lucide-duo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a2.83 2.83 0 0 0 4 4 4 4 0 1 1-4-4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.3 17.7-1.4 1.4"/><path d="m19.1 4.9-1.4 1.4"/></svg></span>
+          <span class="gesture-badge is-feature">Appearance</span>
+        </div>
         <div class="gesture-title">Light &amp; Dark</div>
         <div class="gesture-desc">Follows your macOS appearance, or stays Light or Dark across the dock, folders and popovers.</div>
       </div>
 
       <div class="gesture-box">
-        <span class="gesture-badge is-feature">Indicators</span>
+        <div class="feature-head">
+          <span class="feature-icon"><svg class="lucide-duo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>
+          <span class="gesture-badge is-feature">Indicators</span>
+        </div>
         <div class="gesture-title">Window Dots</div>
         <div class="gesture-desc">Dots show how many windows each app has open. Hidden and minimized apps dim automatically.</div>
       </div>
 
       <div class="gesture-box">
-        <span class="gesture-badge is-new">New in 1.4</span>
+        <div class="feature-head">
+          <span class="feature-icon"><svg class="lucide-duo" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <span class="gesture-badge is-new">New in 1.4</span>
+        </div>
         <div class="gesture-title">Accessibility Check</div>
         <div class="gesture-desc">FoldyDock checks its Accessibility permission at launch and repairs a stale one in a single click.</div>
       </div>
