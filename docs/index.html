@@ -2133,6 +2133,18 @@
       width: fit-content;
     }
 
+    .gesture-badge.is-feature {
+      color: #4da3ff;
+      background: rgba(10, 132, 255, 0.1);
+      border-color: rgba(10, 132, 255, 0.28);
+    }
+
+    .gesture-badge.is-new {
+      color: #bf5af2;
+      background: rgba(191, 90, 242, 0.12);
+      border-color: rgba(191, 90, 242, 0.3);
+    }
+
     .gesture-title {
       font-size: 1.05rem;
       font-weight: 600;
@@ -2470,6 +2482,7 @@
 
       <ul class="nav-links">
         <li><a href="#interactive">Live Demo</a></li>
+        <li><a href="#features">Features</a></li>
         <li><a href="#gestures">Gestures</a></li>
         <li><a href="#download">Download</a></li>
       </ul>
@@ -2492,7 +2505,7 @@
   <section class="hero">
     <div class="hero-badge">
       <span class="pulsing-dot"></span>
-      <span>Native Swift 5.9 & SwiftUI • 100% Free & Open Source</span>
+      <span>v1.4.0 • Native Swift & SwiftUI • Free & Open Source</span>
     </div>
 
     <h1>
@@ -2505,7 +2518,7 @@
     </div>
 
     <p class="hero-subtitle">
-      FoldyDock is a sleek, floating glass dock for macOS. Group apps into dynamic live folders, track multi-window instances with glowing activity dots, and quit apps with a single middle-click.
+      FoldyDock is a sleek, floating glass dock for macOS. Group apps into live folders, pick any open window with a hover, control your music, and quit apps with a single middle-click.
     </p>
 
     <div class="hero-cta">
@@ -2896,7 +2909,7 @@
               </div>
               <div class="vscode-editor-content">
                 <div class="vscode-line-nums">
-                  1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10
+                  1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11
                 </div>
                 <pre class="vscode-code"><code><span style="color: #61afef; font-weight: bold;"># FoldyDock 🚀</span>
 <span style="color: #98c379;">A sleek floating dock for macOS with iOS-style folders.</span>
@@ -2905,7 +2918,8 @@
 - <span style="color: #e06c75;">Native Swift 5.9</span> & SwiftUI architecture
 - <span style="color: #98c379;">Interactive Folders</span> directly docked
 - <span style="color: #d19a66;">Middle-click</span> to kill unresponsive apps
-- <span style="color: #61afef;">Multi-Window</span> activity tracking dots</code></pre>
+- <span style="color: #61afef;">Multi-Window</span> activity tracking dots
+- <span style="color: #c678dd;">Window Picker</span> & Now Playing widget</code></pre>
               </div>
             </div>
           </div>
@@ -3354,6 +3368,54 @@
   </section>
 
   <!-- GESTURES & SHORTCUTS -->
+  <section class="section" id="features">
+    <div class="section-header">
+      <div class="section-eyebrow">Inside FoldyDock</div>
+      <h2 class="section-title">Everything a Dock should do.</h2>
+      <p class="section-desc">
+        Native window management, media controls and themes, built into one floating glass bar.
+      </p>
+    </div>
+
+    <div class="gestures-grid">
+      <div class="gesture-box">
+        <span class="gesture-badge is-feature">Hover</span>
+        <div class="gesture-title">Window Picker</div>
+        <div class="gesture-desc">Hover an app with two or more windows to list them by name, then jump straight to the one you need, even on another Space.</div>
+      </div>
+
+      <div class="gesture-box">
+        <span class="gesture-badge is-feature">Click again</span>
+        <div class="gesture-title">Window Cycling</div>
+        <div class="gesture-desc">Click an app that is already in front to cycle through its windows, minimized ones included.</div>
+      </div>
+
+      <div class="gesture-box">
+        <span class="gesture-badge is-feature">Now Playing</span>
+        <div class="gesture-title">Music Widget</div>
+        <div class="gesture-desc">See what is playing in Music, Spotify or YouTube Music, with play, pause and skip right in the dock.</div>
+      </div>
+
+      <div class="gesture-box">
+        <span class="gesture-badge is-feature">Appearance</span>
+        <div class="gesture-title">Light &amp; Dark</div>
+        <div class="gesture-desc">Follows your macOS appearance, or stays Light or Dark across the dock, folders and popovers.</div>
+      </div>
+
+      <div class="gesture-box">
+        <span class="gesture-badge is-feature">Indicators</span>
+        <div class="gesture-title">Window Dots</div>
+        <div class="gesture-desc">Dots show how many windows each app has open. Hidden and minimized apps dim automatically.</div>
+      </div>
+
+      <div class="gesture-box">
+        <span class="gesture-badge is-new">New in 1.4</span>
+        <div class="gesture-title">Accessibility Check</div>
+        <div class="gesture-desc">FoldyDock checks its Accessibility permission at launch and repairs a stale one in a single click.</div>
+      </div>
+    </div>
+  </section>
+
   <section class="section" id="gestures">
     <div class="section-header">
       <div class="section-eyebrow">Fluid Controls</div>
@@ -3380,6 +3442,12 @@
         <span class="gesture-badge">Drag & Drop</span>
         <div class="gesture-title">Group into Folder</div>
         <div class="gesture-desc">Drop an application icon onto another to instantly group them into a dynamic folder.</div>
+      </div>
+
+      <div class="gesture-box">
+        <span class="gesture-badge">Hover</span>
+        <div class="gesture-title">Pick a Window</div>
+        <div class="gesture-desc">Rest the pointer on a multi-window app to choose the exact window to bring forward.</div>
       </div>
 
       <div class="gesture-box">
@@ -3909,7 +3977,7 @@
         resp.innerHTML = 'Available commands:<br>• <b>status</b> — Show FoldyDock runtime telemetry<br>• <b>ls</b> — List current directory files<br>• <b>apps</b> — List dock & folder applications<br>• <b>clear</b> — Clear terminal buffer<br>• <b>build</b> — Trigger swift build';
       } else if (lower === 'status') {
         resp.style.color = '#30d158';
-        resp.innerHTML = '[FoldyDock v1.1.1] PID: 15757 | Memory: 42.4 MB | CPU: 0.1% | Status: Healthy';
+        resp.innerHTML = '[FoldyDock v1.4.0] PID: 15757 | Memory: 42.4 MB | CPU: 0.1% | Status: Healthy';
       } else if (lower === 'ls' || lower === 'ls -la') {
         resp.style.color = '#9cb8ff';
         resp.innerHTML = 'FoldyDock.xcodeproj/ &nbsp; Sources/ &nbsp; docs/ &nbsp; scripts/ &nbsp; README.md &nbsp; LICENSE';
