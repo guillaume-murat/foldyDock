@@ -19,6 +19,7 @@ public final class DockPanel: NSPanel {
     private var globalMouseMonitor: Any?
     private var spaceObserver: NSObjectProtocol?
     private var edgePollingTimer: Timer?
+    private var lastShowDate: Date = .distantPast
 
     public var currentScreen: NSScreen {
         didSet {
@@ -81,16 +82,36 @@ public final class DockPanel: NSPanel {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self = self else { return }
-                if self.isHiddenState {
-                    self.hotspotManager.handleSpaceChange()
-                } else {
-                    self.orderFrontRegardless()
-                }
+                self.handleActiveSpaceChange()
             }
         }
 
         reposition()
         startEdgeMonitoring()
+    }
+
+    /// Re-attaches the dock (or its hotspots) to the newly active Space. Ordering front during the
+    /// Space slide animation can be ignored, so it is repeated once the transition has settled.
+    private func handleActiveSpaceChange() {
+        let reattach = { [weak self] in
+            guard let self = self else { return }
+            if self.isHiddenState {
+                self.hotspotManager.handleSpaceChange()
+            } else {
+                self.orderFrontRegardless()
+            }
+        }
+        reattach()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            MainActor.assumeIsolated { reattach() }
+        }
+    }
+
+    /// True when the dock believes it is shown but its window is not actually on screen in the active Space.
+    /// Ignores the show animation window, during which alpha legitimately starts at 0.
+    private var isShownStateDesynced: Bool {
+        guard !isHiddenState, Date().timeIntervalSince(lastShowDate) > 0.5 else { return false }
+        return !isVisible || !isOnActiveSpace || alphaValue < 0.05
     }
 
     deinit {
@@ -289,6 +310,7 @@ public final class DockPanel: NSPanel {
         inactivityTimer?.invalidate()
         inactivityTimer = nil
 
+        lastShowDate = Date()
         let targetScreen = screen ?? self.currentScreen
         let isSwitchingScreen = (targetScreen != self.currentScreen)
         self.currentScreen = targetScreen
@@ -312,7 +334,7 @@ public final class DockPanel: NSPanel {
 
         if animated {
             // Position at bottom edge with opacity 0 before gliding up if hidden or switching screens
-            if isSwitchingScreen || self.alphaValue < 0.05 || !self.isVisible {
+            if isSwitchingScreen || self.alphaValue < 0.05 || !self.isVisible || !self.isOnActiveSpace {
                 let startFrame = NSRect(
                     x: x,
                     y: screenFrame.origin.y,
@@ -406,14 +428,17 @@ public final class DockPanel: NSPanel {
         }
 
         if edgePollingTimer == nil {
-            edgePollingTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+            // Common run-loop modes keep polling alive during drags, open menus and Space transitions.
+            let timer = Timer(timeInterval: 0.08, repeats: true) { [weak self] _ in
                 Task { @MainActor in
                     guard let self = self else { return }
-                    if self.isHiddenState {
+                    if self.isHiddenState || self.isShownStateDesynced {
                         self.handleCursorMovement()
                     }
                 }
             }
+            RunLoop.main.add(timer, forMode: .common)
+            edgePollingTimer = timer
         }
     }
 
@@ -428,6 +453,12 @@ public final class DockPanel: NSPanel {
 
     private func handleCursorMovement() {
         let loc = NSEvent.mouseLocation
+
+        if self.isShownStateDesynced, let targetScreen = self.screenForBottomEdge(at: loc) {
+            print("[DockPanel] Dock marked shown but not on the active Space; re-showing it")
+            self.showDock(on: targetScreen, animated: true)
+            return
+        }
 
         if self.isHiddenState {
             if let targetScreen = self.screenForBottomEdge(at: loc) {
