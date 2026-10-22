@@ -165,36 +165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.contentViewController = NSHostingController(rootView: content)
         popover.delegate = self
         popover.show(relativeTo: itemRect, of: anchorView, preferredEdge: .maxY)
-        adjustPopoverWindowAboveDock(popover, panel: panel)
         return popover
-    }
-
-    private func adjustPopoverWindowAboveDock(_ popover: NSPopover, panel: DockPanel) {
-        let enforcePosition = {
-            let targetMinY = panel.frame.maxY
-            if let popoverWindow = popover.contentViewController?.view.window {
-                if popoverWindow.frame.minY < targetMinY {
-                    var f = popoverWindow.frame
-                    f.origin.y = targetMinY
-                    popoverWindow.setFrame(f, display: true)
-                }
-            } else {
-                for w in NSApp.windows where NSStringFromClass(type(of: w)).contains("Popover") {
-                    if w.frame.minY < targetMinY {
-                        var f = w.frame
-                        f.origin.y = targetMinY
-                        w.setFrame(f, display: true)
-                    }
-                }
-            }
-        }
-        enforcePosition()
-        DispatchQueue.main.async {
-            enforcePosition()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            enforcePosition()
-        }
     }
 
     private func closeWindowPickerPopover() {

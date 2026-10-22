@@ -101,6 +101,7 @@ public struct WindowPickerPopoverView: View {
             .padding(.bottom, 8)
         }
         .frame(minWidth: 220, maxWidth: 320)
+        .fixedSize(horizontal: false, vertical: true)
         .onHover { hovering in
             if hovering {
                 viewModel.handleWindowPickerHoverStart()
