@@ -249,3 +249,20 @@ struct WindowCyclingTests {
         #expect(infos[1].title == "Claude in Chrome")
     }
 }
+
+@Suite("WindowCountReconciliationTests")
+struct WindowCountReconciliationTests {
+    @Test("Dock indicator counts use the verified Window Picker count and fall back to the raw CGWindowList count")
+    func testReconcileWindowCounts() {
+        let raw = ["com.google.Chrome": 3, "com.apple.finder": 2, "org.example.NoMenu": 2]
+        let verified = ["com.google.Chrome": 2, "com.apple.finder": 3, "org.example.NoMenu": 0]
+
+        let counts = AppObserverService.reconcileWindowCounts(raw: raw, verified: verified)
+        #expect(counts["com.google.Chrome"] == 2)
+        #expect(counts["com.apple.finder"] == 3)
+        #expect(counts["org.example.NoMenu"] == 2)
+
+        let unverified = AppObserverService.reconcileWindowCounts(raw: ["com.apple.Safari": 1], verified: [:])
+        #expect(unverified["com.apple.Safari"] == 1)
+    }
+}

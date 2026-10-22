@@ -19,6 +19,14 @@ public final class AppObserverService: ObservableObject {
     private var syncTimer: Timer?
     private var cyclingEngine = AppWindowCyclingEngine()
 
+    /// Raw CGWindowList counts include helper windows (e.g. Chrome's full-screen toolbar), so each
+    /// count is re-verified with the AX + Window menu list the Window Picker uses.
+    private var rawWindowCounts: [String: Int] = [:]
+    private var verifiedWindowCounts: [String: Int] = [:]
+    private var verifiedAt: [String: Date] = [:]
+    private var verificationsInFlight: Set<String> = []
+    private static let verificationMaxAge: TimeInterval = 10
+
     @_silgen_name("_AXUIElementGetWindow")
     nonisolated private static func _AXUIElementGetWindow(_ element: AXUIElement, _ wid: UnsafeMutablePointer<CGWindowID>) -> AXError
 
@@ -97,8 +105,53 @@ public final class AppObserverService: ObservableObject {
             counts[bid, default: 0] += 1
         }
 
+        let now = Date()
+        for (bid, raw) in counts {
+            let isStale = now.timeIntervalSince(verifiedAt[bid] ?? .distantPast) > Self.verificationMaxAge
+            if raw != rawWindowCounts[bid] || isStale {
+                verifyWindowCount(for: bid)
+            }
+        }
+        for bid in rawWindowCounts.keys where counts[bid] == nil {
+            verifiedWindowCounts.removeValue(forKey: bid)
+            verifiedAt.removeValue(forKey: bid)
+        }
+        rawWindowCounts = counts
+        publishWindowCounts()
+    }
+
+    /// Prefers the verified count; falls back to the raw count when verification found nothing
+    /// (no Accessibility permission, or an app without a Window menu whose windows are on another Space).
+    nonisolated static func reconcileWindowCounts(raw: [String: Int], verified: [String: Int]) -> [String: Int] {
+        raw.reduce(into: [:]) { result, pair in
+            if let checked = verified[pair.key], checked > 0 {
+                result[pair.key] = checked
+            } else {
+                result[pair.key] = pair.value
+            }
+        }
+    }
+
+    private func publishWindowCounts() {
+        let counts = Self.reconcileWindowCounts(raw: rawWindowCounts, verified: verifiedWindowCounts)
         if self.windowCountsByBundleId != counts {
             self.windowCountsByBundleId = counts
+        }
+    }
+
+    private func verifyWindowCount(for bundleIdentifier: String) {
+        guard !verificationsInFlight.contains(bundleIdentifier) else { return }
+        verificationsInFlight.insert(bundleIdentifier)
+        Task { [weak self] in
+            let count = await Task.detached(priority: .utility) {
+                Self.queryOpenWindows(for: bundleIdentifier).count
+            }.value
+            guard let self = self else { return }
+            self.verificationsInFlight.remove(bundleIdentifier)
+            guard self.rawWindowCounts[bundleIdentifier] != nil else { return }
+            self.verifiedWindowCounts[bundleIdentifier] = count
+            self.verifiedAt[bundleIdentifier] = Date()
+            self.publishWindowCounts()
         }
     }
 
