@@ -584,7 +584,7 @@ public final class DockViewModel: ObservableObject {
         let opened = popoverCoordinator.toggleApplicationsLauncher()
         if opened {
             AppDiscoveryService.shared.refreshApps(force: false)
-            NSApp.activate(ignoringOtherApps: true)
+            NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }
 
