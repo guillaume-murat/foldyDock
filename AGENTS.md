@@ -31,5 +31,6 @@ Run `./scripts/run_tests.sh` (never raw `swift test`: it silently skips XCTest c
 
 - **Conciseness**: Keep feature descriptions, changelogs, and release notes concise, direct, and focused on essential value without unnecessary fluff.
 - **French Translation**: Always provide a French translation for releases and the app README (bilingual EN/FR or paired concise translations).
+- **Website check**: At every release, check that https://guillaume-murat.github.io/foldyDock/ reflects the new version and features. The site is published by GitHub Pages from `docs/` on `main` (`docs/index.html`). If it is out of date, update it using the `apple-design` skill, then push with the release.
 
 
