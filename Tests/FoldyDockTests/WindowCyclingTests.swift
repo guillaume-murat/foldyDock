@@ -158,15 +158,18 @@ struct WindowCyclingTests {
             AXWindowEntry(windowID: 102, title: "Mozilla Firefox", isMinimized: false, isMain: false),
             AXWindowEntry(windowID: 103, title: "GitHub - foldyDock", isMinimized: true, isMain: false)
         ]
+        let snapshot = AppWindowSnapshot(
+            windows: AppWindowCyclingEngine.buildWindowInfos(pid: pid, axWindows: axWindows, menuEntries: menuItems),
+            axWindows: axWindows,
+            menuEntries: menuItems
+        )
 
         // 1st click when app is NOT frontmost -> activates app without cycling
         let firstDecision = engine.decideActivation(
             pid: pid,
             isFrontmost: false,
             isHidden: false,
-            cgWindowCount: 3,
-            axWindows: axWindows,
-            menuEntries: menuItems
+            snapshot: snapshot
         )
         #expect(firstDecision == .activateFirstWindow)
 
@@ -175,9 +178,7 @@ struct WindowCyclingTests {
             pid: pid,
             isFrontmost: true,
             isHidden: false,
-            cgWindowCount: 3,
-            axWindows: axWindows,
-            menuEntries: menuItems
+            snapshot: snapshot
         )
         #expect(secondDecision == .pressMenuIndex(menuIndex: 3, matchingWindowID: 102))
 
@@ -186,9 +187,7 @@ struct WindowCyclingTests {
             pid: pid,
             isFrontmost: true,
             isHidden: false,
-            cgWindowCount: 3,
-            axWindows: axWindows,
-            menuEntries: menuItems
+            snapshot: snapshot
         )
         #expect(thirdDecision == .pressMenuIndex(menuIndex: 4, matchingWindowID: 103))
 
@@ -197,9 +196,7 @@ struct WindowCyclingTests {
             pid: pid,
             isFrontmost: true,
             isHidden: false,
-            cgWindowCount: 3,
-            axWindows: axWindows,
-            menuEntries: menuItems
+            snapshot: snapshot
         )
         #expect(fourthDecision == .pressMenuIndex(menuIndex: 2, matchingWindowID: 101))
     }
@@ -250,19 +247,3 @@ struct WindowCyclingTests {
     }
 }
 
-@Suite("WindowCountReconciliationTests")
-struct WindowCountReconciliationTests {
-    @Test("Dock indicator counts use the verified Window Picker count and fall back to the raw CGWindowList count")
-    func testReconcileWindowCounts() {
-        let raw = ["com.google.Chrome": 3, "com.apple.finder": 2, "org.example.NoMenu": 2]
-        let verified = ["com.google.Chrome": 2, "com.apple.finder": 3, "org.example.NoMenu": 0]
-
-        let counts = AppObserverService.reconcileWindowCounts(raw: raw, verified: verified)
-        #expect(counts["com.google.Chrome"] == 2)
-        #expect(counts["com.apple.finder"] == 3)
-        #expect(counts["org.example.NoMenu"] == 2)
-
-        let unverified = AppObserverService.reconcileWindowCounts(raw: ["com.apple.Safari": 1], verified: [:])
-        #expect(unverified["com.apple.Safari"] == 1)
-    }
-}

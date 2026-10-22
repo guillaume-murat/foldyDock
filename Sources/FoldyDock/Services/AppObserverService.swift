@@ -19,16 +19,13 @@ public final class AppObserverService: ObservableObject {
     private var syncTimer: Timer?
     private var cyclingEngine = AppWindowCyclingEngine()
 
-    /// Raw CGWindowList counts include helper windows (e.g. Chrome's full-screen toolbar), so each
-    /// count is re-verified with the AX + Window menu list the Window Picker uses.
-    private var rawWindowCounts: [String: Int] = [:]
-    private var verifiedWindowCounts: [String: Int] = [:]
-    private var verifiedAt: [String: Date] = [:]
-    private var verificationsInFlight: Set<String> = []
-    private static let verificationMaxAge: TimeInterval = 10
-
-    @_silgen_name("_AXUIElementGetWindow")
-    nonisolated private static func _AXUIElementGetWindow(_ element: AXUIElement, _ wid: UnsafeMutablePointer<CGWindowID>) -> AXError
+    private let windowInventory = AppWindowInventory(source: SystemAppWindowSource())
+    private var inventoryRefreshTask: Task<Void, Never>?
+    private var inventoryRefreshPending = false
+    private var allMinimizedBundleIds: Set<String> = []
+    #if DEBUG
+    private var windowStateOverriddenForTesting = false
+    #endif
 
     public init() {
         refreshRunningApps()
@@ -57,7 +54,7 @@ public final class AppObserverService: ObservableObject {
         syncTimer?.invalidate()
     }
 
-    /// Refresh the list of currently running regular applications and their window counts
+    /// Refresh the list of currently running regular applications and their window state
     public func refreshRunningApps() {
         let apps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
         self.runningBundleIds = Set(apps.compactMap(\.bundleIdentifier))
@@ -66,126 +63,62 @@ public final class AppObserverService: ObservableObject {
             self.activeAppBundleId = frontBid
         }
         self.refreshWindowCounts()
-        self.refreshHiddenApps()
     }
 
-    /// Counts open user windows for all regular applications
+    /// Refreshes window dots and hidden state from the App Window Inventory (off the main thread, coalesced).
     public func refreshWindowCounts() {
-        let opts: CGWindowListOption = [.excludeDesktopElements]
-        guard let list = CGWindowListCopyWindowInfo(opts, kCGNullWindowID) as? [[String: Any]] else {
+        publishHiddenApps()
+        guard inventoryRefreshTask == nil else {
+            inventoryRefreshPending = true
             return
         }
-
-        var pidToBundle: [pid_t: String] = [:]
-        for app in NSWorkspace.shared.runningApplications {
-            if let bid = app.bundleIdentifier, app.activationPolicy == .regular {
-                pidToBundle[app.processIdentifier] = bid
-            }
-        }
-
-        var counts: [String: Int] = [:]
-        for win in list {
-            guard let layer = win[kCGWindowLayer as String] as? Int, layer == 0,
-                  let pid = win[kCGWindowOwnerPID as String] as? pid_t,
-                  let bid = pidToBundle[pid],
-                  let bounds = win[kCGWindowBounds as String] as? [String: Any],
-                  let w = bounds["Width"] as? Double,
-                  let h = bounds["Height"] as? Double,
-                  let alpha = win[kCGWindowAlpha as String] as? Double, alpha > 0.05,
-                  w >= 150 && h >= 150 else {
-                continue
-            }
-
-            let title = (win[kCGWindowName as String] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            // Exclude macOS system 500x500 empty-titled offscreen helper windows
-            if w == 500 && h == 500 && title.isEmpty {
-                continue
-            }
-
-            counts[bid, default: 0] += 1
-        }
-
-        let now = Date()
-        for (bid, raw) in counts {
-            let isStale = now.timeIntervalSince(verifiedAt[bid] ?? .distantPast) > Self.verificationMaxAge
-            if raw != rawWindowCounts[bid] || isStale {
-                verifyWindowCount(for: bid)
-            }
-        }
-        for bid in rawWindowCounts.keys where counts[bid] == nil {
-            verifiedWindowCounts.removeValue(forKey: bid)
-            verifiedAt.removeValue(forKey: bid)
-        }
-        rawWindowCounts = counts
-        publishWindowCounts()
-    }
-
-    /// Prefers the verified count; falls back to the raw count when verification found nothing
-    /// (no Accessibility permission, or an app without a Window menu whose windows are on another Space).
-    nonisolated static func reconcileWindowCounts(raw: [String: Int], verified: [String: Int]) -> [String: Int] {
-        raw.reduce(into: [:]) { result, pair in
-            if let checked = verified[pair.key], checked > 0 {
-                result[pair.key] = checked
-            } else {
-                result[pair.key] = pair.value
-            }
-        }
-    }
-
-    private func publishWindowCounts() {
-        let counts = Self.reconcileWindowCounts(raw: rawWindowCounts, verified: verifiedWindowCounts)
-        if self.windowCountsByBundleId != counts {
-            self.windowCountsByBundleId = counts
-        }
-    }
-
-    private func verifyWindowCount(for bundleIdentifier: String) {
-        guard !verificationsInFlight.contains(bundleIdentifier) else { return }
-        verificationsInFlight.insert(bundleIdentifier)
-        Task { [weak self] in
-            let count = await Task.detached(priority: .utility) {
-                Self.queryOpenWindows(for: bundleIdentifier).count
-            }.value
+        let apps = Self.regularRunningApps()
+        let inventory = windowInventory
+        inventoryRefreshTask = Task { [weak self] in
+            let summary = await inventory.refresh(apps: apps)
             guard let self = self else { return }
-            self.verificationsInFlight.remove(bundleIdentifier)
-            guard self.rawWindowCounts[bundleIdentifier] != nil else { return }
-            self.verifiedWindowCounts[bundleIdentifier] = count
-            self.verifiedAt[bundleIdentifier] = Date()
-            self.publishWindowCounts()
+            self.apply(summary)
+            self.inventoryRefreshTask = nil
+            if self.inventoryRefreshPending {
+                self.inventoryRefreshPending = false
+                self.refreshWindowCounts()
+            }
         }
     }
 
-    /// Refreshes the set of applications that are hidden (via ⌘H/Masquer or with all windows minimized via yellow button)
+    /// Hidden = hidden with ⌘H, or every User Window minimized (yellow button).
     public func refreshHiddenApps() {
-        var hiddenBids: Set<String> = []
-        for app in NSWorkspace.shared.runningApplications where app.activationPolicy == .regular {
-            guard let bid = app.bundleIdentifier else { continue }
-            if app.isHidden {
-                hiddenBids.insert(bid)
-                continue
-            }
+        refreshWindowCounts()
+    }
 
-            // Check if all windows are minimized (yellow traffic light button)
-            let appElem = AXUIElementCreateApplication(app.processIdentifier)
-            var winListRef: CFTypeRef?
-            if AXUIElementCopyAttributeValue(appElem, kAXWindowsAttribute as CFString, &winListRef) == .success,
-               let wins = winListRef as? [AXUIElement], !wins.isEmpty {
-                var minCount = 0
-                for w in wins {
-                    var val: CFTypeRef?
-                    if AXUIElementCopyAttributeValue(w, kAXMinimizedAttribute as CFString, &val) == .success,
-                       let b = val as? Bool, b {
-                        minCount += 1
-                    }
-                }
-                if minCount > 0 && minCount == wins.count {
-                    hiddenBids.insert(bid)
-                }
-            }
+    private func apply(_ summary: AppWindowSummary) {
+        #if DEBUG
+        if windowStateOverriddenForTesting { return }
+        #endif
+        allMinimizedBundleIds = summary.allMinimizedBundleIds
+        if self.windowCountsByBundleId != summary.windowCounts {
+            self.windowCountsByBundleId = summary.windowCounts
         }
+        publishHiddenApps()
+    }
 
-        if self.hiddenAppBundleIds != hiddenBids {
-            self.hiddenAppBundleIds = hiddenBids
+    private func publishHiddenApps() {
+        #if DEBUG
+        if windowStateOverriddenForTesting { return }
+        #endif
+        let hiddenWithCommandH = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular && $0.isHidden }
+            .compactMap(\.bundleIdentifier)
+        let hidden = Set(hiddenWithCommandH).union(allMinimizedBundleIds.intersection(runningBundleIds))
+        if self.hiddenAppBundleIds != hidden {
+            self.hiddenAppBundleIds = hidden
+        }
+    }
+
+    nonisolated private static func regularRunningApps() -> [RunningAppRef] {
+        NSWorkspace.shared.runningApplications.compactMap { app in
+            guard app.activationPolicy == .regular, let bid = app.bundleIdentifier else { return nil }
+            return RunningAppRef(pid: app.processIdentifier, bundleIdentifier: bid)
         }
     }
 
@@ -214,7 +147,6 @@ public final class AppObserverService: ObservableObject {
                 guard let self = self, let bid = app.bundleIdentifier else { return }
                 self.runningBundleIds.insert(bid)
                 self.refreshWindowCounts()
-                self.refreshHiddenApps()
                 self.onAppLaunched?(app)
             }
             .store(in: &cancellables)
@@ -227,7 +159,6 @@ public final class AppObserverService: ObservableObject {
                 self.cyclingEngine.removeState(for: app.processIdentifier)
                 self.runningBundleIds.remove(bid)
                 self.refreshWindowCounts()
-                self.refreshHiddenApps()
                 self.onAppTerminated?(bid)
             }
             .store(in: &cancellables)
@@ -240,7 +171,6 @@ public final class AppObserverService: ObservableObject {
                     self?.activeAppBundleId = app.bundleIdentifier
                 }
                 self?.refreshWindowCounts()
-                self?.refreshHiddenApps()
             }
             .store(in: &cancellables)
 
@@ -248,7 +178,6 @@ public final class AppObserverService: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshWindowCounts()
-                self?.refreshHiddenApps()
             }
             .store(in: &cancellables)
 
@@ -256,7 +185,6 @@ public final class AppObserverService: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshWindowCounts()
-                self?.refreshHiddenApps()
             }
             .store(in: &cancellables)
 
@@ -264,7 +192,6 @@ public final class AppObserverService: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshWindowCounts()
-                self?.refreshHiddenApps()
             }
             .store(in: &cancellables)
     }
@@ -311,14 +238,6 @@ public final class AppObserverService: ObservableObject {
         }
     }
 
-    nonisolated private static func windowID(for element: AXUIElement) -> CGWindowID {
-        var wid: CGWindowID = 0
-        if _AXUIElementGetWindow(element, &wid) == .success, wid > 0 {
-            return wid
-        }
-        return CGWindowID(bitPattern: Int32(truncatingIfNeeded: CFHash(element)))
-    }
-
     nonisolated private static func unminimizeWindow(_ window: AXUIElement) {
         var minVal: CFTypeRef?
         if AXUIElementCopyAttributeValue(window, kAXMinimizedAttribute as CFString, &minVal) == .success,
@@ -332,99 +251,6 @@ public final class AppObserverService: ObservableObject {
         AXUIElementPerformAction(window, kAXRaiseAction as CFString)
         AXUIElementSetAttributeValue(window, kAXMainAttribute as CFString, kCFBooleanTrue)
         AXUIElementSetAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, window)
-    }
-
-    nonisolated private static func copyAXAttribute(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {
-        var val: CFTypeRef?
-        if AXUIElementCopyAttributeValue(element, attribute as CFString, &val) == .success {
-            return val
-        }
-        return nil
-    }
-
-    /// Locates the Window menu element and its child menu items if present.
-    nonisolated private static func findWindowMenuItems(appElem: AXUIElement) -> [AXUIElement]? {
-        guard let menuBarRef = copyAXAttribute(appElem, kAXMenuBarAttribute as String),
-              CFGetTypeID(menuBarRef) == AXUIElementGetTypeID() else {
-            return nil
-        }
-        let menuBar = menuBarRef as! AXUIElement
-        guard let menuBarItems = copyAXAttribute(menuBar, kAXChildrenAttribute as String) as? [AXUIElement] else {
-            return nil
-        }
-
-        for (idx, item) in menuBarItems.enumerated() {
-            let title = (copyAXAttribute(item, kAXTitleAttribute as String) as? String) ?? ""
-            guard WindowCycleHelper.isWindowMenu(title: title, index: idx, totalMenuItems: menuBarItems.count) else {
-                continue
-            }
-
-            guard let menus = copyAXAttribute(item, kAXChildrenAttribute as String) as? [AXUIElement],
-                  let menu = menus.first,
-                  let subItems = copyAXAttribute(menu, kAXChildrenAttribute as String) as? [AXUIElement] else {
-                continue
-            }
-            return subItems
-        }
-        return nil
-    }
-
-    /// Extracts Window menu sub-items and their normalized `WindowMenuEntry` metadata.
-    nonisolated private static func inspectWindowMenu(appElem: AXUIElement) -> (elements: [AXUIElement], entries: [WindowMenuEntry]) {
-        guard let subItems = findWindowMenuItems(appElem: appElem) else {
-            return ([], [])
-        }
-        let entries: [WindowMenuEntry] = subItems.enumerated().map { (idx, sub) in
-            let subTitle = (copyAXAttribute(sub, kAXTitleAttribute as String) as? String) ?? ""
-            let mark = copyAXAttribute(sub, "AXMenuItemMarkChar") as? String
-            let isMarked = mark != nil && !mark!.isEmpty
-            return WindowMenuEntry(index: idx, title: subTitle, isSeparator: subTitle.isEmpty, isMarked: isMarked)
-        }
-        return (subItems, entries)
-    }
-
-    /// Extracts eligible standard user windows and their normalized `AXWindowEntry` metadata.
-    nonisolated private static func inspectAXWindows(appElem: AXUIElement, bundleIdentifier: String) -> (allWindows: [AXUIElement], eligibleElements: [AXUIElement], entries: [AXWindowEntry]) {
-        var winListRef: CFTypeRef?
-        _ = AXUIElementCopyAttributeValue(appElem, kAXWindowsAttribute as CFString, &winListRef)
-        let wins = (winListRef as? [AXUIElement]) ?? []
-
-        var eligibleElements: [AXUIElement] = []
-        var entries: [AXWindowEntry] = []
-
-        for w in wins {
-            let role = copyAXAttribute(w, kAXRoleAttribute as String) as? String
-            let subrole = copyAXAttribute(w, kAXSubroleAttribute as String) as? String
-            let title = (copyAXAttribute(w, kAXTitleAttribute as String) as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-
-            guard AppWindowCyclingEngine.isEligibleAXWindow(
-                role: role,
-                subrole: subrole,
-                title: title,
-                bundleIdentifier: bundleIdentifier
-            ) else {
-                continue
-            }
-
-            let isMin = (copyAXAttribute(w, kAXMinimizedAttribute as String) as? Bool) ?? false
-            let isMain = (copyAXAttribute(w, kAXMainAttribute as String) as? Bool) ?? false
-            let wid = windowID(for: w)
-
-            eligibleElements.append(w)
-            entries.append(AXWindowEntry(windowID: wid, title: title, isMinimized: isMin, isMain: isMain))
-        }
-
-        return (wins, eligibleElements, entries)
-    }
-
-    nonisolated private static func focusedWindowTitle(appElem: AXUIElement) -> String? {
-        var focusedWinRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(appElem, kAXFocusedWindowAttribute as CFString, &focusedWinRef) == .success,
-           let focusedWin = focusedWinRef,
-           CFGetTypeID(focusedWin) == AXUIElementGetTypeID() {
-            return copyAXAttribute(focusedWin as! AXUIElement, kAXTitleAttribute as String) as? String
-        }
-        return nil
     }
 
     /// Triggers the native macOS window cycle keyboard shortcut (Cmd + `) directly to the target application PID.
@@ -477,42 +303,43 @@ public final class AppObserverService: ObservableObject {
         let bid = bundleIdentifier ?? runningApp.bundleIdentifier ?? ""
 
         // Ensure Accessibility permission is checked/prompted when multi-window cycling is needed
-        let cgCount = windowCountsByBundleId[bid] ?? 0
-        if cgCount > 1 && !AXIsProcessTrusted() {
+        let dockWindowCount = windowCountsByBundleId[bid] ?? 0
+        if dockWindowCount > 1 && !AccessibilityPermissionService.shared.isTrusted {
             requestAccessibilityPermissionIfNeeded()
         }
 
         let appElem = AXUIElementCreateApplication(pid)
-        let axInspection = Self.inspectAXWindows(appElem: appElem, bundleIdentifier: bid)
-        let menuInspection = Self.inspectWindowMenu(appElem: appElem)
-
+        let snapshot = windowInventory.snapshot(for: RunningAppRef(pid: pid, bundleIdentifier: bid))
         let decision = cyclingEngine.decideActivation(
             pid: pid,
             isFrontmost: isAlreadyFrontmost,
             isHidden: runningApp.isHidden,
-            cgWindowCount: cgCount,
-            axWindows: axInspection.entries,
-            menuEntries: menuInspection.entries,
-            focusedWindowTitle: Self.focusedWindowTitle(appElem: appElem)
+            snapshot: snapshot,
+            fallbackWindowCount: dockWindowCount
         )
 
         self.activeAppBundleId = runningApp.bundleIdentifier
 
+        let raise = { (windowID: CGWindowID) in
+            if let element = SystemAppWindowSource.axWindowElement(pid: pid, windowID: windowID) {
+                Self.raiseWindow(element, appElement: appElem)
+            }
+        }
+
         switch decision {
         case .pressMenuIndex(let menuIndex, let matchingWindowID):
-            if menuIndex < menuInspection.elements.count,
-               AXUIElementPerformAction(menuInspection.elements[menuIndex], kAXPressAction as CFString) == .success {
-                if let wid = matchingWindowID,
-                   let matchIdx = axInspection.entries.firstIndex(where: { $0.windowID == wid }) {
-                    Self.raiseWindow(axInspection.eligibleElements[matchIdx], appElement: appElem)
+            let menuItems = SystemAppWindowSource.windowMenuItemElements(pid: pid)
+            if menuIndex < menuItems.count,
+               AXUIElementPerformAction(menuItems[menuIndex], kAXPressAction as CFString) == .success {
+                if let wid = matchingWindowID {
+                    raise(wid)
                 }
                 yieldAndActivate(runningApp)
                 return
             }
             // Fallback to Strategy 2 (AX window raise) before Strategy 3 (keyboard shortcut)
-            if let fallbackWID = cyclingEngine.nextAXWindowIDToRaise(pid: pid, axWindows: axInspection.entries),
-               let matchIdx = axInspection.entries.firstIndex(where: { $0.windowID == fallbackWID }) {
-                Self.raiseWindow(axInspection.eligibleElements[matchIdx], appElement: appElem)
+            if let fallbackWID = cyclingEngine.nextAXWindowIDToRaise(pid: pid, axWindows: snapshot.axWindows) {
+                raise(fallbackWID)
                 yieldAndActivate(runningApp)
                 return
             }
@@ -520,9 +347,7 @@ public final class AppObserverService: ObservableObject {
             triggerWindowCycleKeyboardShortcut(for: pid)
 
         case .raiseWindowID(let targetWID):
-            if let matchIdx = axInspection.entries.firstIndex(where: { $0.windowID == targetWID }) {
-                Self.raiseWindow(axInspection.eligibleElements[matchIdx], appElement: appElem)
-            }
+            raise(targetWID)
             yieldAndActivate(runningApp)
 
         case .sendKeyboardShortcut:
@@ -534,7 +359,10 @@ public final class AppObserverService: ObservableObject {
                 runningApp.unhide()
             }
             yieldAndActivate(runningApp, options: [.activateAllWindows])
-            if let frontWindow = axInspection.eligibleElements.first ?? axInspection.allWindows.first {
+            let frontWindow = snapshot.axWindows.first
+                .flatMap { SystemAppWindowSource.axWindowElement(pid: pid, windowID: $0.windowID) }
+                ?? SystemAppWindowSource.axWindowElements(pid: pid).first
+            if let frontWindow = frontWindow {
                 Self.raiseWindow(frontWindow, appElement: appElem)
             }
             executeAppleScript(bundleIdentifier: bundleIdentifier ?? runningApp.bundleIdentifier, command: "reopen\nactivate")
@@ -575,72 +403,62 @@ public final class AppObserverService: ObservableObject {
         return runningBundleIds.contains(bid)
     }
 
-    /// Internal query implementation that runs AX queries safely across background or main threads.
-    nonisolated private static func queryOpenWindows(for bundleIdentifier: String) -> [AppWindowInfo] {
+    /// Fresh App Window Inventory of a running application (empty if not running).
+    nonisolated private func openWindows(for bundleIdentifier: String) -> [AppWindowInfo] {
+        guard let app = Self.runningApp(bundleIdentifier: bundleIdentifier) else { return [] }
+        return windowInventory.snapshot(for: RunningAppRef(pid: app.processIdentifier, bundleIdentifier: bundleIdentifier)).windows
+    }
+
+    nonisolated private static func runningApp(bundleIdentifier: String) -> NSRunningApplication? {
         let matchingApps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
-        guard let runningApp = matchingApps.first(where: { $0.activationPolicy == .regular }) ?? matchingApps.first else {
-            return []
-        }
-
-        let pid = runningApp.processIdentifier
-        let appElem = AXUIElementCreateApplication(pid)
-        let axInspection = inspectAXWindows(appElem: appElem, bundleIdentifier: bundleIdentifier)
-        let menuInspection = inspectWindowMenu(appElem: appElem)
-
-        return AppWindowCyclingEngine.buildWindowInfos(
-            pid: pid,
-            axWindows: axInspection.entries,
-            menuEntries: menuInspection.entries
-        )
+        return matchingApps.first(where: { $0.activationPolicy == .regular }) ?? matchingApps.first
     }
 
-    /// Synchronously fetches open standard user document windows for an application.
+    /// Synchronously fetches the User Windows of an application.
     public func fetchOpenWindows(for bundleIdentifier: String) -> [AppWindowInfo] {
-        Self.queryOpenWindows(for: bundleIdentifier)
+        openWindows(for: bundleIdentifier)
     }
 
-    /// Asynchronously fetches open standard user document windows off the main thread to avoid UI hitches.
+    /// Asynchronously fetches the User Windows of an application off the main thread to avoid UI hitches.
     public func fetchOpenWindowsAsync(for bundleIdentifier: String) async -> [AppWindowInfo] {
-        await Task.detached(priority: .userInitiated) {
-            Self.queryOpenWindows(for: bundleIdentifier)
+        await Task.detached(priority: .userInitiated) { [self] in
+            self.openWindows(for: bundleIdentifier)
         }.value
     }
 
     /// Selects and brings a specific window to the foreground.
     /// Handles unminimization, Mission Control virtual Space switching, and cooperative application activation.
     public func selectWindow(_ window: AppWindowInfo, for bundleIdentifier: String) {
-        let matchingApps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
-        guard let runningApp = matchingApps.first(where: { $0.activationPolicy == .regular }) ?? matchingApps.first else {
-            return
-        }
+        guard let runningApp = Self.runningApp(bundleIdentifier: bundleIdentifier) else { return }
 
         let pid = runningApp.processIdentifier
         let appElem = AXUIElementCreateApplication(pid)
-        let axInspection = Self.inspectAXWindows(appElem: appElem, bundleIdentifier: bundleIdentifier)
-        let menuInspection = Self.inspectWindowMenu(appElem: appElem)
+        let snapshot = windowInventory.snapshot(for: RunningAppRef(pid: pid, bundleIdentifier: bundleIdentifier))
 
         if runningApp.isHidden {
             runningApp.unhide()
         }
 
         self.activeAppBundleId = runningApp.bundleIdentifier
-        let matchedMenuIdx = self.cyclingEngine.recordSelectedWindow(window, pid: pid, menuEntries: menuInspection.entries)
+        let matchedMenuIdx = self.cyclingEngine.recordSelectedWindow(window, pid: pid, menuEntries: snapshot.menuEntries)
         yieldAndActivate(runningApp)
 
         // 1. Strategy 1: If Window menu item matches, perform kAXPressAction to switch Space and select the window
         var menuActionSucceeded = false
-        if let itemIdx = matchedMenuIdx, itemIdx < menuInspection.elements.count {
-            if AXUIElementPerformAction(menuInspection.elements[itemIdx], kAXPressAction as CFString) == .success {
+        if let itemIdx = matchedMenuIdx {
+            let menuItems = SystemAppWindowSource.windowMenuItemElements(pid: pid)
+            if itemIdx < menuItems.count,
+               AXUIElementPerformAction(menuItems[itemIdx], kAXPressAction as CFString) == .success {
                 menuActionSucceeded = true
             }
         }
 
         // 2. Strategy 2: If the window is on the current Space, unminimize and raise directly
         var axRaised = false
-        if let matchIdx = AppWindowCyclingEngine.resolveAXWindowIndex(for: window, in: axInspection.entries) {
-            let matchingAXWindow = axInspection.eligibleElements[matchIdx]
-            Self.unminimizeWindow(matchingAXWindow)
-            Self.raiseWindow(matchingAXWindow, appElement: appElem)
+        if let matchIdx = AppWindowCyclingEngine.resolveAXWindowIndex(for: window, in: snapshot.axWindows),
+           let element = SystemAppWindowSource.axWindowElement(pid: pid, windowID: snapshot.axWindows[matchIdx].windowID) {
+            Self.unminimizeWindow(element)
+            Self.raiseWindow(element, appElement: appElem)
             axRaised = true
         }
 
@@ -652,6 +470,7 @@ public final class AppObserverService: ObservableObject {
 
     #if DEBUG
     public func setWindowCountsForTesting(_ counts: [String: Int]) {
+        windowStateOverriddenForTesting = true
         self.windowCountsByBundleId = counts
     }
 
@@ -660,6 +479,7 @@ public final class AppObserverService: ObservableObject {
     }
 
     public func setHiddenAppBundleIdsForTesting(_ bids: Set<String>) {
+        windowStateOverriddenForTesting = true
         self.hiddenAppBundleIds = bids
     }
     #endif

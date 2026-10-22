@@ -55,9 +55,13 @@ public struct AppWindowCyclingEngine: Sendable {
         if let wid = window.windowID, wid > 0 {
             lastCycledWindowIDPerPid[pid] = wid
         }
+        let candidateIndices = WindowCycleHelper.candidateWindowIndices(entries: menuEntries)
+        if let menuIndex = window.menuIndex, let relIdx = candidateIndices.firstIndex(of: menuIndex) {
+            lastCycledMenuRelativeIndexPerPid[pid] = relIdx
+            return menuIndex
+        }
         let targetTitle = (window.menuTitle ?? window.title).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !targetTitle.isEmpty else { return nil }
-        let candidateIndices = WindowCycleHelper.candidateWindowIndices(entries: menuEntries)
         for (relIdx, itemIdx) in candidateIndices.enumerated() {
             let sTitle = menuEntries[itemIdx].title.trimmingCharacters(in: .whitespacesAndNewlines)
             if Self.titlesMatch(sTitle, targetTitle) {
@@ -138,7 +142,8 @@ public struct AppWindowCyclingEngine: Sendable {
                     isMinimized: false,
                     isMain: entry.isMarked,
                     windowID: nil,
-                    menuTitle: candidateTitle
+                    menuTitle: candidateTitle,
+                    menuIndex: itemIdx
                 ))
                 continue
             }
@@ -151,24 +156,26 @@ public struct AppWindowCyclingEngine: Sendable {
                 isMinimized: existing.isMinimized,
                 isMain: existing.isMain || entry.isMarked,
                 windowID: existing.windowID,
-                menuTitle: candidateTitle
+                menuTitle: candidateTitle,
+                menuIndex: itemIdx
             )
         }
 
         return windowInfos
     }
 
+    /// Decides what a click on a running application's dock icon does.
+    /// `fallbackWindowCount` is the dock's window count, used when the snapshot is empty (no Accessibility permission).
     public mutating func decideActivation(
         pid: pid_t,
         isFrontmost: Bool,
         isHidden: Bool,
-        cgWindowCount: Int,
-        axWindows: [AXWindowEntry],
-        menuEntries: [WindowMenuEntry],
-        focusedWindowTitle: String? = nil
+        snapshot: AppWindowSnapshot,
+        fallbackWindowCount: Int = 0
     ) -> WindowCycleDecision {
+        let menuEntries = snapshot.menuEntries
         let candidateIndices = WindowCycleHelper.candidateWindowIndices(entries: menuEntries)
-        let knownWindowCount = max(cgWindowCount, max(axWindows.count, candidateIndices.count))
+        let knownWindowCount = max(fallbackWindowCount, snapshot.windows.count, candidateIndices.count)
 
         guard WindowCycleHelper.shouldCycleWindows(
             isFrontmost: isFrontmost,
@@ -182,23 +189,10 @@ public struct AppWindowCyclingEngine: Sendable {
 
         // Strategy 1: Window menu cycling (handles multi-Space, minimized windows, and Firefox/Chrome/Safari)
         if candidateIndices.count >= 2 {
-            var checkedRelativeIndex: Int? = nil
-            for (relIdx, itemIdx) in candidateIndices.enumerated() {
-                if menuEntries[itemIdx].isMarked {
-                    checkedRelativeIndex = relIdx
-                    break
-                }
-            }
-
-            if checkedRelativeIndex == nil, let focusedTitle = focusedWindowTitle, !focusedTitle.isEmpty {
-                for (relIdx, itemIdx) in candidateIndices.enumerated() {
-                    let itemTitle = menuEntries[itemIdx].title
-                    if itemTitle == focusedTitle || itemTitle.contains(focusedTitle) || focusedTitle.contains(itemTitle) {
-                        checkedRelativeIndex = relIdx
-                        break
-                    }
-                }
-            }
+            // Current window: the checked menu entry, else the menu entry paired with the AX main window
+            let markedMenuIndex = candidateIndices.first { menuEntries[$0].isMarked }
+                ?? snapshot.windows.first { $0.isMain && $0.windowID != nil }?.menuIndex
+            let checkedRelativeIndex = markedMenuIndex.flatMap { candidateIndices.firstIndex(of: $0) }
 
             let effectiveIndex: Int?
             if let lastIdx = lastCycledMenuRelativeIndexPerPid[pid], lastIdx >= 0, lastIdx < candidateIndices.count {
@@ -211,35 +205,12 @@ public struct AppWindowCyclingEngine: Sendable {
             lastCycledMenuRelativeIndexPerPid[pid] = nextRelIdx
 
             let targetMenuIndex = candidateIndices[nextRelIdx]
-            let targetTitle = menuEntries[targetMenuIndex].title.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            // Find matching AX window on current Space (if multiple share the same title, pick the corresponding occurrence)
-            var sameTitleOccurrence = 0
-            for idx in 0...nextRelIdx {
-                let t = menuEntries[candidateIndices[idx]].title.trimmingCharacters(in: .whitespacesAndNewlines)
-                if t == targetTitle {
-                    sameTitleOccurrence += 1
-                }
-            }
-
-            var matchedWindowID: CGWindowID? = nil
-            var seenAXMatching = 0
-            for w in axWindows {
-                let wTitle = w.title.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !wTitle.isEmpty && (wTitle == targetTitle || targetTitle.contains(wTitle) || wTitle.contains(targetTitle)) {
-                    seenAXMatching += 1
-                    matchedWindowID = w.windowID
-                    if seenAXMatching == sameTitleOccurrence {
-                        break
-                    }
-                }
-            }
-
+            let matchedWindowID = snapshot.windows.first { $0.menuIndex == targetMenuIndex }?.windowID
             return .pressMenuIndex(menuIndex: targetMenuIndex, matchingWindowID: matchedWindowID)
         }
 
         // Strategy 2: AXWindowEntry stable order cycling
-        if let wid = nextAXWindowIDToRaise(pid: pid, axWindows: axWindows) {
+        if let wid = nextAXWindowIDToRaise(pid: pid, axWindows: snapshot.axWindows) {
             return .raiseWindowID(wid)
         }
 

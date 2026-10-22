@@ -40,6 +40,14 @@ _Avoid_: Autostart helper, login item daemon
 A contextual popover displayed upon hovering an application icon with 2 or more open windows, listing their titles and states (active/minimized) to let the user select and focus a specific window directly.
 _Avoid_: Window switcher, Alt-tab preview, thumbnail bar
 
+**User Window**:
+A standard window or dialog of an application that the user works in, on any Space. Excludes panels, palettes, helper windows (such as Chrome's full-screen toolbar) and the Finder desktop.
+_Avoid_: Window list entry, CG window
+
+**App Window Inventory**:
+The reconciled list of an application's User Windows, pairing what Accessibility reports (current Space) with the application's Window menu (all Spaces). It is the single source for the dock's window dots, the Window Picker Popover, window cycling and the "all windows minimized" state.
+_Avoid_: Window list, window count
+
 **Appearance Mode**:
 The visual theme governing the dock and its popovers (`system`, `light`, or `dark`), either synchronizing automatically with macOS appearance or enforcing an explicit light or dark frosted glass palette.
 _Avoid_: Color scheme, skin, UI style
