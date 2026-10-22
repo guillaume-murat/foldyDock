@@ -46,7 +46,8 @@ public struct SystemAppWindowSource: AppWindowSource {
         Self.windowMenuItemElements(pid: pid).enumerated().map { idx, item in
             let title = (Self.copyAXAttribute(item, kAXTitleAttribute as String) as? String) ?? ""
             let mark = Self.copyAXAttribute(item, "AXMenuItemMarkChar") as? String
-            return WindowMenuEntry(index: idx, title: title, isSeparator: title.isEmpty, isMarked: !(mark ?? "").isEmpty)
+            let identifier = Self.copyAXAttribute(item, kAXIdentifierAttribute as String) as? String
+            return WindowMenuEntry(index: idx, title: title, isSeparator: title.isEmpty, isMarked: !(mark ?? "").isEmpty, identifier: identifier)
         }
     }
 

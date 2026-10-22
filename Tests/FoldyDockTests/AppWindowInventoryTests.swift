@@ -112,6 +112,49 @@ struct AppWindowInventoryTests {
         #expect(summary.allMinimizedBundleIds == ["com.apple.Preview"])
     }
 
+    @Test("Window menu commands after the last separator are not windows (Gemini lists none, Antigravity ends with Toggle Full Screen)")
+    func testWindowMenuCommandsAreNotWindows() {
+        let source = FixtureWindowSource()
+        let gemini = RunningAppRef(pid: 12, bundleIdentifier: "com.google.GeminiMacOS")
+        let antigravity = RunningAppRef(pid: 13, bundleIdentifier: "com.google.antigravity")
+        source.axWindowsByPid[12] = [window(401, "Gemini", main: true)]
+        source.menuEntriesByPid[12] = [
+            WindowMenuEntry(index: 0, title: "Minimiser", isSeparator: false, isMarked: false, identifier: "performMiniaturize:"),
+            WindowMenuEntry(index: 1, title: "", isSeparator: true, isMarked: false),
+            WindowMenuEntry(index: 2, title: "Tout ramener au premier plan", isSeparator: false, isMarked: false, identifier: "arrangeInFront:"),
+            WindowMenuEntry(index: 3, title: "Organiser au premier plan", isSeparator: false, isMarked: false, identifier: "alternateArrangeInFront:"),
+            WindowMenuEntry(index: 4, title: "Supprimer la fenêtre du groupe", isSeparator: false, isMarked: false, identifier: "_removeWindowFromStageManagerSet:")
+        ]
+        source.axWindowsByPid[13] = [window(501, "main.swift — foldyDock")]
+        source.menuEntriesByPid[13] = [
+            WindowMenuEntry(index: 0, title: "Minimize", isSeparator: false, isMarked: false, identifier: "performMiniaturize:"),
+            WindowMenuEntry(index: 1, title: "", isSeparator: true, isMarked: false),
+            WindowMenuEntry(index: 2, title: "Toggle Full Screen", isSeparator: false, isMarked: false, identifier: "toggleFullScreenMode:")
+        ]
+        let inventory = AppWindowInventory(source: source)
+
+        #expect(inventory.snapshot(for: gemini).windows.map(\.title) == ["Gemini"])
+        #expect(inventory.snapshot(for: antigravity).windows.map(\.title) == ["main.swift — foldyDock"])
+    }
+
+    @Test("Window entries are recognised by their makeKeyAndOrderFront: action even when commands follow them")
+    func testWindowEntriesRecognisedByAction() {
+        let source = FixtureWindowSource()
+        let app = RunningAppRef(pid: 14, bundleIdentifier: "com.example.Editor")
+        source.menuEntriesByPid[14] = [
+            WindowMenuEntry(index: 0, title: "", isSeparator: true, isMarked: false),
+            WindowMenuEntry(index: 1, title: "Rapport.md", isSeparator: false, isMarked: true, identifier: "makeKeyAndOrderFront:"),
+            WindowMenuEntry(index: 2, title: "Notes.md", isSeparator: false, isMarked: false, identifier: "makeKeyAndOrderFront:"),
+            WindowMenuEntry(index: 3, title: "", isSeparator: true, isMarked: false),
+            WindowMenuEntry(index: 4, title: "Show All Tabs", isSeparator: false, isMarked: false, identifier: "toggleTabOverview:")
+        ]
+
+        let windows = AppWindowInventory(source: source).snapshot(for: app).windows
+
+        #expect(windows.map(\.title) == ["Rapport.md", "Notes.md"])
+        #expect(windows.map(\.menuIndex) == [1, 2])
+    }
+
     @Test("Window cycling raises the window paired by the inventory, not one whose title merely contains the target")
     func testCyclingUsesInventoryPairing() {
         let source = FixtureWindowSource()

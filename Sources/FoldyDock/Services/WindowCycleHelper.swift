@@ -6,13 +6,18 @@ public struct WindowMenuEntry: Equatable, Sendable {
     public let title: String
     public let isSeparator: Bool
     public let isMarked: Bool
+    /// The item's AXIdentifier: AppKit window entries use `makeKeyAndOrderFront:`, commands their own selector.
+    public let identifier: String?
 
-    public init(index: Int, title: String, isSeparator: Bool, isMarked: Bool) {
+    public init(index: Int, title: String, isSeparator: Bool, isMarked: Bool, identifier: String? = nil) {
         self.index = index
         self.title = title
         self.isSeparator = isSeparator
         self.isMarked = isMarked
+        self.identifier = identifier
     }
+
+    static let windowEntryIdentifier = "makeKeyAndOrderFront:"
 }
 
 public struct AXWindowEntry: Equatable, Sendable {
@@ -311,7 +316,15 @@ public enum WindowCycleHelper {
         }
     }
 
+    /// Indices of the Window menu entries that are windows. Entries tagged with AppKit's window action are
+    /// authoritative; otherwise the last section is used, minus entries carrying a command identifier
+    /// (Gemini lists no windows and ends with "Bring All to Front", Electron apps with "Toggle Full Screen").
     public static func candidateWindowIndices(entries: [WindowMenuEntry]) -> [Int] {
-        candidateWindowIndices(items: entries.map { (title: $0.title, isSeparator: $0.isSeparator, isMarked: $0.isMarked) })
+        let windowEntries = entries.indices.filter { entries[$0].identifier == WindowMenuEntry.windowEntryIdentifier }
+        if !windowEntries.isEmpty {
+            return windowEntries
+        }
+        return candidateWindowIndices(items: entries.map { (title: $0.title, isSeparator: $0.isSeparator, isMarked: $0.isMarked) })
+            .filter { (entries[$0].identifier ?? "").isEmpty }
     }
 }
