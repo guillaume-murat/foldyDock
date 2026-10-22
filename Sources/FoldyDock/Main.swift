@@ -173,9 +173,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.animates = true
         popover.appearance = viewModel.theme.nsAppearance
         let hostingController = NSHostingController(rootView: content)
-        // Size the popover to its SwiftUI content before showing: otherwise it opens at the
-        // default 320×320, then SwiftUI shrinks the window with its top edge pinned, lifting
-        // the arrow far above the dock.
+        // NSPopover must own every size change: left to its defaults, the hosting controller resizes
+        // the popover window itself with the top edge pinned, lifting the arrow above the dock.
+        // With .preferredContentSize, NSPopover applies new sizes and keeps the arrow anchored.
+        hostingController.sizingOptions = [.preferredContentSize]
+        // Open at the content's size instead of the default 320×320.
         let fittingSize = hostingController.view.fittingSize
         if fittingSize.width > 0, fittingSize.height > 0 {
             popover.contentSize = fittingSize

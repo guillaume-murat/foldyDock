@@ -9,8 +9,12 @@ public struct FolderPopoverView: View {
     @State private var isEditingTitle: Bool = false
 
     private let appIconSize: CGFloat = 64.0
+    // Fixed columns keep the popover's height a function of its item count only: adaptive columns
+    // made the height depend on the width SwiftUI picked at each measurement, so the popover window
+    // shrank after opening and floated above the dock.
     private let columns = [
-        GridItem(.adaptive(minimum: 88, maximum: 104), spacing: 16)
+        GridItem(.fixed(88), spacing: 16),
+        GridItem(.fixed(88), spacing: 16)
     ]
 
     private let itemWidth: CGFloat = 88.0
@@ -122,8 +126,8 @@ public struct FolderPopoverView: View {
             }
         }
         .padding(18)
-        .frame(minWidth: 320, maxWidth: 480)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(minWidth: 320)
+        .fixedSize()
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(theme.folderPopoverBackground)
