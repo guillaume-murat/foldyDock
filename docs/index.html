@@ -2151,6 +2151,35 @@
       stroke-linejoin: round;
     }
 
+    .feature-demo {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: #07080b;
+      margin-bottom: 0.25rem;
+    }
+
+    .gesture-box.is-wide {
+      grid-column: 1 / -1;
+    }
+
+    @media (min-width: 861px) {
+      .gesture-box.is-wide {
+        display: grid;
+        grid-template-columns: 1fr 1.25fr;
+        align-items: center;
+        gap: 2rem;
+      }
+      .gesture-box.is-wide .feature-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+    }
+
     .feature-head {
       display: flex;
       align-items: center;
@@ -3417,7 +3446,20 @@
     </div>
 
     <div class="gestures-grid">
+      <div class="gesture-box is-wide">
+        <div class="feature-text">
+          <div class="feature-head">
+            <span class="feature-icon"><svg class="lucide-duo" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span>
+            <span class="gesture-badge is-feature">Folders</span>
+          </div>
+          <div class="gesture-title">Live Folders</div>
+          <div class="gesture-desc">Group apps into folders right in the dock. Click one to open it and launch any app inside, with its window dots still visible.</div>
+        </div>
+        <video class="feature-demo" muted loop playsinline preload="none" poster="assets/demos/folder.jpg" data-src="assets/demos/folder.mp4" aria-label="Opening the IA folder in FoldyDock"></video>
+      </div>
+
       <div class="gesture-box">
+        <video class="feature-demo" muted loop playsinline preload="none" poster="assets/demos/picker.jpg" data-src="assets/demos/picker.mp4" aria-label="Hovering Claude in FoldyDock lists its two windows"></video>
         <div class="feature-head">
           <span class="feature-icon"><svg class="lucide-duo" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/></svg></span>
           <span class="gesture-badge is-feature">Hover</span>
@@ -3436,6 +3478,7 @@
       </div>
 
       <div class="gesture-box">
+        <video class="feature-demo" muted loop playsinline preload="none" poster="assets/demos/music.jpg" data-src="assets/demos/music.mp4" aria-label="The FoldyDock music widget playing a track"></video>
         <div class="feature-head">
           <span class="feature-icon"><svg class="lucide-duo" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
           <span class="gesture-badge is-feature">Now Playing</span>
@@ -3595,6 +3638,25 @@
     };
 
     let activeWindowName = null;
+
+    // Feature demos: load when near the viewport, play only while visible, poster only for reduced motion
+    (function () {
+      const videos = document.querySelectorAll('video.feature-demo');
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion || !('IntersectionObserver' in window)) return;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target;
+          if (entry.isIntersecting) {
+            if (!video.src) video.src = video.dataset.src;
+            video.play().catch(() => {});
+          } else if (video.src) {
+            video.pause();
+          }
+        });
+      }, { rootMargin: '200px 0px', threshold: 0.25 });
+      videos.forEach((video) => observer.observe(video));
+    })();
 
     function showToast(title, subtitle) {
       actionToast.innerHTML = `<h3>${title}</h3><p>${subtitle}</p>`;
