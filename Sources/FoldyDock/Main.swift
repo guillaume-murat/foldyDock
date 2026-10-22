@@ -109,6 +109,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupMenuBarStatusItem()
         setupScreenChangeObserver()
         NSApp.applicationIconImage = LogoProvider.shared.logoImage(size: 512)
+
+        if vm.config.checkAccessibilityOnLaunch {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak vm] in
+                guard let vm = vm else { return }
+                if !AccessibilityPermissionService.shared.presentLaunchAlertIfNeeded() {
+                    vm.config.checkAccessibilityOnLaunch = false
+                    vm.saveConfig()
+                }
+            }
+        }
     }
 
     private func showFolderPopover(for folder: DockItem, viewModel: DockViewModel) {

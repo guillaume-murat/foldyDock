@@ -36,13 +36,11 @@ public final class AppObserverService: ObservableObject {
     /// Prompts the user to grant Accessibility permission in System Settings if not already granted.
     @discardableResult
     public func requestAccessibilityPermissionIfNeeded() -> Bool {
-        let trusted = AXIsProcessTrusted()
+        let permission = AccessibilityPermissionService.shared
+        permission.refresh()
+        let trusted = permission.isTrusted
         if !trusted {
-            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-            _ = AXIsProcessTrustedWithOptions(options)
-            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                NSWorkspace.shared.open(url)
-            }
+            permission.requestPermission()
         }
         return trusted
     }

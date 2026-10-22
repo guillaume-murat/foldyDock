@@ -3,6 +3,7 @@ import AppKit
 
 public struct FoldyDockSettingsView: View {
     @ObservedObject var viewModel: DockViewModel
+    @ObservedObject private var accessibility = AccessibilityPermissionService.shared
     public var onClose: (() -> Void)?
 
     @State private var showingResetConfirmation: Bool = false
@@ -566,7 +567,68 @@ public struct FoldyDockSettingsView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    // Section 5: Maintenance & Quitter
+                    // Section 5: Autorisations
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 8) {
+                                Image(systemName: accessibility.isTrusted ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                    .foregroundStyle(accessibility.isTrusted ? Color.green : Color.orange)
+                                Text(accessibility.isTrusted ? "Accessibilité autorisée" : "Accessibilité non autorisée")
+                                    .font(.system(size: 13, weight: .medium))
+                                Spacer()
+                            }
+
+                            Text(accessibility.isTrusted
+                                 ? "Le sélecteur de fenêtres et le passage d'une fenêtre à l'autre sont opérationnels."
+                                 : "Requise pour le sélecteur de fenêtres. Si FoldyDock est déjà coché dans Réglages Système, l'autorisation appartient à une ancienne version : réinitialisez-la.")
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.secondary)
+
+                            if !accessibility.isTrusted {
+                                HStack(spacing: 10) {
+                                    Button {
+                                        accessibility.requestPermission()
+                                    } label: {
+                                        Label("Ouvrir les Réglages", systemImage: "gearshape")
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                    .buttonStyle(.borderedProminent)
+
+                                    Button {
+                                        accessibility.resetAndRequestPermission()
+                                    } label: {
+                                        Label("Réinitialiser", systemImage: "arrow.clockwise")
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                    .buttonStyle(.bordered)
+                                }
+                            }
+
+                            Divider()
+
+                            Toggle("Vérifier l'autorisation au lancement", isOn: Binding(
+                                get: { viewModel.config.checkAccessibilityOnLaunch },
+                                set: { newValue in
+                                    viewModel.config.checkAccessibilityOnLaunch = newValue
+                                    viewModel.saveConfig()
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .font(.system(size: 13, weight: .medium))
+
+                            Text("Affiche une alerte au démarrage si l'accès Accessibilité manque (par exemple après une mise à jour).")
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(8)
+                    } label: {
+                        Label("Autorisations", systemImage: "lock.shield")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .onAppear { accessibility.refresh() }
+
+                    // Section 6: Maintenance & Quitter
                     VStack(spacing: 10) {
                         Button(action: {
                             showingResetConfirmation = true

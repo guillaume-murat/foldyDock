@@ -121,7 +121,12 @@ cat <<EOF > "$CONTENTS/Info.plist"
 </plist>
 EOF
 
-codesign --force --deep --sign - --identifier "com.foldydock.FoldyDock" "$APP_BUNDLE" 2>/dev/null || true
+# Sign with a stable designated requirement (bundle identifier instead of the per-build cdhash)
+# so the Accessibility permission granted in System Settings survives rebuilds.
+# Set FOLDYDOCK_SIGN_IDENTITY to a code-signing identity name to use a real certificate instead.
+SIGN_IDENTITY="${FOLDYDOCK_SIGN_IDENTITY:--}"
+codesign --force --deep --sign "$SIGN_IDENTITY" --identifier "com.foldydock.FoldyDock" \
+  -r='designated => identifier "com.foldydock.FoldyDock"' "$APP_BUNDLE" 2>/dev/null || true
 
 echo "✅ $APP_NAME assembled successfully in $DIST_DIR!"
 

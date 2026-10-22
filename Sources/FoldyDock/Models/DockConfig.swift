@@ -20,6 +20,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
     public var showWindowPickerOnHover: Bool // Show Window Picker popover on app hover with >= 2 windows (default: true)
     public var windowPickerHoverDelay: Double // Delay in seconds before Window Picker popover appears (default: 0.35)
     public var appearanceMode: AppearanceMode // Visual theme of the dock (.system, .light, .dark)
+    public var checkAccessibilityOnLaunch: Bool // Alert at launch when Accessibility permission is missing (default: true)
 
     public var hideDelay: Double {
         get { autohideDelay }
@@ -50,6 +51,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         case showWindowPickerOnHover
         case windowPickerHoverDelay
         case appearanceMode
+        case checkAccessibilityOnLaunch
     }
 
     public init(
@@ -71,7 +73,8 @@ public struct DockConfig: Codable, Equatable, Sendable {
         showNowPlayingWidget: Bool = true,
         showWindowPickerOnHover: Bool = true,
         windowPickerHoverDelay: Double = 0.35,
-        appearanceMode: AppearanceMode = .system
+        appearanceMode: AppearanceMode = .system,
+        checkAccessibilityOnLaunch: Bool = true
     ) {
         self.autohideEnabled = autohideEnabled
         self.autohideDelay = autohideDelay
@@ -92,6 +95,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.showWindowPickerOnHover = showWindowPickerOnHover
         self.windowPickerHoverDelay = windowPickerHoverDelay
         self.appearanceMode = appearanceMode
+        self.checkAccessibilityOnLaunch = checkAccessibilityOnLaunch
     }
 
     public init(from decoder: Decoder) throws {
@@ -115,6 +119,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.showWindowPickerOnHover = try container.decodeIfPresent(Bool.self, forKey: .showWindowPickerOnHover) ?? true
         self.windowPickerHoverDelay = try container.decodeIfPresent(Double.self, forKey: .windowPickerHoverDelay) ?? 0.35
         self.appearanceMode = try container.decodeIfPresent(AppearanceMode.self, forKey: .appearanceMode) ?? .system
+        self.checkAccessibilityOnLaunch = try container.decodeIfPresent(Bool.self, forKey: .checkAccessibilityOnLaunch) ?? true
     }
 
     /// Default dock configuration with standard macOS applications and an example folder.
