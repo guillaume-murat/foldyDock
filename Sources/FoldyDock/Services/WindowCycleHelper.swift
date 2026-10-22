@@ -101,13 +101,10 @@ public struct AppWindowCyclingEngine: Sendable {
         menuEntries: [WindowMenuEntry]
     ) -> [AppWindowInfo] {
         var windowInfos: [AppWindowInfo] = []
-        var axTitleCounts: [String: Int] = [:]
 
         for (idx, w) in axWindows.enumerated() {
             let trimmed = w.title.trimmingCharacters(in: .whitespacesAndNewlines)
             let displayTitle = trimmed.isEmpty ? "Fenêtre \(idx + 1)" : trimmed
-            axTitleCounts[displayTitle, default: 0] += 1
-
             windowInfos.append(AppWindowInfo(
                 id: "\(pid)-\(w.windowID)-\(idx)",
                 title: displayTitle,
@@ -118,19 +115,23 @@ public struct AppWindowCyclingEngine: Sendable {
             ))
         }
 
+        // Pair each Window-menu entry with one not-yet-matched AX window: exact title first, then
+        // prefix (Chrome's AX titles add " - Google Chrome" or a tab-group suffix). Unpaired menu
+        // entries are windows on other Spaces, which AX does not report.
         let candidateIndices = WindowCycleHelper.candidateWindowIndices(entries: menuEntries)
-        var menuTitleSeenCounts: [String: Int] = [:]
+        let axTitles = windowInfos.map { $0.menuTitle ?? "" }
+        var matchedAXIndices = Set<Int>()
 
         for (cIdx, itemIdx) in candidateIndices.enumerated() {
             let entry = menuEntries[itemIdx]
             let candidateTitle = entry.title.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !candidateTitle.isEmpty else { continue }
 
-            menuTitleSeenCounts[candidateTitle, default: 0] += 1
-            let seenSoFar = menuTitleSeenCounts[candidateTitle] ?? 1
-            let axCountForTitle = axTitleCounts[candidateTitle] ?? 0
+            let unmatched = axTitles.indices.filter { !matchedAXIndices.contains($0) }
+            let matchIdx = unmatched.first { axTitles[$0] == candidateTitle }
+                ?? unmatched.first { titlesMatch(axTitles[$0], candidateTitle) }
 
-            if seenSoFar > axCountForTitle {
+            guard let i = matchIdx else {
                 windowInfos.append(AppWindowInfo(
                     id: "\(pid)-menu-\(itemIdx)-\(cIdx)",
                     title: candidateTitle,
@@ -139,25 +140,19 @@ public struct AppWindowCyclingEngine: Sendable {
                     windowID: nil,
                     menuTitle: candidateTitle
                 ))
-            } else if entry.isMarked {
-                // Match the Nth occurrence of candidateTitle in windowInfos
-                var occurrence = 0
-                for i in windowInfos.indices where windowInfos[i].title == candidateTitle {
-                    occurrence += 1
-                    if occurrence == seenSoFar {
-                        let existing = windowInfos[i]
-                        windowInfos[i] = AppWindowInfo(
-                            id: existing.id,
-                            title: existing.title,
-                            isMinimized: existing.isMinimized,
-                            isMain: true,
-                            windowID: existing.windowID,
-                            menuTitle: existing.menuTitle
-                        )
-                        break
-                    }
-                }
+                continue
             }
+
+            matchedAXIndices.insert(i)
+            let existing = windowInfos[i]
+            windowInfos[i] = AppWindowInfo(
+                id: existing.id,
+                title: candidateTitle,
+                isMinimized: existing.isMinimized,
+                isMain: existing.isMain || entry.isMarked,
+                windowID: existing.windowID,
+                menuTitle: candidateTitle
+            )
         }
 
         return windowInfos

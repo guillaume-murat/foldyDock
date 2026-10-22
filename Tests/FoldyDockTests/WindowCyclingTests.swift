@@ -226,4 +226,26 @@ struct WindowCyclingTests {
         #expect(infos[2].windowID == nil)
         #expect(infos[2].title == "Other Space Window")
     }
+
+    @Test("Window menu titles match AX titles that carry an app or tab-group suffix (Chrome) without duplicating the window")
+    func testBuildOpenWindowInfosMatchesSuffixedAXTitles() {
+        let axWindows: [AXWindowEntry] = [
+            AXWindowEntry(windowID: 201, title: "Nouvel onglet - Google Chrome", isMinimized: false, isMain: true)
+        ]
+        let menuItems: [WindowMenuEntry] = [
+            WindowMenuEntry(index: 0, title: "Tout ramener au premier plan", isSeparator: false, isMarked: false),
+            WindowMenuEntry(index: 1, title: "", isSeparator: true, isMarked: false),
+            WindowMenuEntry(index: 2, title: "Claude in Chrome", isSeparator: false, isMarked: false),
+            WindowMenuEntry(index: 3, title: "Nouvel onglet", isSeparator: false, isMarked: true)
+        ]
+
+        let infos = AppWindowCyclingEngine.buildWindowInfos(pid: 42, axWindows: axWindows, menuEntries: menuItems)
+        #expect(infos.count == 2)
+        #expect(infos[0].windowID == 201)
+        #expect(infos[0].title == "Nouvel onglet")
+        #expect(infos[0].menuTitle == "Nouvel onglet")
+        #expect(infos[0].isMain == true)
+        #expect(infos[1].windowID == nil)
+        #expect(infos[1].title == "Claude in Chrome")
+    }
 }
