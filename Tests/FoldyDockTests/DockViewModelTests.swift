@@ -989,7 +989,19 @@ final class DockViewModelTests: XCTestCase {
         let decoded = try JSONDecoder().decode(DockConfig.self, from: legacyJson)
         XCTAssertFalse(decoded.launchAtLogin)
     }
+
+    func testAppBundleURLForOpenInFinder() {
+        let vm = DockViewModel(persistenceService: persistenceService)
+
+        let byPath = DockItem(type: .app, title: "Calculator", bundleIdentifier: "com.apple.calculator",
+                              appPath: "/System/Applications/Calculator.app")
+        XCTAssertEqual(vm.appBundleURL(for: byPath)?.path, "/System/Applications/Calculator.app")
+
+        let stalePath = DockItem(type: .app, title: "Finder", bundleIdentifier: "com.apple.finder",
+                                 appPath: "/Applications/Moved Away.app")
+        XCTAssertEqual(vm.appBundleURL(for: stalePath)?.lastPathComponent, "Finder.app")
+
+        let folder = DockItem(type: .folder, title: "IA", subItems: [])
+        XCTAssertNil(vm.appBundleURL(for: folder))
+    }
 }
-
-
-

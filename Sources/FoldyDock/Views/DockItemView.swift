@@ -320,6 +320,12 @@ public struct DockItemView: View {
                 Divider()
             }
 
+            if !item.isFinder {
+                Button("Ouvrir dans le Finder") {
+                    viewModel.openInFinder(item: item)
+                }
+            }
+
             Button(item.isPinned ? "Détacher du dock" : "Conserver dans le dock") {
                 viewModel.togglePin(itemId: item.id)
             }

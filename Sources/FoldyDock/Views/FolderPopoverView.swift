@@ -291,6 +291,11 @@ private struct FolderSubItemView: View {
                     }
                 }
 
+                Button("Ouvrir dans le Finder") {
+                    viewModel.openInFinder(item: item)
+                    viewModel.closeFolderPopover()
+                }
+
                 if isRunning {
                     Button("Quitter l'application") {
                         viewModel.terminate(item: item)

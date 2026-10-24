@@ -395,6 +395,10 @@ private struct RunningSubAppItemView: View {
                     viewModel.launch(item: subApp)
                 }
 
+                Button("Ouvrir dans le Finder") {
+                    viewModel.openInFinder(item: subApp)
+                }
+
                 Button("Quitter l'application") {
                     viewModel.terminate(item: subApp)
                 }

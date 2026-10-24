@@ -324,6 +324,24 @@ public final class DockViewModel: ObservableObject {
     }
 
     /// Opens a new Finder window and brings Finder to the front.
+    /// The application bundle on disk: the stored path when it still exists, else the bundle identifier's install location.
+    public func appBundleURL(for item: DockItem) -> URL? {
+        guard item.type == .app else { return nil }
+        if let path = item.appPath, FileManager.default.fileExists(atPath: path) {
+            return URL(fileURLWithPath: path)
+        }
+        if let bid = item.bundleIdentifier {
+            return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)
+        }
+        return nil
+    }
+
+    /// Reveals the application bundle selected in a Finder window.
+    public func openInFinder(item: DockItem) {
+        guard let url = appBundleURL(for: item) else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
     public func openNewFinderWindow() {
         DispatchQueue.global(qos: .userInitiated).async {
             let script = """
