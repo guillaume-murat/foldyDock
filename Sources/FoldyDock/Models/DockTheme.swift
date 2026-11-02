@@ -56,10 +56,6 @@ public struct DockTheme: Equatable, Sendable {
         isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.24)
     }
 
-    public var separatorColor: Color {
-        isDark ? Color.white.opacity(0.25) : Color.black.opacity(0.20)
-    }
-
     public var separatorEdgeColor: Color {
         isDark ? Color.white.opacity(0.12) : Color.black.opacity(0.08)
     }

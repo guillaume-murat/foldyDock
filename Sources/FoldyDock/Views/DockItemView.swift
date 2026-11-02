@@ -144,20 +144,7 @@ public struct DockItemView: View {
                             theme: theme
                         )
                     case .separator:
-                        Rectangle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        theme.separatorEdgeColor,
-                                        theme.separatorCenterColor,
-                                        theme.separatorEdgeColor
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .frame(width: 1.5, height: iconSize * 0.65)
-                            .shadow(color: theme.isDark ? Color.white.opacity(0.25) : Color.clear, radius: 1)
+                        DockSeparatorView(height: iconSize * 0.65, theme: theme)
                     case .settings:
                         EmptyView()
                         .frame(width: iconSize, height: iconSize)

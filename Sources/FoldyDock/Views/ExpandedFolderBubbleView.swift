@@ -84,7 +84,7 @@ public struct ExpandedFolderBubbleView: View {
             return folderSize + capsuleHorizontalPadding * 2
         }
         let totalRunningWidth = CGFloat(activeCount) * subAppSlotWidth + CGFloat(max(0, activeCount - 1)) * subAppSpacing
-        let dividerAndPadding: CGFloat = dividerSpacing + 1.2 + dividerSpacing + capsuleHorizontalPadding * 2
+        let dividerAndPadding: CGFloat = dividerSpacing + DockSeparatorView.width + dividerSpacing + capsuleHorizontalPadding * 2
         return folderSize + dividerAndPadding + totalRunningWidth
     }
 
@@ -169,19 +169,7 @@ public struct ExpandedFolderBubbleView: View {
 
                 // 2. Subtle Vertical Divider
                 if activeCount > 0 {
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    theme.separatorEdgeColor,
-                                    theme.separatorCenterColor,
-                                    theme.separatorEdgeColor
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 1.2, height: bubbleHeight * 0.70)
+                    DockSeparatorView(height: bubbleHeight * 0.70, theme: theme)
                         .transition(.opacity)
                 }
 

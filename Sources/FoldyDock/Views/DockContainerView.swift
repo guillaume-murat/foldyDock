@@ -37,9 +37,7 @@ public struct DockContainerView: View {
 
             // Divider between pinned items and unpinned running applications
             if !viewModel.unpinnedRunningItems.isEmpty {
-                Rectangle()
-                    .fill(theme.separatorColor)
-                    .frame(width: 1, height: viewModel.config.iconSize * 0.65)
+                DockSeparatorView(height: viewModel.config.iconSize * 0.65, theme: theme)
                     .padding(.horizontal, 2)
                     .contentShape(Rectangle().inset(by: -6))
                     .onDrop(of: [.plainText, .utf8PlainText, .text], isTargeted: nil) { _ in
@@ -68,9 +66,7 @@ public struct DockContainerView: View {
 
             // NowPlayingWidget immediately to the left of Trash, surrounded by dividers
             if viewModel.config.showNowPlayingWidget {
-                Rectangle()
-                    .fill(theme.separatorColor)
-                    .frame(width: 1, height: viewModel.config.iconSize * 0.65)
+                DockSeparatorView(height: viewModel.config.iconSize * 0.65, theme: theme)
                     .padding(.horizontal, 2)
 
                 NowPlayingWidget(
@@ -80,9 +76,7 @@ public struct DockContainerView: View {
                 )
 
                 if viewModel.config.showTrash {
-                    Rectangle()
-                        .fill(theme.separatorColor)
-                        .frame(width: 1, height: viewModel.config.iconSize * 0.65)
+                    DockSeparatorView(height: viewModel.config.iconSize * 0.65, theme: theme)
                         .padding(.horizontal, 2)
                 }
             }
@@ -101,9 +95,7 @@ public struct DockContainerView: View {
                 }()
 
                 if !hasPrecedingSeparator {
-                    Rectangle()
-                        .fill(theme.separatorColor)
-                        .frame(width: 1, height: viewModel.config.iconSize * 0.65)
+                    DockSeparatorView(height: viewModel.config.iconSize * 0.65, theme: theme)
                         .padding(.horizontal, 2)
                 }
 
