@@ -1,6 +1,6 @@
 # FoldyDock Domain
 
-FoldyDock is an expandable, floating macOS dock with folders, window tracking, and real-time frosted glass blur.
+FoldyDock is an expandable, floating macOS dock with folders, window tracking, real-time frosted glass blur, and system integrations.
 
 ## Language
 
@@ -32,9 +32,33 @@ _Avoid_: Ephemeral app, background app
 The intended spatial resolution of a drag-and-drop interaction relative to a target item (`before`, `after`, or `merge`).
 _Avoid_: Drop position, insert mode
 
+**NowPlayingWidget**:
+A dedicated playback control and metadata capsule anchored between the unpinned applications and the Trash item, surrounded by dividers.
+_Avoid_: Music bar, player pill, media widget
+
+**NowPlayingSource**:
+The active system media-emitting application (e.g. Music, Spotify, Safari, Chrome) monitored via macOS MediaRemote.
+_Avoid_: Music provider, audio player, sound emitter
+
+**TransportControls**:
+The dedicated interactive playback controls (Previous, Play/Pause, Next) dispatching remote commands to the active NowPlayingSource.
+_Avoid_: Media buttons, player actions, playback buttons
+
+**CalendarWidget**:
+A dedicated capsule showing the current date and the Next Event, anchored immediately before the NowPlayingWidget and surrounded by dividers. It is not a DockItem and cannot be moved.
+_Avoid_: Agenda bar, date pill, calendar item
+
+**Next Event**:
+The timed calendar event shown by the CalendarWidget: the one in progress, otherwise the soonest one starting within the next 24 hours, across all calendars visible in Calendar. All-day events never qualify.
+_Avoid_: Upcoming appointment, agenda entry, meeting
+
 **Launch at Login**:
 A system integration service managing automatic startup of FoldyDock on macOS user login using Apple's modern `SMAppService` framework.
 _Avoid_: Autostart helper, login item daemon
+
+**Window Cycling**:
+The round-robin focus rotation among eligible standard windows of an already frontmost application upon repeated dock item clicks. Restores minimized windows upon focus.
+_Avoid_: Alt-tabbing, window flipping, task switcher
 
 **Window Picker Popover**:
 A contextual popover displayed upon hovering an application icon with 2 or more open windows, listing their titles and states (active/minimized) to let the user select and focus a specific window directly.
