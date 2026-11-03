@@ -560,6 +560,8 @@ public struct FoldyDockSettingsView: View {
                                 .font(.system(size: 11.5))
                                 .foregroundStyle(.secondary)
 
+                            CalendarAccessHelpView(viewModel: viewModel, service: viewModel.calendarWidget)
+
                             Divider()
 
                             Toggle("Afficher la corbeille", isOn: Binding(
@@ -685,5 +687,33 @@ public struct FoldyDockSettingsView: View {
             }
         }
         .frame(width: 420, height: 580)
+    }
+}
+
+/// Explains why the CalendarWidget shows the date alone, and how to change it.
+private struct CalendarAccessHelpView: View {
+    @ObservedObject var viewModel: DockViewModel
+    @ObservedObject var service: CalendarWidgetService
+
+    var body: some View {
+        if viewModel.showsCalendarAccessHelp {
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Seule la date est affichée, car FoldyDock n'a pas accès à vos calendriers.", systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(.secondary)
+
+                if service.state.accessStatus == .notDetermined {
+                    Button("Autoriser l'accès") {
+                        Task { await service.requestAccessIfNeeded() }
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Button("Ouvrir Réglages Système") {
+                        viewModel.openCalendarPrivacySettings()
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        }
     }
 }

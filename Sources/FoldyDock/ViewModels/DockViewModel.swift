@@ -230,6 +230,17 @@ public final class DockViewModel: ObservableObject {
         }
     }
 
+    /// True when the widget is on but cannot read events.
+    public var showsCalendarAccessHelp: Bool {
+        config.showCalendarWidget && calendarWidget.state.accessStatus != .granted
+    }
+
+    public func openCalendarPrivacySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     public func openCalendarApp() {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iCal") else { return }
         NSWorkspace.shared.open(url)

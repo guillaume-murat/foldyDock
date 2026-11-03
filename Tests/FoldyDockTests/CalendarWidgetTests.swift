@@ -303,4 +303,26 @@ struct CalendarWidgetTests {
         #expect(service.state.nextEvent == standup)
         #expect(service.state.accessStatus == .granted)
     }
+
+    // MARK: - Access help in the preferences
+
+    @Test("The preferences explain a missing permission only while the widget is on")
+    func testAccessHelpVisibility() async {
+        let source = FixtureCalendarSource()
+        source.status = .denied
+        let (viewModel, _) = makeViewModel(service: makeService(source, clock: TestClock()))
+        #expect(viewModel.showsCalendarAccessHelp == false)
+
+        await viewModel.setCalendarWidgetEnabled(true)
+        #expect(viewModel.showsCalendarAccessHelp == true)
+
+        source.status = .granted
+        await viewModel.calendarWidget.refresh()
+        #expect(viewModel.showsCalendarAccessHelp == false)
+
+        source.status = .denied
+        await viewModel.calendarWidget.refresh()
+        await viewModel.setCalendarWidgetEnabled(false)
+        #expect(viewModel.showsCalendarAccessHelp == false)
+    }
 }
