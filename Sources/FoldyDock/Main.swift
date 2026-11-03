@@ -93,7 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if NSEvent.pressedMouseButtons == 0 && vm.dragSourceId != nil {
                 vm.clearDropState()
             }
-            return vm.hasActivePopover || vm.dragSourceId != nil || vm.activeDropTargetId != nil || vm.isResizing
+            return vm.hasActivePopover || vm.dragSourceId != nil || vm.activeDropTargetId != nil
         }
 
         self.dockPanel = panel

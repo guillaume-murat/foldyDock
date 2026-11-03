@@ -22,11 +22,6 @@ public struct DockConfig: Codable, Equatable, Sendable {
     public var appearanceMode: AppearanceMode // Visual theme of the dock (.system, .light, .dark)
     public var checkAccessibilityOnLaunch: Bool // Alert at launch when Accessibility permission is missing (default: true)
 
-    public var hideDelay: Double {
-        get { autohideDelay }
-        set { autohideDelay = newValue }
-    }
-
     public var dockHeight: Double {
         iconSize + verticalPadding * 2
     }

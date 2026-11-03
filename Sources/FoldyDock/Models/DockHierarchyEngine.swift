@@ -273,15 +273,6 @@ public struct DockHierarchyEngine: Equatable, Sendable {
         items.insert(separator, at: safeIndex)
     }
 
-    /// Removes the separator at the specified index if it exists.
-    @discardableResult
-    public mutating func removeSeparator(at index: Int) -> Bool {
-        guard index >= 0 && index < items.count else { return false }
-        guard items[index].type == .separator else { return false }
-        items.remove(at: index)
-        return true
-    }
-
     /// Creates an empty folder with the given title at the specified index.
     public mutating func createEmptyFolder(at index: Int, title: String = "NOUVEAU DOSSIER") {
         let safeIndex = max(0, min(index, items.count))

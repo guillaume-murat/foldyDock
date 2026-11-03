@@ -27,12 +27,10 @@ public final class MediaRemoteNowPlayingService: NowPlayingServiceProviding {
     private typealias MRGetInfo = @convention(c) (DispatchQueue, @escaping (CFDictionary?) -> Void) -> Void
     private typealias MRRegister = @convention(c) (DispatchQueue) -> Void
     private typealias MRSendCommand = @convention(c) (Int32, AnyObject?) -> Bool
-    private typealias MRGetPID = @convention(c) (DispatchQueue, @escaping (pid_t) -> Void) -> Void
 
     private var mrGetInfo: MRGetInfo?
     private var mrRegister: MRRegister?
     private var mrSendCommand: MRSendCommand?
-    private var mrGetPID: MRGetPID?
 
     private var currentPID: pid_t?
     private var pollTimer: Timer?
@@ -59,9 +57,6 @@ public final class MediaRemoteNowPlayingService: NowPlayingServiceProviding {
         }
         if let sym = dlsym(handle, "MRMediaRemoteSendCommand") {
             mrSendCommand = unsafeBitCast(sym, to: MRSendCommand.self)
-        }
-        if let sym = dlsym(handle, "MRMediaRemoteGetNowPlayingApplicationPID") {
-            mrGetPID = unsafeBitCast(sym, to: MRGetPID.self)
         }
     }
 

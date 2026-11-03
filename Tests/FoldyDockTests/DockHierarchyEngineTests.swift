@@ -205,7 +205,7 @@ final class DockHierarchyEngineTests: XCTestCase {
 
     // MARK: - CRUD & Invariant Tests
 
-    func testInsertAndRemoveSeparator() {
+    func testInsertSeparator() {
         let app1 = makeApp(title: "App 1")
         let app2 = makeApp(title: "App 2")
         var engine = DockHierarchyEngine(items: [app1, app2])
@@ -213,11 +213,6 @@ final class DockHierarchyEngineTests: XCTestCase {
         engine.insertSeparator(at: 1)
         XCTAssertEqual(engine.items.count, 3)
         XCTAssertEqual(engine.items[1].type, .separator)
-
-        let removed = engine.removeSeparator(at: 1)
-        XCTAssertTrue(removed)
-        XCTAssertEqual(engine.items.count, 2)
-        XCTAssertEqual(engine.items[1].id, app2.id)
     }
 
     func testCreateEmptyFolderAndRename() {

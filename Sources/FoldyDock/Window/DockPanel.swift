@@ -15,7 +15,6 @@ public final class DockPanel: NSPanel {
     private(set) public var isHiddenState: Bool = false
     private var shownY: CGFloat = 18
     public let hotspotManager: HotspotManager
-    public var onMiddleClickEvent: ((NSEvent) -> Void)?
     private var globalMouseMonitor: Any?
     private var spaceObserver: NSObjectProtocol?
     private var edgePollingTimer: Timer?
@@ -166,10 +165,6 @@ public final class DockPanel: NSPanel {
                 scheduleInactivityTimer()
             }
         }
-    }
-
-    public func updateDockWidth(_ width: CGFloat) {
-        updateDockSize(width: width, height: self.dockHeight)
     }
 
     public func updateDockSize(width: CGFloat, height: CGFloat) {

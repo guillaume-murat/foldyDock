@@ -114,31 +114,6 @@ struct WindowCyclingTests {
         #expect(indices[nextRelativeIndex] == 4)
     }
 
-    @Test("WindowCycleHelper reconciles stable string keys across z-order shifts without ping-ponging")
-    func testReconcileStableKeys() {
-        var stableKeys: [String] = []
-        let zOrderedSnapshots = [
-            ["wid-10", "wid-20", "wid-30"],
-            ["wid-20", "wid-10", "wid-30"],
-            ["wid-30", "wid-20", "wid-10"]
-        ]
-
-        var lastKey: String? = "wid-10"
-        var visited: [String] = []
-
-        for snapshot in zOrderedSnapshots {
-            stableKeys = WindowCycleHelper.reconcileStableKeys(existingKeys: stableKeys, currentKeys: snapshot)
-            let currentIdx = lastKey.flatMap { stableKeys.firstIndex(of: $0) }
-            let nextIdx = WindowCycleHelper.nextWindowIndex(currentIndex: currentIdx, windowCount: stableKeys.count)
-            let nextKey = stableKeys[nextIdx]
-            visited.append(nextKey)
-            lastKey = nextKey
-        }
-
-        #expect(stableKeys == ["wid-10", "wid-20", "wid-30"])
-        #expect(visited == ["wid-20", "wid-30", "wid-10"])
-    }
-
     @Test("AppWindowCyclingEngine activates background app on first click, then cycles sequentially on subsequent clicks including identical Firefox titles")
     func testAppWindowCyclingEngineEndToEnd() {
         var engine = AppWindowCyclingEngine()

@@ -8,7 +8,6 @@ public struct NowPlayingWidget: View {
 
     @State private var isHovered: Bool = false
     @State private var cachedArtwork: NSImage?
-    @State private var lastArtworkData: Data?
 
     public init(viewModel: DockViewModel, iconSize: CGFloat, dockHeight: CGFloat) {
         self.viewModel = viewModel

@@ -33,11 +33,6 @@ public final class AppObserverService: ObservableObject {
         startPeriodicSync()
     }
 
-    /// Returns true if the application has macOS Accessibility (AX) permission.
-    public var isAccessibilityTrusted: Bool {
-        AXIsProcessTrusted()
-    }
-
     /// Prompts the user to grant Accessibility permission in System Settings if not already granted.
     @discardableResult
     public func requestAccessibilityPermissionIfNeeded() -> Bool {
@@ -412,11 +407,6 @@ public final class AppObserverService: ObservableObject {
     nonisolated private static func runningApp(bundleIdentifier: String) -> NSRunningApplication? {
         let matchingApps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
         return matchingApps.first(where: { $0.activationPolicy == .regular }) ?? matchingApps.first
-    }
-
-    /// Synchronously fetches the User Windows of an application.
-    public func fetchOpenWindows(for bundleIdentifier: String) -> [AppWindowInfo] {
-        openWindows(for: bundleIdentifier)
     }
 
     /// Asynchronously fetches the User Windows of an application off the main thread to avoid UI hitches.

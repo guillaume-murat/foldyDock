@@ -105,7 +105,6 @@ public final class DockViewModel: ObservableObject {
         CGFloat(config.dockHeight)
     }
 
-    @Published public var isResizing: Bool = false
     @Published public var isTrashEmpty: Bool = true
     @Published public var nowPlayingState: NowPlayingState = .idle
     @Published public var isSystemDark: Bool = DockTheme.currentSystemIsDark()
@@ -119,9 +118,6 @@ public final class DockViewModel: ObservableObject {
         saveConfig()
     }
     public let nowPlayingService: NowPlayingServiceProviding
-    public static let minIconSize: Double = 32.0
-    public static let maxIconSize: Double = 96.0
-    private var initialDragIconSize: Double?
 
     private let persistenceService: DockPersistenceService
     private let appObserver: AppObserverService
@@ -639,11 +635,6 @@ public final class DockViewModel: ObservableObject {
         saveConfig()
     }
 
-    public func toggleAppLauncher() {
-        config.showAppLauncher.toggle()
-        saveConfig()
-    }
-
     public func togglePin(itemId: UUID) {
         if let index = items.firstIndex(where: { $0.id == itemId }) {
             // It was in pinned items -> unpin it
@@ -853,42 +844,6 @@ public final class DockViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Dynamic Resizing
-    
-    public func startResizing() {
-        isResizing = true
-        initialDragIconSize = config.iconSize
-    }
-
-    public func updateIconSize(translationX: CGFloat, isRightEdge: Bool) {
-        if !isResizing || initialDragIconSize == nil {
-            startResizing()
-        }
-        guard let baseSize = initialDragIconSize else { return }
-
-        // Total count of items determining sensitivity
-        let totalItems = max(3, items.count + unpinnedRunningItems.count)
-        
-        // Moving right edge to the right (translationX > 0) widens the dock -> increases icon size.
-        // Moving left edge to the left (translationX < 0) widens the dock -> increases icon size.
-        let effectiveDelta = isRightEdge ? translationX : -translationX
-
-        // 1:1 edge tracking formula: ΔiconSize = (2 * Δedge) / totalItems
-        let sizeDelta = Double(effectiveDelta * 2.0) / Double(totalItems)
-        let newSize = min(max(baseSize + sizeDelta, Self.minIconSize), Self.maxIconSize)
-
-        if abs(config.iconSize - newSize) > 0.05 {
-            config.iconSize = newSize
-            objectWillChange.send()
-        }
-    }
-
-    public func finishResizing() {
-        isResizing = false
-        initialDragIconSize = nil
-        saveConfig()
-    }
-
     // MARK: - Context Menu Insertions & Settings
 
     public func insertionIndex(for xPosition: CGFloat) -> Int {
@@ -953,10 +908,6 @@ public final class DockViewModel: ObservableObject {
             config.launchAtLogin = launchAtLoginService.isEnabled
         }
         saveConfig()
-    }
-
-    public func toggleLaunchAtLogin() {
-        setLaunchAtLogin(!config.launchAtLogin)
     }
 
     public func resetToDefaults() {

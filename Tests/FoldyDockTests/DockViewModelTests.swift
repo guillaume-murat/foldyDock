@@ -323,76 +323,6 @@ final class DockViewModelTests: XCTestCase {
         }
     }
 
-    func testUpdateIconSizeExpandsAndShrinks() {
-        let app1 = DockItem(type: .app, title: "App 1", bundleIdentifier: "com.test.app1")
-        let app2 = DockItem(type: .app, title: "App 2", bundleIdentifier: "com.test.app2")
-        let config = DockConfig(iconSize: 52.0, items: [app1, app2])
-        persistenceService.saveConfig(config)
-
-        let vm = DockViewModel(persistenceService: persistenceService)
-        XCTAssertEqual(vm.config.iconSize, 52.0)
-
-        // Dragging right edge outward (positive translationX) increases iconSize
-        vm.startResizing()
-        XCTAssertTrue(vm.isResizing)
-        vm.updateIconSize(translationX: 30.0, isRightEdge: true)
-        XCTAssertGreaterThan(vm.config.iconSize, 52.0)
-
-        // Dragging right edge inward (negative translationX) decreases iconSize
-        vm.updateIconSize(translationX: -30.0, isRightEdge: true)
-        XCTAssertLessThan(vm.config.iconSize, 52.0)
-
-        // Reset and test left edge
-        vm.finishResizing()
-        XCTAssertFalse(vm.isResizing)
-        let baseSize = vm.config.iconSize
-
-        // Dragging left edge outward (negative translationX = moving to the left) increases iconSize
-        vm.startResizing()
-        vm.updateIconSize(translationX: -30.0, isRightEdge: false)
-        XCTAssertGreaterThan(vm.config.iconSize, baseSize)
-
-        // Dragging left edge inward (positive translationX = moving to the right) decreases iconSize
-        vm.updateIconSize(translationX: 30.0, isRightEdge: false)
-        XCTAssertLessThan(vm.config.iconSize, baseSize)
-    }
-
-    func testIconSizeClampingMinAndMax() {
-        let app1 = DockItem(type: .app, title: "App 1", bundleIdentifier: "com.test.app1")
-        let config = DockConfig(iconSize: 52.0, items: [app1])
-        persistenceService.saveConfig(config)
-
-        let vm = DockViewModel(persistenceService: persistenceService)
-
-        // Drag right edge extremely far outward
-        vm.startResizing()
-        vm.updateIconSize(translationX: 5000.0, isRightEdge: true)
-        XCTAssertEqual(vm.config.iconSize, DockViewModel.maxIconSize)
-
-        // Drag right edge extremely far inward
-        vm.updateIconSize(translationX: -5000.0, isRightEdge: true)
-        XCTAssertEqual(vm.config.iconSize, DockViewModel.minIconSize)
-    }
-
-    func testFinishResizingPersistsToDisk() {
-        let app1 = DockItem(type: .app, title: "App 1", bundleIdentifier: "com.test.app1")
-        let config = DockConfig(iconSize: 52.0, items: [app1])
-        persistenceService.saveConfig(config)
-
-        let vm = DockViewModel(persistenceService: persistenceService)
-        vm.startResizing()
-        vm.updateIconSize(translationX: 40.0, isRightEdge: true)
-        let newSize = vm.config.iconSize
-        XCTAssertNotEqual(newSize, 52.0)
-
-        vm.finishResizing()
-        XCTAssertFalse(vm.isResizing)
-
-        // Verify loaded config from disk has the new iconSize
-        let loaded = persistenceService.loadConfig()
-        XCTAssertEqual(loaded.iconSize, newSize)
-    }
-
     func testRemoveUnpinnedItem() {
         let app1 = DockItem(type: .app, title: "App 1", bundleIdentifier: "com.test.app1")
         let config = DockConfig(items: [app1])
@@ -753,7 +683,6 @@ final class DockViewModelTests: XCTestCase {
     func testShowDelayAndHideDelayConfigAndPersistence() throws {
         let config = DockConfig.defaultConfig
         XCTAssertEqual(config.showDelay, 0.0)
-        XCTAssertEqual(config.hideDelay, 0.3)
         XCTAssertEqual(config.autohideDelay, 0.3)
 
         let vm = DockViewModel(persistenceService: persistenceService)
@@ -763,17 +692,15 @@ final class DockViewModelTests: XCTestCase {
         }
 
         vm.config.showDelay = 0.4
-        vm.config.hideDelay = 0.8
+        vm.config.autohideDelay = 0.8
         vm.saveConfig()
 
         XCTAssertNotNil(receivedConfig)
         XCTAssertEqual(receivedConfig?.showDelay, 0.4)
-        XCTAssertEqual(receivedConfig?.hideDelay, 0.8)
         XCTAssertEqual(receivedConfig?.autohideDelay, 0.8)
 
         let reloaded = persistenceService.loadConfig()
         XCTAssertEqual(reloaded.showDelay, 0.4)
-        XCTAssertEqual(reloaded.hideDelay, 0.8)
         XCTAssertEqual(reloaded.autohideDelay, 0.8)
     }
 
@@ -797,20 +724,6 @@ final class DockViewModelTests: XCTestCase {
 
         let reloaded = persistenceService.loadConfig()
         XCTAssertEqual(reloaded.labelDistance, 15.0)
-    }
-
-    func testAppLauncherConfigAndToggle() {
-        let vm = DockViewModel(persistenceService: persistenceService)
-        XCTAssertTrue(vm.config.showAppLauncher)
-
-        vm.toggleAppLauncher()
-        XCTAssertFalse(vm.config.showAppLauncher)
-
-        let reloaded = persistenceService.loadConfig()
-        XCTAssertFalse(reloaded.showAppLauncher)
-
-        vm.toggleAppLauncher()
-        XCTAssertTrue(vm.config.showAppLauncher)
     }
 
     func testApplicationsLauncherOpenAndClose() {
@@ -956,7 +869,7 @@ final class DockViewModelTests: XCTestCase {
         let reloaded = persistenceService.loadConfig()
         XCTAssertTrue(reloaded.launchAtLogin)
 
-        vm.toggleLaunchAtLogin()
+        vm.setLaunchAtLogin(false)
         XCTAssertFalse(vm.config.launchAtLogin)
         XCTAssertFalse(mockProvider.isEnabled)
         XCTAssertEqual(mockProvider.setEnabledCallCount, 2)
