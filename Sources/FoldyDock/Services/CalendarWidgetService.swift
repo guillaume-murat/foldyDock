@@ -122,7 +122,10 @@ public final class CalendarWidgetService: ObservableObject {
         timer.tolerance = 5
         RunLoop.main.add(timer, forMode: .common)
         refreshTimer = timer
-        Task { await refresh() }
+        Task {
+            guard refreshTimer != nil else { return }
+            await refresh()
+        }
     }
 
     private func observeSourceChangesOnce() {
