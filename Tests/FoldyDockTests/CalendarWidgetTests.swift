@@ -8,6 +8,15 @@ final class FixtureCalendarSource: CalendarEventSource, @unchecked Sendable {
     var statusAfterRequest: CalendarAccessStatus = .granted
     var events: [CalendarEvent] = []
     private(set) var requestCount = 0
+    private var changeHandlers: [@Sendable () -> Void] = []
+
+    func observeChanges(_ handler: @escaping @Sendable () -> Void) {
+        changeHandlers.append(handler)
+    }
+
+    func notifyChange() {
+        changeHandlers.forEach { $0() }
+    }
 
     func accessStatus() -> CalendarAccessStatus { status }
 
@@ -198,5 +207,100 @@ struct CalendarWidgetTests {
         await viewModel.setCalendarWidgetEnabled(true)
 
         #expect(source.requestCount == 0)
+    }
+
+    // MARK: - Live updates
+
+    @Test("When the Next Event ends, the widget moves to the following event, then to the date alone")
+    func testMovesOnWhenEventEnds() async {
+        let source = FixtureCalendarSource()
+        let standup = event("Standup", at(3, 10), at(3, 11))
+        let lunch = event("Lunch", at(3, 12), at(3, 13))
+        source.events = [standup, lunch]
+        let clock = TestClock()
+        clock.now = at(3, 10, 30)
+        let service = makeService(source, clock: clock)
+        await service.refresh()
+        #expect(service.state.nextEvent == standup)
+
+        clock.now = at(3, 11)
+        await service.refresh()
+        #expect(service.state.nextEvent == lunch)
+
+        clock.now = at(3, 13)
+        await service.refresh()
+        #expect(service.state.nextEvent == nil)
+    }
+
+    @Test("An event appears once it enters the 24-hour limit")
+    func testEventEntersLimit() async {
+        let source = FixtureCalendarSource()
+        let trip = event("Trip", at(4, 12), at(4, 13))
+        source.events = [trip]
+        let clock = TestClock()
+        clock.now = at(3, 11)
+        let service = makeService(source, clock: clock)
+        await service.refresh()
+        #expect(service.state.nextEvent == nil)
+
+        clock.now = at(3, 12, 1)
+        await service.refresh()
+        #expect(service.state.nextEvent == trip)
+    }
+
+    @Test("A change in the calendars updates the widget while it is shown")
+    func testCalendarChangeRefreshes() async {
+        let source = FixtureCalendarSource()
+        let clock = TestClock()
+        clock.now = at(3, 9)
+        let service = makeService(source, clock: clock)
+        service.setActive(true)
+        defer { service.setActive(false) }
+        await service.refresh()
+        #expect(service.state.nextEvent == nil)
+
+        let standup = event("Standup", at(3, 10), at(3, 11))
+        source.events = [standup]
+        source.notifyChange()
+        for _ in 0..<100 where service.state.nextEvent == nil {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        #expect(service.state.nextEvent == standup)
+    }
+
+    @Test("A calendar change is ignored while the widget is hidden")
+    func testCalendarChangeIgnoredWhenHidden() async {
+        let source = FixtureCalendarSource()
+        let clock = TestClock()
+        clock.now = at(3, 9)
+        let service = makeService(source, clock: clock)
+        service.setActive(true)
+        service.setActive(false)
+        await service.refresh()
+
+        source.events = [event("Standup", at(3, 10), at(3, 11))]
+        source.notifyChange()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(service.state.nextEvent == nil)
+    }
+
+    @Test("Access granted after a refusal shows events without a restart")
+    func testAccessGrantedLater() async {
+        let source = FixtureCalendarSource()
+        source.status = .denied
+        let standup = event("Standup", at(3, 10), at(3, 11))
+        source.events = [standup]
+        let clock = TestClock()
+        clock.now = at(3, 9)
+        let service = makeService(source, clock: clock)
+        await service.refresh()
+        #expect(service.state.nextEvent == nil)
+
+        source.status = .granted
+        await service.refresh()
+        #expect(service.state.nextEvent == standup)
+        #expect(service.state.accessStatus == .granted)
     }
 }

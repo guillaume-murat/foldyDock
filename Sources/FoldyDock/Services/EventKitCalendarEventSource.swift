@@ -7,6 +7,7 @@ public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked 
     private let lock = NSLock()
     private var store: EKEventStore?
     private var storeSawAccess = false
+    private var changeObserver: NSObjectProtocol?
 
     public init() {}
 
@@ -33,6 +34,15 @@ public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked 
         return store.events(matching: predicate).map {
             CalendarEvent(title: $0.title ?? "", start: $0.startDate, end: $0.endDate, isAllDay: $0.isAllDay)
         }
+    }
+
+    public func observeChanges(_ handler: @escaping @Sendable () -> Void) {
+        // No specific store: the observed one can be replaced when access is granted.
+        changeObserver = NotificationCenter.default.addObserver(
+            forName: .EKEventStoreChanged,
+            object: nil,
+            queue: nil
+        ) { _ in handler() }
     }
 
     /// A store created before access was granted keeps returning nothing, so it is replaced on the first

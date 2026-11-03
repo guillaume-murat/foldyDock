@@ -29,6 +29,8 @@ public protocol CalendarEventSource: Sendable {
     func requestAccess() async -> CalendarAccessStatus
     /// Events overlapping the range, from the calendars visible in Calendar.
     func events(from start: Date, to end: Date) -> [CalendarEvent]
+    /// Calls the handler whenever events or calendars change, from any thread.
+    func observeChanges(_ handler: @escaping @Sendable () -> Void)
 }
 
 /// What the CalendarWidget shows at one moment.
@@ -48,6 +50,7 @@ public final class CalendarWidgetService: ObservableObject {
     private let now: @Sendable () -> Date
     private let calendar: Calendar
     private var refreshTimer: Timer?
+    private var isObservingChanges = false
     private static let refreshInterval: TimeInterval = 30
     private static let nextEventHorizon: TimeInterval = 24 * 60 * 60
 
@@ -112,6 +115,7 @@ public final class CalendarWidgetService: ObservableObject {
         refreshTimer?.invalidate()
         refreshTimer = nil
         guard active else { return }
+        observeSourceChangesOnce()
         let timer = Timer(timeInterval: Self.refreshInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.refresh() }
         }
@@ -119,5 +123,16 @@ public final class CalendarWidgetService: ObservableObject {
         RunLoop.main.add(timer, forMode: .common)
         refreshTimer = timer
         Task { await refresh() }
+    }
+
+    private func observeSourceChangesOnce() {
+        guard !isObservingChanges else { return }
+        isObservingChanges = true
+        source.observeChanges { [weak self] in
+            Task { @MainActor in
+                guard let self, self.refreshTimer != nil else { return }
+                await self.refresh()
+            }
+        }
     }
 }
