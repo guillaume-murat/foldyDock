@@ -64,6 +64,19 @@ public struct DockContainerView: View {
                 }
             }
 
+            // CalendarWidget immediately before the NowPlayingWidget, set apart by the same dividers
+            if viewModel.config.showCalendarWidget {
+                DockSeparatorView(height: viewModel.config.iconSize * 0.65, theme: theme)
+                    .padding(.horizontal, 2)
+
+                CalendarWidget(
+                    viewModel: viewModel,
+                    service: viewModel.calendarWidget,
+                    iconSize: viewModel.config.iconSize,
+                    dockHeight: dockHeight
+                )
+            }
+
             // NowPlayingWidget immediately to the left of Trash, surrounded by dividers
             if viewModel.config.showNowPlayingWidget {
                 DockSeparatorView(height: viewModel.config.iconSize * 0.65, theme: theme)
@@ -86,6 +99,9 @@ public struct DockContainerView: View {
                 let hasPrecedingSeparator: Bool = {
                     if viewModel.config.showNowPlayingWidget {
                         return true
+                    }
+                    if viewModel.config.showCalendarWidget {
+                        return false
                     }
                     if !viewModel.unpinnedRunningItems.isEmpty {
                         return viewModel.unpinnedRunningItems.last?.type == .separator
@@ -111,6 +127,7 @@ public struct DockContainerView: View {
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.runningBundleIds)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.config.showTrash)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.config.showNowPlayingWidget)
+        .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.config.showCalendarWidget)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.nowPlayingState)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.config.showAppLauncher)
         .animation(.spring(response: 0.32, dampingFraction: 0.78), value: viewModel.config.itemSpacing)

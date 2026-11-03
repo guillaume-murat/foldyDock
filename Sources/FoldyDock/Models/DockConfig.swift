@@ -17,6 +17,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
     public var launchAtLogin: Bool // Launch FoldyDock at macOS startup (default: false)
     public var itemSpacing: Double // Spacing between dock items in points (default: 12.0)
     public var showNowPlayingWidget: Bool // Show Now Playing media widget in dock (default: true)
+    public var showCalendarWidget: Bool // Show CalendarWidget in dock (default: false)
     public var showWindowPickerOnHover: Bool // Show Window Picker popover on app hover with >= 2 windows (default: true)
     public var windowPickerHoverDelay: Double // Delay in seconds before Window Picker popover appears (default: 0.35)
     public var appearanceMode: AppearanceMode // Visual theme of the dock (.system, .light, .dark)
@@ -43,6 +44,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         case launchAtLogin
         case itemSpacing
         case showNowPlayingWidget
+        case showCalendarWidget
         case showWindowPickerOnHover
         case windowPickerHoverDelay
         case appearanceMode
@@ -66,6 +68,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         launchAtLogin: Bool = false,
         itemSpacing: Double = 12.0,
         showNowPlayingWidget: Bool = true,
+        showCalendarWidget: Bool = false,
         showWindowPickerOnHover: Bool = true,
         windowPickerHoverDelay: Double = 0.35,
         appearanceMode: AppearanceMode = .system,
@@ -87,6 +90,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.launchAtLogin = launchAtLogin
         self.itemSpacing = itemSpacing
         self.showNowPlayingWidget = showNowPlayingWidget
+        self.showCalendarWidget = showCalendarWidget
         self.showWindowPickerOnHover = showWindowPickerOnHover
         self.windowPickerHoverDelay = windowPickerHoverDelay
         self.appearanceMode = appearanceMode
@@ -111,6 +115,7 @@ public struct DockConfig: Codable, Equatable, Sendable {
         self.launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
         self.itemSpacing = try container.decodeIfPresent(Double.self, forKey: .itemSpacing) ?? 12.0
         self.showNowPlayingWidget = try container.decodeIfPresent(Bool.self, forKey: .showNowPlayingWidget) ?? true
+        self.showCalendarWidget = try container.decodeIfPresent(Bool.self, forKey: .showCalendarWidget) ?? false
         self.showWindowPickerOnHover = try container.decodeIfPresent(Bool.self, forKey: .showWindowPickerOnHover) ?? true
         self.windowPickerHoverDelay = try container.decodeIfPresent(Double.self, forKey: .windowPickerHoverDelay) ?? 0.35
         self.appearanceMode = try container.decodeIfPresent(AppearanceMode.self, forKey: .appearanceMode) ?? .system

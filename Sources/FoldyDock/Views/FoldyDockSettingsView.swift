@@ -545,6 +545,23 @@ public struct FoldyDockSettingsView: View {
 
                             Divider()
 
+                            Toggle("Afficher le widget calendrier", isOn: Binding(
+                                get: { viewModel.config.showCalendarWidget },
+                                set: { newValue in
+                                    Task {
+                                        await viewModel.setCalendarWidgetEnabled(newValue)
+                                    }
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .font(.system(size: 13, weight: .medium))
+
+                            Text("Affiche la date dans le dock, juste avant le widget de musique. Un clic ouvre Calendrier.")
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.secondary)
+
+                            Divider()
+
                             Toggle("Afficher la corbeille", isOn: Binding(
                                 get: { viewModel.config.showTrash },
                                 set: { _ in

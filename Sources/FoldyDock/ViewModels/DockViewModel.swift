@@ -118,6 +118,7 @@ public final class DockViewModel: ObservableObject {
         saveConfig()
     }
     public let nowPlayingService: NowPlayingServiceProviding
+    public let calendarWidget: CalendarWidgetService
 
     private let persistenceService: DockPersistenceService
     private let appObserver: AppObserverService
@@ -151,12 +152,14 @@ public final class DockViewModel: ObservableObject {
         persistenceService: DockPersistenceService,
         appObserver: AppObserverService,
         launchAtLoginService: LaunchAtLoginProviding = SMAppLaunchAtLoginProvider(),
-        nowPlayingService: NowPlayingServiceProviding = MediaRemoteNowPlayingService.shared
+        nowPlayingService: NowPlayingServiceProviding = MediaRemoteNowPlayingService.shared,
+        calendarWidget: CalendarWidgetService? = nil
     ) {
         self.persistenceService = persistenceService
         self.appObserver = appObserver
         self.launchAtLoginService = launchAtLoginService
         self.nowPlayingService = nowPlayingService
+        self.calendarWidget = calendarWidget ?? CalendarWidgetService()
         self.config = persistenceService.loadConfig()
         self.config.launchAtLogin = launchAtLoginService.isEnabled
         self.items = self.config.items.filter { $0.type != .settings }
@@ -168,6 +171,7 @@ public final class DockViewModel: ObservableObject {
         synchronizeRunningUnpinnedApps()
         updateTrashStatus()
         setupTrashTimer()
+        self.calendarWidget.setActive(config.showCalendarWidget)
     }
 
     private func setupAppearanceObservation() {
@@ -215,6 +219,18 @@ public final class DockViewModel: ObservableObject {
     public func toggleNowPlayingWidget() {
         config.showNowPlayingWidget.toggle()
         saveConfig()
+    }
+
+    public func setCalendarWidgetEnabled(_ enabled: Bool) async {
+        config.showCalendarWidget = enabled
+        saveConfig()
+        calendarWidget.setActive(enabled)
+        await calendarWidget.refresh()
+    }
+
+    public func openCalendarApp() {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iCal") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     private func setupAppObserverCallbacks() {
