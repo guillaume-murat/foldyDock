@@ -225,7 +225,9 @@ public final class DockViewModel: ObservableObject {
         config.showCalendarWidget = enabled
         saveConfig()
         calendarWidget.setActive(enabled)
-        await calendarWidget.refresh()
+        if enabled {
+            await calendarWidget.requestAccessIfNeeded()
+        }
     }
 
     public func openCalendarApp() {

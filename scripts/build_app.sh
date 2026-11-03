@@ -117,6 +117,8 @@ cat <<EOF > "$CONTENTS/Info.plist"
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>FoldyDock affiche le titre et l'heure de votre prochain événement dans le widget calendrier.</string>
 </dict>
 </plist>
 EOF

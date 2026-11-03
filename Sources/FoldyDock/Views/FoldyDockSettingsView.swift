@@ -556,7 +556,7 @@ public struct FoldyDockSettingsView: View {
                             .toggleStyle(.switch)
                             .font(.system(size: 13, weight: .medium))
 
-                            Text("Affiche la date dans le dock, juste avant le widget de musique. Un clic ouvre Calendrier.")
+                            Text("Affiche la date et votre prochain événement dans le dock, juste avant le widget de musique. Un clic ouvre Calendrier.")
                                 .font(.system(size: 11.5))
                                 .foregroundStyle(.secondary)
 

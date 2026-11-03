@@ -2,6 +2,26 @@ import Testing
 import Foundation
 @testable import FoldyDock
 
+/// Fixture adapter: a permission status and a list of events, with no EventKit involved.
+final class FixtureCalendarSource: CalendarEventSource, @unchecked Sendable {
+    var status: CalendarAccessStatus = .granted
+    var statusAfterRequest: CalendarAccessStatus = .granted
+    var events: [CalendarEvent] = []
+    private(set) var requestCount = 0
+
+    func accessStatus() -> CalendarAccessStatus { status }
+
+    func requestAccess() async -> CalendarAccessStatus {
+        requestCount += 1
+        status = statusAfterRequest
+        return status
+    }
+
+    func events(from start: Date, to end: Date) -> [CalendarEvent] {
+        events.filter { $0.start < end && $0.end > start }
+    }
+}
+
 private let utcCalendar: Calendar = {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "UTC")!
@@ -10,6 +30,15 @@ private let utcCalendar: Calendar = {
 
 private func at(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
     utcCalendar.date(from: DateComponents(year: 2026, month: 11, day: day, hour: hour, minute: minute))!
+}
+
+private func event(_ title: String, _ start: Date, _ end: Date, allDay: Bool = false) -> CalendarEvent {
+    CalendarEvent(title: title, start: start, end: end, isAllDay: allDay)
+}
+
+@MainActor
+private func makeService(_ source: FixtureCalendarSource, clock: TestClock) -> CalendarWidgetService {
+    CalendarWidgetService(source: source, now: { clock.now }, calendar: utcCalendar)
 }
 
 @MainActor
@@ -31,7 +60,7 @@ struct CalendarWidgetTests {
     func testDateChangesAtMidnight() async {
         let clock = TestClock()
         clock.now = at(3, 23, 59)
-        let service = CalendarWidgetService(now: { clock.now }, calendar: utcCalendar)
+        let service = makeService(FixtureCalendarSource(), clock: clock)
         await service.refresh()
         #expect(service.state.today == at(3, 0))
 
@@ -53,10 +82,121 @@ struct CalendarWidgetTests {
 
     @Test("Switching the CalendarWidget on survives a restart")
     func testPreferencePersists() async {
-        let (viewModel, persistence) = makeViewModel(service: CalendarWidgetService())
+        let (viewModel, persistence) = makeViewModel(service: makeService(FixtureCalendarSource(), clock: TestClock()))
         await viewModel.setCalendarWidgetEnabled(true)
 
         #expect(viewModel.config.showCalendarWidget == true)
         #expect(persistence.loadConfig().showCalendarWidget == true)
+    }
+
+    // MARK: - Next Event
+
+    private func nextEvent(among events: [CalendarEvent], at date: Date) async -> CalendarEvent? {
+        let source = FixtureCalendarSource()
+        source.events = events
+        let clock = TestClock()
+        clock.now = date
+        let service = makeService(source, clock: clock)
+        await service.refresh()
+        return service.state.nextEvent
+    }
+
+    @Test("The soonest upcoming event is the Next Event")
+    func testSoonestUpcomingEvent() async {
+        let standup = event("Standup", at(3, 10), at(3, 11))
+        let lunch = event("Lunch", at(3, 12), at(3, 13))
+        #expect(await nextEvent(among: [lunch, standup], at: at(3, 9)) == standup)
+    }
+
+    @Test("An event in progress wins over an upcoming one")
+    func testEventInProgressWins() async {
+        let workshop = event("Workshop", at(3, 9), at(3, 11))
+        let lunch = event("Lunch", at(3, 12), at(3, 13))
+        #expect(await nextEvent(among: [lunch, workshop], at: at(3, 10)) == workshop)
+    }
+
+    @Test("Among overlapping events in progress, the one ending first wins")
+    func testOverlappingEventsInProgress() async {
+        let focus = event("Focus block", at(3, 8), at(3, 17))
+        let review = event("Review", at(3, 10), at(3, 11))
+        #expect(await nextEvent(among: [focus, review], at: at(3, 10, 30)) == review)
+    }
+
+    @Test("A finished event is never the Next Event")
+    func testFinishedEventIgnored() async {
+        #expect(await nextEvent(among: [event("Standup", at(3, 8), at(3, 9))], at: at(3, 9)) == nil)
+    }
+
+    @Test("All-day events never qualify")
+    func testAllDayEventsIgnored() async {
+        let birthday = event("Birthday", at(3, 0), at(4, 0), allDay: true)
+        #expect(await nextEvent(among: [birthday], at: at(3, 10)) == nil)
+    }
+
+    @Test("Only events starting within the next 24 hours qualify")
+    func testTwentyFourHourLimit() async {
+        let inside = event("Inside", at(4, 8, 59), at(4, 10))
+        let outside = event("Outside", at(4, 9, 1), at(4, 10))
+        #expect(await nextEvent(among: [inside], at: at(3, 9)) == inside)
+        #expect(await nextEvent(among: [outside], at: at(3, 9)) == nil)
+    }
+
+    // MARK: - Permission
+
+    @Test("Without calendar access the widget shows the date alone")
+    func testRefusedAccessShowsDateAlone() async {
+        let source = FixtureCalendarSource()
+        source.status = .denied
+        source.events = [event("Standup", at(3, 10), at(3, 11))]
+        let clock = TestClock()
+        clock.now = at(3, 9)
+        let service = makeService(source, clock: clock)
+
+        await service.refresh()
+
+        #expect(service.state.today == at(3, 0))
+        #expect(service.state.nextEvent == nil)
+        #expect(service.state.accessStatus == .denied)
+    }
+
+    @Test("Switching the widget on requests access, then shows the Next Event")
+    func testSwitchingOnRequestsAccess() async {
+        let source = FixtureCalendarSource()
+        source.status = .notDetermined
+        let standup = event("Standup", at(3, 10), at(3, 11))
+        source.events = [standup]
+        let clock = TestClock()
+        clock.now = at(3, 9)
+        let (viewModel, _) = makeViewModel(service: makeService(source, clock: clock))
+
+        await viewModel.setCalendarWidgetEnabled(true)
+
+        #expect(source.requestCount == 1)
+        #expect(viewModel.calendarWidget.state.nextEvent == standup)
+    }
+
+    @Test("Launching with the widget on, or switching it off, never requests access")
+    func testNoRequestAtLaunchOrWhenOff() async {
+        let source = FixtureCalendarSource()
+        source.status = .notDetermined
+        let (viewModel, _) = makeViewModel(
+            service: makeService(source, clock: TestClock()),
+            config: DockConfig(showCalendarWidget: true)
+        )
+        await viewModel.calendarWidget.refresh()
+        await viewModel.setCalendarWidgetEnabled(false)
+
+        #expect(source.requestCount == 0)
+    }
+
+    @Test("A refused or granted permission is not requested again")
+    func testNoRepeatRequest() async {
+        let source = FixtureCalendarSource()
+        source.status = .denied
+        let (viewModel, _) = makeViewModel(service: makeService(source, clock: TestClock()))
+
+        await viewModel.setCalendarWidgetEnabled(true)
+
+        #expect(source.requestCount == 0)
     }
 }

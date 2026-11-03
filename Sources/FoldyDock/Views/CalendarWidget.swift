@@ -23,6 +23,10 @@ public struct CalendarWidget: View {
         iconSize * 0.42
     }
 
+    private var titleFontSize: CGFloat {
+        max(10.0, min(12.5, iconSize * 0.21))
+    }
+
     private var weekdayFontSize: CGFloat {
         max(8.5, min(11.0, iconSize * 0.17))
     }
@@ -36,10 +40,16 @@ public struct CalendarWidget: View {
             Button(action: {
                 viewModel.openCalendarApp()
             }) {
-                dateView
-                    .padding(.horizontal, 7)
-                    .frame(minWidth: iconSize, minHeight: iconSize)
-                    .contentShape(Rectangle())
+                HStack(spacing: 8) {
+                    dateView
+
+                    if let event = service.state.nextEvent {
+                        nextEventView(event)
+                    }
+                }
+                .padding(.horizontal, 7)
+                .frame(minWidth: iconSize, minHeight: iconSize)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .frame(height: iconSize)
@@ -69,6 +79,30 @@ public struct CalendarWidget: View {
                 isHovered = hovering
             }
         }
+    }
+
+    private func nextEventView(_ event: CalendarEvent) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(event.title)
+                .font(.system(size: titleFontSize, weight: .semibold))
+                .foregroundColor(theme.widgetTitleColor)
+                .lineLimit(1)
+                .truncationMode(.tail)
+
+            Text(timeLabel(for: event))
+                .font(.system(size: weekdayFontSize, weight: .medium))
+                .foregroundColor(theme.widgetArtistColor)
+                .lineLimit(1)
+        }
+        .frame(minWidth: iconSize * 1.1, maxWidth: iconSize * 2.2, alignment: .leading)
+    }
+
+    /// The weekday tells an event tomorrow morning apart from one today at the same time.
+    private func timeLabel(for event: CalendarEvent) -> String {
+        if Calendar.autoupdatingCurrent.isDate(event.start, inSameDayAs: service.state.today) {
+            return event.start.formatted(date: .omitted, time: .shortened)
+        }
+        return event.start.formatted(.dateTime.weekday(.abbreviated).hour().minute())
     }
 
     private var dateView: some View {
