@@ -8,6 +8,7 @@ final class FixtureCalendarSource: CalendarEventSource, @unchecked Sendable {
     var statusAfterRequest: CalendarAccessStatus = .granted
     var events: [CalendarEvent] = []
     private(set) var requestCount = 0
+    var onRequest: (@Sendable () async -> Void)?
     private var changeHandlers: [@Sendable () -> Void] = []
 
     func observeChanges(_ handler: @escaping @Sendable () -> Void) {
@@ -20,15 +21,19 @@ final class FixtureCalendarSource: CalendarEventSource, @unchecked Sendable {
 
     func accessStatus() -> CalendarAccessStatus { status }
 
-    func requestAccess() async -> CalendarAccessStatus {
+    func requestAccess() async {
         requestCount += 1
+        await onRequest?()
         status = statusAfterRequest
-        return status
     }
 
     func events(from start: Date, to end: Date) -> [CalendarEvent] {
         events.filter { $0.start < end && $0.end > start }
     }
+}
+
+final class TestFlag: @unchecked Sendable {
+    var value: Bool?
 }
 
 private let utcCalendar: Calendar = {
@@ -56,7 +61,7 @@ private func makeViewModel(service: CalendarWidgetService, config: DockConfig = 
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     let persistence = DockPersistenceService(customDirectoryURL: directory)
     persistence.saveConfig(config)
-    let viewModel = DockViewModel(persistenceService: persistence, appObserver: .shared, calendarWidget: service)
+    let viewModel = DockViewModel(persistenceService: persistence, appObserver: .shared, calendarWidgetService: service)
     return (viewModel, persistence)
 }
 
@@ -181,7 +186,7 @@ struct CalendarWidgetTests {
         await viewModel.setCalendarWidgetEnabled(true)
 
         #expect(source.requestCount == 1)
-        #expect(viewModel.calendarWidget.state.nextEvent == standup)
+        #expect(viewModel.calendarWidgetService.state.nextEvent == standup)
     }
 
     @Test("Launching with the widget on, or switching it off, never requests access")
@@ -192,7 +197,7 @@ struct CalendarWidgetTests {
             service: makeService(source, clock: TestClock()),
             config: DockConfig(showCalendarWidget: true)
         )
-        await viewModel.calendarWidget.refresh()
+        await viewModel.calendarWidgetService.refresh()
         await viewModel.setCalendarWidgetEnabled(false)
 
         #expect(source.requestCount == 0)
@@ -317,12 +322,40 @@ struct CalendarWidgetTests {
         #expect(viewModel.showsCalendarAccessHelp == true)
 
         source.status = .granted
-        await viewModel.calendarWidget.refresh()
+        await viewModel.calendarWidgetService.refresh()
         #expect(viewModel.showsCalendarAccessHelp == false)
 
         source.status = .denied
-        await viewModel.calendarWidget.refresh()
+        await viewModel.calendarWidgetService.refresh()
         await viewModel.setCalendarWidgetEnabled(false)
         #expect(viewModel.showsCalendarAccessHelp == false)
+    }
+
+    @Test("The preferences explain a permission never requested while the widget is on")
+    func testAccessHelpWhenNotDetermined() async {
+        let source = FixtureCalendarSource()
+        source.status = .notDetermined
+        let (viewModel, _) = makeViewModel(
+            service: makeService(source, clock: TestClock()),
+            config: DockConfig(showCalendarWidget: true)
+        )
+
+        #expect(viewModel.showsCalendarAccessHelp == true)
+    }
+
+    @Test("The preferences stay quiet behind the system prompt")
+    func testNoAccessHelpBehindPrompt() async {
+        let source = FixtureCalendarSource()
+        source.status = .notDetermined
+        let (viewModel, _) = makeViewModel(service: makeService(source, clock: TestClock()))
+        let observed = TestFlag()
+        source.onRequest = { @MainActor in
+            observed.value = viewModel.showsCalendarAccessHelp
+        }
+
+        await viewModel.setCalendarWidgetEnabled(true)
+
+        #expect(source.requestCount == 1)
+        #expect(observed.value == false)
     }
 }

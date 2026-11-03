@@ -118,7 +118,7 @@ public final class DockViewModel: ObservableObject {
         saveConfig()
     }
     public let nowPlayingService: NowPlayingServiceProviding
-    public let calendarWidget: CalendarWidgetService
+    public let calendarWidgetService: CalendarWidgetService
 
     private let persistenceService: DockPersistenceService
     private let appObserver: AppObserverService
@@ -153,13 +153,13 @@ public final class DockViewModel: ObservableObject {
         appObserver: AppObserverService,
         launchAtLoginService: LaunchAtLoginProviding = SMAppLaunchAtLoginProvider(),
         nowPlayingService: NowPlayingServiceProviding = MediaRemoteNowPlayingService.shared,
-        calendarWidget: CalendarWidgetService? = nil
+        calendarWidgetService: CalendarWidgetService? = nil
     ) {
         self.persistenceService = persistenceService
         self.appObserver = appObserver
         self.launchAtLoginService = launchAtLoginService
         self.nowPlayingService = nowPlayingService
-        self.calendarWidget = calendarWidget ?? CalendarWidgetService()
+        self.calendarWidgetService = calendarWidgetService ?? CalendarWidgetService()
         self.config = persistenceService.loadConfig()
         self.config.launchAtLogin = launchAtLoginService.isEnabled
         self.items = self.config.items.filter { $0.type != .settings }
@@ -171,7 +171,7 @@ public final class DockViewModel: ObservableObject {
         synchronizeRunningUnpinnedApps()
         updateTrashStatus()
         setupTrashTimer()
-        self.calendarWidget.setActive(config.showCalendarWidget)
+        self.calendarWidgetService.setActive(config.showCalendarWidget)
     }
 
     private func setupAppearanceObservation() {
@@ -224,15 +224,17 @@ public final class DockViewModel: ObservableObject {
     public func setCalendarWidgetEnabled(_ enabled: Bool) async {
         config.showCalendarWidget = enabled
         saveConfig()
-        calendarWidget.setActive(enabled)
+        calendarWidgetService.setActive(enabled)
         if enabled {
-            await calendarWidget.requestAccessIfNeeded()
+            await calendarWidgetService.requestAccessIfNeeded()
         }
     }
 
     /// True when the widget is on but cannot read events.
     public var showsCalendarAccessHelp: Bool {
-        config.showCalendarWidget && calendarWidget.state.accessStatus != .granted
+        config.showCalendarWidget
+            && calendarWidgetService.state.accessStatus != .granted
+            && !calendarWidgetService.isRequestingAccess
     }
 
     public func openCalendarPrivacySettings() {

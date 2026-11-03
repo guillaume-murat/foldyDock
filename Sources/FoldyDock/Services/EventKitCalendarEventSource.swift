@@ -19,9 +19,8 @@ public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked 
         }
     }
 
-    public func requestAccess() async -> CalendarAccessStatus {
+    public func requestAccess() async {
         _ = try? await currentStore().requestFullAccessToEvents()
-        return accessStatus()
     }
 
     public func events(from start: Date, to end: Date) -> [CalendarEvent] {

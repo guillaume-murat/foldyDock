@@ -71,7 +71,7 @@ public struct DockContainerView: View {
 
                 CalendarWidget(
                     viewModel: viewModel,
-                    service: viewModel.calendarWidget,
+                    service: viewModel.calendarWidgetService,
                     iconSize: viewModel.config.iconSize,
                     dockHeight: dockHeight
                 )

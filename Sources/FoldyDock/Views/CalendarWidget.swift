@@ -27,7 +27,7 @@ public struct CalendarWidget: View {
         max(10.0, min(12.5, iconSize * 0.21))
     }
 
-    private var weekdayFontSize: CGFloat {
+    private var captionFontSize: CGFloat {
         max(8.5, min(11.0, iconSize * 0.17))
     }
 
@@ -90,7 +90,7 @@ public struct CalendarWidget: View {
                 .truncationMode(.tail)
 
             Text(timeLabel(for: event))
-                .font(.system(size: weekdayFontSize, weight: .medium))
+                .font(.system(size: captionFontSize, weight: .medium))
                 .foregroundColor(theme.widgetArtistColor)
                 .lineLimit(1)
         }
@@ -99,7 +99,7 @@ public struct CalendarWidget: View {
 
     /// The weekday tells an event tomorrow morning apart from one today at the same time.
     private func timeLabel(for event: CalendarEvent) -> String {
-        if Calendar.autoupdatingCurrent.isDate(event.start, inSameDayAs: service.state.today) {
+        if service.isToday(event.start) {
             return event.start.formatted(date: .omitted, time: .shortened)
         }
         return event.start.formatted(.dateTime.weekday(.abbreviated).hour().minute())
@@ -108,8 +108,8 @@ public struct CalendarWidget: View {
     private var dateView: some View {
         VStack(spacing: 0) {
             Text(service.state.today.formatted(.dateTime.weekday(.abbreviated)))
-                .font(.system(size: weekdayFontSize, weight: .semibold))
-                .foregroundColor(.red)
+                .font(.system(size: captionFontSize, weight: .semibold))
+                .foregroundColor(theme.widgetArtistColor)
                 .lineLimit(1)
                 .fixedSize()
 

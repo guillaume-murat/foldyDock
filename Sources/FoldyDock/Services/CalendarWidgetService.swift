@@ -8,7 +8,7 @@ public struct CalendarEvent: Equatable, Sendable {
     public let end: Date
     public let isAllDay: Bool
 
-    public init(title: String, start: Date, end: Date, isAllDay: Bool = false) {
+    public init(title: String, start: Date, end: Date, isAllDay: Bool) {
         self.title = title
         self.start = start
         self.end = end
@@ -25,8 +25,8 @@ public enum CalendarAccessStatus: Equatable, Sendable {
 /// Seam to the user's calendars. `EventKitCalendarEventSource` in production, fixtures in tests.
 public protocol CalendarEventSource: Sendable {
     func accessStatus() -> CalendarAccessStatus
-    /// Shows the system permission prompt and returns the resulting status.
-    func requestAccess() async -> CalendarAccessStatus
+    /// Shows the system permission prompt.
+    func requestAccess() async
     /// Events overlapping the range, from the calendars visible in Calendar.
     func events(from start: Date, to end: Date) -> [CalendarEvent]
     /// Calls the handler whenever events or calendars change, from any thread.
@@ -45,6 +45,8 @@ public struct CalendarWidgetState: Equatable, Sendable {
 @MainActor
 public final class CalendarWidgetService: ObservableObject {
     @Published public private(set) var state: CalendarWidgetState
+    /// True while the system permission prompt is on screen.
+    @Published public private(set) var isRequestingAccess = false
 
     private let source: CalendarEventSource
     private let now: @Sendable () -> Date
@@ -83,20 +85,27 @@ public final class CalendarWidgetService: ObservableObject {
             }.value
             nextEvent = Self.nextEvent(among: events, at: date, horizon: horizon)
         }
-        let next = CalendarWidgetState(
+        let updated = CalendarWidgetState(
             today: calendar.startOfDay(for: date),
             nextEvent: nextEvent,
             accessStatus: status
         )
-        if next != state { state = next }
+        if updated != state { state = updated }
     }
 
     /// Shows the system prompt the first time only; a refused permission is changed in System Settings.
     public func requestAccessIfNeeded() async {
         if source.accessStatus() == .notDetermined {
-            _ = await source.requestAccess()
+            isRequestingAccess = true
+            await source.requestAccess()
+            isRequestingAccess = false
         }
         await refresh()
+    }
+
+    /// Whether a date falls on the day the widget shows.
+    public func isToday(_ date: Date) -> Bool {
+        calendar.isDate(date, inSameDayAs: state.today)
     }
 
     private static func nextEvent(among events: [CalendarEvent], at date: Date, horizon: Date) -> CalendarEvent? {

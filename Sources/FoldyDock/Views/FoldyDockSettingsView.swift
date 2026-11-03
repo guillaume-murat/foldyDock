@@ -560,7 +560,7 @@ public struct FoldyDockSettingsView: View {
                                 .font(.system(size: 11.5))
                                 .foregroundStyle(.secondary)
 
-                            CalendarAccessHelpView(viewModel: viewModel, service: viewModel.calendarWidget)
+                            CalendarAccessHelpView(viewModel: viewModel, service: viewModel.calendarWidgetService)
 
                             Divider()
 
