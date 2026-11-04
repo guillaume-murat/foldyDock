@@ -160,6 +160,11 @@ public struct DockTheme: Equatable, Sendable {
         Color(red: 1.0, green: 0.27, blue: 0.23)
     }
 
+    /// Stays readable when the glass turns mid-gray over a white window.
+    public var calendarSecondaryTextColor: Color {
+        isDark ? Color.white.opacity(0.85) : Color(white: 0.25)
+    }
+
     // MARK: - Popovers (Folder Popover & Applications Popover)
 
     public var popoverPrimaryText: Color {

@@ -99,7 +99,7 @@ public struct CalendarWidget: View {
             if service.isTomorrow(event.start) {
                 Text("DEMAIN")
                     .font(.system(size: captionFontSize, weight: .semibold))
-                    .foregroundColor(theme.widgetArtistColor)
+                    .foregroundColor(theme.calendarSecondaryTextColor)
                     .lineLimit(1)
             }
 
@@ -109,13 +109,13 @@ public struct CalendarWidget: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(event.title)
                         .font(.system(size: titleFontSize, weight: .semibold))
-                        .foregroundColor(theme.isDark && !event.isReminder ? accent : theme.widgetTitleColor)
+                        .foregroundColor(theme.widgetTitleColor)
                         .lineLimit(1)
                         .truncationMode(.tail)
 
                     Text(timeLabel(of: event))
                         .font(.system(size: captionFontSize, weight: .medium))
-                        .foregroundColor(theme.isDark && !event.isReminder ? accent.opacity(0.8) : theme.widgetArtistColor)
+                        .foregroundColor(theme.calendarSecondaryTextColor)
                         .lineLimit(1)
                 }
             }
@@ -146,14 +146,14 @@ public struct CalendarWidget: View {
             if !event.isAllDay {
                 Text(compactTimeLabel(of: event))
                     .font(.system(size: captionFontSize, weight: .medium))
-                    .foregroundColor(theme.isDark && !event.isReminder ? accent.opacity(0.8) : theme.widgetArtistColor)
+                    .foregroundColor(theme.calendarSecondaryTextColor)
                     .lineLimit(1)
                     .fixedSize()
             }
 
             Text(event.title)
                 .font(.system(size: captionFontSize, weight: .semibold))
-                .foregroundColor(theme.isDark && !event.isReminder ? accent : theme.widgetTitleColor)
+                .foregroundColor(theme.widgetTitleColor)
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
