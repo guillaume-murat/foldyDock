@@ -69,6 +69,26 @@ struct NowPlayingWidgetTests {
         #expect(viewModel.nowPlayingState == .idle)
     }
 
+    @Test("The NowPlayingWidget only shows while media is playing or paused, and when its option is on")
+    func testWidgetHiddenWithoutMedia() {
+        let mockService = MockNowPlayingService()
+        let viewModel = DockViewModel(nowPlayingService: mockService)
+        viewModel.config.showNowPlayingWidget = true
+        let track = MediaTrack(title: "Starboy", artist: "The Weeknd", artworkData: nil, pid: 1234)
+
+        mockService.emit(state: .idle)
+        #expect(viewModel.isNowPlayingWidgetVisible == false)
+
+        mockService.emit(state: .playing(track))
+        #expect(viewModel.isNowPlayingWidgetVisible == true)
+
+        mockService.emit(state: .paused(track))
+        #expect(viewModel.isNowPlayingWidgetVisible == true)
+
+        viewModel.config.showNowPlayingWidget = false
+        #expect(viewModel.isNowPlayingWidgetVisible == false)
+    }
+
     @Test("DockViewModel toggles showNowPlayingWidget configuration")
     func testToggleNowPlayingWidget() {
         let mockService = MockNowPlayingService()

@@ -130,16 +130,8 @@ public struct DockTheme: Equatable, Sendable {
         }
     }
 
-    public var widgetIdleIconColor: Color {
-        isDark ? Color.white.opacity(0.35) : Color.black.opacity(0.45)
-    }
-
     public var widgetIdleIconBackground: Color {
         isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.07)
-    }
-
-    public var widgetIdleTextColor: Color {
-        isDark ? Color.white.opacity(0.40) : Color.black.opacity(0.50)
     }
 
     public var widgetTitleColor: Color {

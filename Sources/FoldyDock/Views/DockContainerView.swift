@@ -78,7 +78,7 @@ public struct DockContainerView: View {
             }
 
             // NowPlayingWidget immediately to the left of Trash, surrounded by dividers
-            if viewModel.config.showNowPlayingWidget {
+            if viewModel.isNowPlayingWidgetVisible {
                 DockSeparatorView(height: viewModel.config.iconSize * 0.65, theme: theme)
                     .padding(.horizontal, 2)
 
@@ -97,7 +97,7 @@ public struct DockContainerView: View {
             // Trash at the far right of the dock
             if viewModel.config.showTrash {
                 let hasPrecedingSeparator: Bool = {
-                    if viewModel.config.showNowPlayingWidget {
+                    if viewModel.isNowPlayingWidgetVisible {
                         return true
                     }
                     if viewModel.config.showCalendarWidget {

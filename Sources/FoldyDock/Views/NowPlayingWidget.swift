@@ -45,15 +45,8 @@ public struct NowPlayingWidget: View {
 
     public var body: some View {
         ZStack(alignment: .center) {
-            // 1. Main Capsule (idle or active) - centered vertically
-            Group {
-                switch viewModel.nowPlayingState {
-                case .idle:
-                    idleView
-                case .playing, .paused:
-                    activeView
-                }
-            }
+            // 1. Main Capsule - centered vertically
+            activeView
             .frame(height: capsuleHeight)
             .background(
                 RoundedRectangle(cornerRadius: capsuleHeight * 0.22, style: .continuous)
@@ -114,35 +107,6 @@ public struct NowPlayingWidget: View {
         } else {
             cachedArtwork = nil
         }
-    }
-
-    // MARK: - Idle View (No media playing)
-    private var idleView: some View {
-        Button(action: {
-            viewModel.activateNowPlayingSource()
-        }) {
-            HStack(spacing: 8) {
-                Image(systemName: "music.note")
-                    .font(.system(size: buttonIconSize * 1.15, weight: .semibold))
-                    .foregroundColor(theme.widgetIdleIconColor)
-                    .frame(width: artworkSize, height: artworkSize)
-                    .background(
-                        RoundedRectangle(cornerRadius: artworkSize * 0.24, style: .continuous)
-                            .fill(theme.widgetIdleIconBackground)
-                    )
-
-                Text("No Music")
-                    .font(.system(size: titleFontSize, weight: .medium))
-                    .foregroundColor(theme.widgetIdleTextColor)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .padding(.trailing, 8)
-            }
-            .padding(.horizontal, 7)
-            .frame(minWidth: iconSize * 2.35)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Active View (Playing or Paused)

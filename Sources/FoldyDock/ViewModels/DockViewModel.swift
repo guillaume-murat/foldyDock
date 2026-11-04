@@ -216,6 +216,11 @@ public final class DockViewModel: ObservableObject {
         nowPlayingService.activateSource()
     }
 
+    /// The option is on and there is media playing or paused.
+    public var isNowPlayingWidgetVisible: Bool {
+        config.showNowPlayingWidget && nowPlayingState != .idle
+    }
+
     public func toggleNowPlayingWidget() {
         config.showNowPlayingWidget.toggle()
         saveConfig()

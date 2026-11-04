@@ -33,7 +33,7 @@ The intended spatial resolution of a drag-and-drop interaction relative to a tar
 _Avoid_: Drop position, insert mode
 
 **NowPlayingWidget**:
-A dedicated playback control and metadata capsule anchored between the unpinned applications and the Trash item, surrounded by dividers.
+A dedicated playback control and metadata capsule anchored between the unpinned applications and the Trash item, surrounded by dividers. It only shows while media is playing or paused.
 _Avoid_: Music bar, player pill, media widget
 
 **NowPlayingSource**:

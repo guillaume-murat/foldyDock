@@ -539,7 +539,7 @@ public struct FoldyDockSettingsView: View {
                             .toggleStyle(.switch)
                             .font(.system(size: 13, weight: .medium))
 
-                            Text("Affiche le widget multimédia Now Playing entre les applications et la corbeille.")
+                            Text("Affiche le widget multimédia Now Playing avant la corbeille, uniquement quand de la musique est en lecture ou en pause.")
                                 .font(.system(size: 11.5))
                                 .foregroundStyle(.secondary)
 
