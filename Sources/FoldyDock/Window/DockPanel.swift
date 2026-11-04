@@ -96,6 +96,8 @@ public final class DockPanel: NSPanel {
             guard let self = self else { return }
             if self.isHiddenState {
                 self.hotspotManager.handleSpaceChange()
+            } else if !self.isOnActiveSpace {
+                self.reattachToActiveSpace()
             } else {
                 self.orderFrontRegardless()
             }
@@ -104,6 +106,17 @@ public final class DockPanel: NSPanel {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
             MainActor.assumeIsolated { reattach() }
         }
+    }
+
+    /// macOS sometimes leaves an all-Spaces window attached to the previous Space when switching to a
+    /// full-screen Space, and ordering it front again does not move it. Ordering it out and re-applying
+    /// its collection behavior makes the window server place it on the active Space again.
+    private func reattachToActiveSpace() {
+        let behavior = collectionBehavior
+        orderOut(nil)
+        collectionBehavior = []
+        collectionBehavior = behavior
+        orderFrontRegardless()
     }
 
     /// True when the dock believes it is shown but its window is not actually on screen in the active Space.
@@ -450,7 +463,9 @@ public final class DockPanel: NSPanel {
         let loc = NSEvent.mouseLocation
 
         if self.isShownStateDesynced, let targetScreen = self.screenForBottomEdge(at: loc) {
-            print("[DockPanel] Dock marked shown but not on the active Space; re-showing it")
+            if !self.isOnActiveSpace {
+                self.reattachToActiveSpace()
+            }
             self.showDock(on: targetScreen, animated: true)
             return
         }
