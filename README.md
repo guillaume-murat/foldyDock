@@ -34,6 +34,7 @@
 
 - 📂 **iOS-Style Folders / Dossiers iOS** : Miniatures réactives, popover dédié et fusion par glisser-déposer.
 - 🎵 **Now Playing Widget / Widget Musical** : Contrôle universel de la musique (YouTube Music, Spotify, Apple Music...) avec boutons play/pause/skip.
+- 📅 **Calendar Widget / Widget Calendrier** : La date et vos prochains événements et rappels dans le dock (optionnel).
 - 🗂️ **Window Picker Popover / Sélecteur de Fenêtres** : Survol d'une icône (2+ fenêtres) pour lister et sélectionner directement la fenêtre souhaitée.
 - 🌗 **Light & Dark Mode / Mode Clair & Sombre** : Thème adaptatif (Système, Clair, Sombre) avec contraste optimal sur tous les éléments et popovers.
 - 🔄 **Window Cycling / Rotation du Focus** : Clics successifs sur l'icône pour alterner entre les fenêtres d'une même application.
@@ -103,6 +104,10 @@
 - **Settings Panel (`⌘,`)**: Real-time adjustment of dock height, icon sizes, autohide, and launch at login.  
   *Panneau complet pour ajuster la taille, l'automasquage et le lancement au démarrage.*
 
+### 8. 📅 Calendar Widget / Widget Calendrier
+- **Up Next**: Shows the date and up to three items: today's all-day event, then your soonest events and reminders. Off by default, with a click opening Calendar.  
+  *Affiche la date et jusqu'à trois éléments : l'événement de la journée, puis vos prochains événements et rappels. Désactivé par défaut ; un clic ouvre Calendrier.*
+
 ---
 
 ## 🖱️ Mouse & Shortcuts Controls
@@ -130,6 +135,8 @@
 - **Swift 5.9+** toolchain or **Xcode 15+**
 - **Accessibility permission** (System Settings › Privacy & Security) for window cycling and the window picker. FoldyDock asks for it at launch.  
   *Autorisation d'Accessibilité requise pour la rotation et le sélecteur de fenêtres ; FoldyDock la demande au lancement.*
+- **Calendars & Reminders permissions** (optional), requested when you turn on the Calendar Widget.  
+  *Autorisations Calendriers et Rappels (optionnelles), demandées à l'activation du widget calendrier.*
 
 ### Compile & Assemble the App Bundle
 Use the automated build script to compile in Release mode and assemble `build/FoldyDock.app`:
@@ -177,6 +184,8 @@ foldyDock/
 │   │   ├── AccessibilityPermissionService.swift # Accessibility check, prompt & reset
 │   │   ├── MediaRemoteNowPlayingService.swift # Universal media detection & control bridge
 │   │   ├── NowPlayingScriptParser.swift       # Resilient script output parser for Now Playing
+│   │   ├── CalendarWidgetService.swift # Next Events selection & refresh
+│   │   ├── EventKitCalendarEventSource.swift # EventKit adapter for events & reminders
 │   │   ├── AppDiscoveryService.swift# Fast async discovery of installed Mac applications
 │   │   ├── DockPersistenceService.swift # Atomic JSON persistence in Application Support
 │   │   ├── LaunchAtLoginService.swift   # macOS SMAppService startup manager
@@ -188,6 +197,8 @@ foldyDock/
 │   │   ├── DockContainerView.swift  # Main dock horizontal stack & padding layout
 │   │   ├── DockItemView.swift       # Single dock item view with titles and badges
 │   │   ├── NowPlayingWidget.swift   # Embedded media capsule with controls & app opener
+│   │   ├── CalendarWidget.swift     # Date & Next Events capsule
+│   │   ├── DockSeparatorView.swift  # Vertical separator shared by the dock
 │   │   ├── FolderPopoverView.swift  # Expanded folder popover grid
 │   │   ├── WindowPickerPopoverView.swift  # Hover list of an app's windows
 │   │   ├── FolderIconGrid.swift     # Closed folder miniature icon grid
