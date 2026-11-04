@@ -233,12 +233,15 @@ public final class DockViewModel: ObservableObject {
     /// True when the widget is on but cannot read events.
     public var showsCalendarAccessHelp: Bool {
         config.showCalendarWidget
-            && calendarWidgetService.state.accessStatus != .granted
+            && (calendarWidgetService.state.accessStatus != .granted
+                || calendarWidgetService.state.reminderAccessStatus != .granted)
             && !calendarWidgetService.isRequestingAccess
     }
 
+    /// Opens the pane of the permission to fix first: Calendars, otherwise Reminders.
     public func openCalendarPrivacySettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars") {
+        let pane = calendarWidgetService.state.accessStatus == .granted ? "Privacy_Reminders" : "Privacy_Calendars"
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") {
             NSWorkspace.shared.open(url)
         }
     }

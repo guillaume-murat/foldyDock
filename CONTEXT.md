@@ -45,12 +45,12 @@ The dedicated interactive playback controls (Previous, Play/Pause, Next) dispatc
 _Avoid_: Media buttons, player actions, playback buttons
 
 **CalendarWidget**:
-A dedicated capsule showing the current date and the Next Event, anchored immediately before the NowPlayingWidget and surrounded by dividers. It is not a DockItem and cannot be moved.
+A dedicated capsule showing the current date and the Next Events, anchored immediately before the NowPlayingWidget and surrounded by dividers. It is not a DockItem and cannot be moved.
 _Avoid_: Agenda bar, date pill, calendar item
 
-**Next Event**:
-The timed calendar event shown by the CalendarWidget: the one in progress, otherwise the soonest one starting within the next 24 hours, across all calendars visible in Calendar. All-day events never qualify.
-_Avoid_: Upcoming appointment, agenda entry, meeting
+**Next Events**:
+The up to three items shown by the CalendarWidget: today's all-day event if any (one at most), then events in progress, then whichever events or incomplete reminders come soonest within the next 24 hours, across all calendars visible in Calendar and all reminder lists. Reminders without a time and reminders past their time never qualify.
+_Avoid_: Upcoming appointments, agenda entries, meetings
 
 **Launch at Login**:
 A system integration service managing automatic startup of FoldyDock on macOS user login using Apple's modern `SMAppService` framework.

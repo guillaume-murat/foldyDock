@@ -556,7 +556,7 @@ public struct FoldyDockSettingsView: View {
                             .toggleStyle(.switch)
                             .font(.system(size: 13, weight: .medium))
 
-                            Text("Affiche la date et votre prochain événement dans le dock, juste avant le widget de musique. Un clic ouvre Calendrier.")
+                            Text("Affiche la date et vos prochains événements ou rappels dans le dock, juste avant le widget de musique. Un clic ouvre Calendrier.")
                                 .font(.system(size: 11.5))
                                 .foregroundStyle(.secondary)
 
@@ -690,19 +690,27 @@ public struct FoldyDockSettingsView: View {
     }
 }
 
-/// Explains why the CalendarWidget shows the date alone, and how to change it.
+/// Explains what the CalendarWidget cannot show without access, and how to change it.
 private struct CalendarAccessHelpView: View {
     @ObservedObject var viewModel: DockViewModel
     @ObservedObject var service: CalendarWidgetService
 
+    private var accessHelpMessage: String {
+        switch (service.state.accessStatus == .granted, service.state.reminderAccessStatus == .granted) {
+        case (true, _): return "Vos rappels ne sont pas affichés, car FoldyDock n'y a pas accès."
+        case (_, true): return "Vos événements ne sont pas affichés, car FoldyDock n'a pas accès à vos calendriers."
+        default: return "Seule la date est affichée, car FoldyDock n'a pas accès à vos calendriers ni à vos rappels."
+        }
+    }
+
     var body: some View {
         if viewModel.showsCalendarAccessHelp {
             VStack(alignment: .leading, spacing: 6) {
-                Label("Seule la date est affichée, car FoldyDock n'a pas accès à vos calendriers.", systemImage: "exclamationmark.triangle.fill")
+                Label(accessHelpMessage, systemImage: "exclamationmark.triangle.fill")
                     .font(.system(size: 11.5))
                     .foregroundStyle(.secondary)
 
-                if service.state.accessStatus == .notDetermined {
+                if service.state.accessStatus == .notDetermined || service.state.reminderAccessStatus == .notDetermined {
                     Button("Autoriser l'accès") {
                         Task { await service.requestAccessIfNeeded() }
                     }

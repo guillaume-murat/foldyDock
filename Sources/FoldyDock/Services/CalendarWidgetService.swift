@@ -14,19 +14,22 @@ public struct CalendarColor: Equatable, Sendable {
     }
 }
 
-/// A calendar event, reduced to what the CalendarWidget needs.
+/// A calendar event or a reminder, reduced to what the CalendarWidget needs. A reminder starts and ends
+/// at its due time, and counts as all-day when it has a date but no time.
 public struct CalendarEvent: Equatable, Sendable {
     public let title: String
     public let start: Date
     public let end: Date
     public let isAllDay: Bool
+    public let isReminder: Bool
     public let color: CalendarColor?
 
-    public init(title: String, start: Date, end: Date, isAllDay: Bool, color: CalendarColor?) {
+    public init(title: String, start: Date, end: Date, isAllDay: Bool, isReminder: Bool, color: CalendarColor?) {
         self.title = title
         self.start = start
         self.end = end
         self.isAllDay = isAllDay
+        self.isReminder = isReminder
         self.color = color
     }
 }
@@ -44,7 +47,12 @@ public protocol CalendarEventSource: Sendable {
     func requestAccess() async
     /// Events overlapping the range, from the calendars visible in Calendar.
     func events(from start: Date, to end: Date) -> [CalendarEvent]
-    /// Calls the handler whenever events or calendars change, from any thread.
+    func reminderAccessStatus() -> CalendarAccessStatus
+    /// Shows the system permission prompt for reminders.
+    func requestReminderAccess() async
+    /// Incomplete reminders due in the range.
+    func reminders(from start: Date, to end: Date) async -> [CalendarEvent]
+    /// Calls the handler whenever events, reminders or calendars change, from any thread.
     func observeChanges(_ handler: @escaping @Sendable () -> Void)
 }
 
@@ -52,8 +60,10 @@ public protocol CalendarEventSource: Sendable {
 public struct CalendarWidgetState: Equatable, Sendable {
     /// Start of the current day, so the state only changes when the date does.
     public var today: Date
-    public var nextEvent: CalendarEvent?
+    /// At most three items: today's all-day event if any, then the soonest.
+    public var nextEvents: [CalendarEvent]
     public var accessStatus: CalendarAccessStatus
+    public var reminderAccessStatus: CalendarAccessStatus
 }
 
 /// Single owner of what the CalendarWidget shows.
@@ -70,6 +80,7 @@ public final class CalendarWidgetService: ObservableObject {
     private var isObservingChanges = false
     private static let refreshInterval: TimeInterval = 30
     private static let nextEventHorizon: TimeInterval = 24 * 60 * 60
+    private static let maxNextEvents = 3
 
     public init(
         source: CalendarEventSource = EventKitCalendarEventSource(),
@@ -81,8 +92,9 @@ public final class CalendarWidgetService: ObservableObject {
         self.calendar = calendar
         self.state = CalendarWidgetState(
             today: calendar.startOfDay(for: now()),
-            nextEvent: nil,
-            accessStatus: source.accessStatus()
+            nextEvents: [],
+            accessStatus: source.accessStatus(),
+            reminderAccessStatus: source.reminderAccessStatus()
         )
     }
 
@@ -91,30 +103,37 @@ public final class CalendarWidgetService: ObservableObject {
     public func refresh() async {
         let date = now()
         let status = source.accessStatus()
-        var nextEvent: CalendarEvent?
+        let reminderStatus = source.reminderAccessStatus()
+        let source = self.source
+        let horizon = date.addingTimeInterval(Self.nextEventHorizon)
+        var candidates: [CalendarEvent] = []
         if status == .granted {
-            let source = self.source
-            let horizon = date.addingTimeInterval(Self.nextEventHorizon)
-            let events = await Task.detached(priority: .utility) {
+            candidates += await Task.detached(priority: .utility) {
                 source.events(from: date, to: horizon)
             }.value
-            nextEvent = Self.nextEvent(among: events, at: date, horizon: horizon)
+        }
+        if reminderStatus == .granted {
+            candidates += await source.reminders(from: date, to: horizon)
         }
         let updated = CalendarWidgetState(
             today: calendar.startOfDay(for: date),
-            nextEvent: nextEvent,
-            accessStatus: status
+            nextEvents: Self.nextEvents(among: candidates, at: date, horizon: horizon),
+            accessStatus: status,
+            reminderAccessStatus: reminderStatus
         )
         if updated != state { state = updated }
     }
 
     /// Shows the system prompt the first time only; a refused permission is changed in System Settings.
     public func requestAccessIfNeeded() async {
+        isRequestingAccess = true
         if source.accessStatus() == .notDetermined {
-            isRequestingAccess = true
             await source.requestAccess()
-            isRequestingAccess = false
         }
+        if source.reminderAccessStatus() == .notDetermined {
+            await source.requestReminderAccess()
+        }
+        isRequestingAccess = false
         await refresh()
     }
 
@@ -124,15 +143,19 @@ public final class CalendarWidgetService: ObservableObject {
         return calendar.isDate(date, inSameDayAs: tomorrow)
     }
 
-    private static func nextEvent(among events: [CalendarEvent], at date: Date, horizon: Date) -> CalendarEvent? {
-        let timed = events.filter { !$0.isAllDay && $0.end > date }
-        let inProgress = timed.filter { $0.start <= date }
-        if let current = inProgress.min(by: { ($0.end, $0.title) < ($1.end, $1.title) }) {
-            return current
-        }
-        return timed
-            .filter { $0.start <= horizon }
-            .min(by: { ($0.start, $0.title) < ($1.start, $1.title) })
+    private static func nextEvents(among items: [CalendarEvent], at date: Date, horizon: Date) -> [CalendarEvent] {
+        let current = items.filter { $0.end > date }
+        let allDayToday = current
+            .filter { $0.isAllDay && !$0.isReminder && $0.start <= date }
+            .min { $0.title < $1.title }
+        let timed = current.filter { !$0.isAllDay }
+        let inProgress = timed
+            .filter { $0.start <= date }
+            .sorted { ($0.end, $0.title) < ($1.end, $1.title) }
+        let upcoming = timed
+            .filter { $0.start > date && $0.start <= horizon }
+            .sorted { ($0.start, $0.title) < ($1.start, $1.title) }
+        return Array(((allDayToday.map { [$0] } ?? []) + inProgress + upcoming).prefix(maxNextEvents))
     }
 
     /// Starts or stops the periodic refresh, which only runs while the widget is shown.

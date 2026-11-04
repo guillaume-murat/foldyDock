@@ -43,8 +43,16 @@ public struct CalendarWidget: View {
                 HStack(spacing: 8) {
                     dateView
 
-                    if let event = service.state.nextEvent {
-                        nextEventView(event)
+                    let events = displayedEvents
+                    if events.count == 1 {
+                        nextEventView(events[0])
+                    } else if !events.isEmpty {
+                        VStack(alignment: .leading, spacing: 1) {
+                            ForEach(Array(events.enumerated()), id: \.offset) { _, event in
+                                compactEventRow(event)
+                            }
+                        }
+                        .frame(maxWidth: iconSize * 3.2, alignment: .leading)
                     }
                 }
                 .padding(.horizontal, 7)
@@ -85,7 +93,7 @@ public struct CalendarWidget: View {
     }
 
     private func nextEventView(_ event: CalendarEvent) -> some View {
-        let accent = event.color.map { Color(red: $0.red, green: $0.green, blue: $0.blue) } ?? theme.widgetArtistColor
+        let accent = accentColor(of: event)
 
         return VStack(alignment: .leading, spacing: 1) {
             if service.isTomorrow(event.start) {
@@ -96,20 +104,18 @@ public struct CalendarWidget: View {
             }
 
             HStack(spacing: 5) {
-                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                    .fill(accent)
-                    .frame(width: 3)
+                indicator(of: event, accent: accent)
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text(event.title)
                         .font(.system(size: titleFontSize, weight: .semibold))
-                        .foregroundColor(theme.isDark ? accent : theme.widgetTitleColor)
+                        .foregroundColor(theme.isDark && !event.isReminder ? accent : theme.widgetTitleColor)
                         .lineLimit(1)
                         .truncationMode(.tail)
 
-                    Text(timeRange(of: event))
+                    Text(timeLabel(of: event))
                         .font(.system(size: captionFontSize, weight: .medium))
-                        .foregroundColor(theme.isDark ? accent.opacity(0.8) : theme.widgetArtistColor)
+                        .foregroundColor(theme.isDark && !event.isReminder ? accent.opacity(0.8) : theme.widgetArtistColor)
                         .lineLimit(1)
                 }
             }
@@ -119,21 +125,88 @@ public struct CalendarWidget: View {
             .padding(.trailing, 6)
             .background(
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(accent.opacity(0.18))
+                    .fill(event.isReminder ? theme.widgetIdleIconBackground : accent.opacity(0.18))
             )
         }
         .frame(minWidth: iconSize * 1.4, maxWidth: iconSize * 2.8, alignment: .leading)
     }
 
-    private func timeRange(of event: CalendarEvent) -> String {
+    /// Three lines only fit from this icon size up.
+    private var displayedEvents: [CalendarEvent] {
+        Array(service.state.nextEvents.prefix(iconSize >= 44 ? 3 : 2))
+    }
+
+    /// One line per item, so several fit in the capsule's height. There is no room for an event's end time.
+    private func compactEventRow(_ event: CalendarEvent) -> some View {
+        let accent = accentColor(of: event)
+
+        return HStack(spacing: 4) {
+            indicator(of: event, accent: accent)
+
+            if !event.isAllDay {
+                Text(compactTimeLabel(of: event))
+                    .font(.system(size: captionFontSize, weight: .medium))
+                    .foregroundColor(theme.isDark && !event.isReminder ? accent.opacity(0.8) : theme.widgetArtistColor)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+
+            Text(event.title)
+                .font(.system(size: captionFontSize, weight: .semibold))
+                .foregroundColor(theme.isDark && !event.isReminder ? accent : theme.widgetTitleColor)
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.vertical, 1)
+        .padding(.leading, 3)
+        .padding(.trailing, 6)
+        .background(
+            RoundedRectangle(cornerRadius: event.isAllDay ? titleFontSize : 4, style: .continuous)
+                .fill(event.isReminder ? theme.widgetIdleIconBackground : accent.opacity(0.18))
+        )
+    }
+
+    private func compactTimeLabel(of event: CalendarEvent) -> String {
         let start = event.start.formatted(date: .omitted, time: .shortened)
-        let end = event.end.formatted(date: .omitted, time: .shortened)
-        return "\(start) – \(end)"
+        return service.isTomorrow(event.start) ? "Demain \(start)" : start
+    }
+
+    private func accentColor(of event: CalendarEvent) -> Color {
+        event.color.map { Color(red: $0.red, green: $0.green, blue: $0.blue) } ?? theme.widgetArtistColor
+    }
+
+    @ViewBuilder
+    private func indicator(of event: CalendarEvent, accent: Color) -> some View {
+        if event.isAllDay {
+            Image(systemName: "calendar")
+                .font(.system(size: titleFontSize * 0.68, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: titleFontSize * 1.15, height: titleFontSize * 1.15)
+                .background(Circle().fill(accent))
+        } else if event.isReminder {
+            Circle()
+                .stroke(accent, lineWidth: 1.5)
+                .frame(width: titleFontSize * 0.9, height: titleFontSize * 0.9)
+                .padding(.leading, 2)
+        } else {
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                .fill(accent)
+                .frame(width: 3)
+        }
+    }
+
+    /// An event shows its time range, a reminder its due time.
+    private func timeLabel(of event: CalendarEvent) -> String {
+        guard !event.isAllDay else { return "Toute la journée" }
+        let start = event.start.formatted(date: .omitted, time: .shortened)
+        guard !event.isReminder else { return start }
+        return "\(start) – \(event.end.formatted(date: .omitted, time: .shortened))"
     }
 
     private var dateView: some View {
         VStack(alignment: .leading, spacing: -1) {
-            Text(service.state.today.formatted(.dateTime.weekday(.wide)).uppercased())
+            Text(service.state.today.formatted(.dateTime.weekday(.abbreviated)).capitalized)
                 .font(.system(size: captionFontSize, weight: .semibold))
                 .foregroundColor(theme.calendarWeekdayColor)
                 .lineLimit(1)

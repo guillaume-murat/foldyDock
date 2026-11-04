@@ -117,8 +117,10 @@ cat <<EOF > "$CONTENTS/Info.plist"
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>FoldyDock affiche le titre et l'heure de vos prochains rappels dans le widget calendrier.</string>
     <key>NSCalendarsFullAccessUsageDescription</key>
-    <string>FoldyDock affiche le titre et l'heure de votre prochain événement dans le widget calendrier.</string>
+    <string>FoldyDock affiche le titre et l'heure de vos prochains événements dans le widget calendrier.</string>
 </dict>
 </plist>
 EOF

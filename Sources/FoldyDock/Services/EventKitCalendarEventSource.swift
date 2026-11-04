@@ -7,7 +7,7 @@ import Foundation
 public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked Sendable {
     private let lock = NSLock()
     private var store: EKEventStore?
-    private var storeSawAccess = false
+    private var storeAccess: [EKEntityType: Bool] = [:]
     private var changeObserver: NSObjectProtocol?
 
     public init() {}
@@ -24,6 +24,29 @@ public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked 
         _ = try? await currentStore().requestFullAccessToEvents()
     }
 
+    public func reminderAccessStatus() -> CalendarAccessStatus {
+        switch EKEventStore.authorizationStatus(for: .reminder) {
+        case .notDetermined: return .notDetermined
+        case .fullAccess: return .granted
+        default: return .denied
+        }
+    }
+
+    public func requestReminderAccess() async {
+        _ = try? await currentStore().requestFullAccessToReminders()
+    }
+
+    public func reminders(from start: Date, to end: Date) async -> [CalendarEvent] {
+        guard reminderAccessStatus() == .granted else { return [] }
+        let store = currentStore()
+        let predicate = store.predicateForIncompleteReminders(withDueDateStarting: start, ending: end, calendars: nil)
+        return await withCheckedContinuation { continuation in
+            store.fetchReminders(matching: predicate) { reminders in
+                continuation.resume(returning: (reminders ?? []).compactMap(Self.calendarEvent(from:)))
+            }
+        }
+    }
+
     public func events(from start: Date, to end: Date) -> [CalendarEvent] {
         guard accessStatus() == .granted else { return [] }
         let store = currentStore()
@@ -37,6 +60,7 @@ public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked 
                 start: $0.startDate,
                 end: $0.endDate,
                 isAllDay: $0.isAllDay,
+                isReminder: false,
                 color: Self.color(of: $0.calendar)
             )
         }
@@ -49,6 +73,18 @@ public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked 
             object: nil,
             queue: nil
         ) { _ in handler() }
+    }
+
+    private static func calendarEvent(from reminder: EKReminder) -> CalendarEvent? {
+        guard let components = reminder.dueDateComponents, let due = components.date else { return nil }
+        return CalendarEvent(
+            title: reminder.title ?? "",
+            start: due,
+            end: due,
+            isAllDay: components.hour == nil,
+            isReminder: true,
+            color: color(of: reminder.calendar)
+        )
     }
 
     private static func color(of calendar: EKCalendar?) -> CalendarColor? {
@@ -66,11 +102,14 @@ public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked 
     private func currentStore() -> EKEventStore {
         lock.lock()
         defer { lock.unlock() }
-        let hasAccess = accessStatus() == .granted
-        if let store, hasAccess == storeSawAccess { return store }
+        let access: [EKEntityType: Bool] = [
+            .event: accessStatus() == .granted,
+            .reminder: reminderAccessStatus() == .granted
+        ]
+        if let store, access == storeAccess { return store }
         let fresh = EKEventStore()
         store = fresh
-        storeSawAccess = hasAccess
+        storeAccess = access
         return fresh
     }
 
