@@ -46,8 +46,8 @@ private func at(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
     utcCalendar.date(from: DateComponents(year: 2026, month: 11, day: day, hour: hour, minute: minute))!
 }
 
-private func event(_ title: String, _ start: Date, _ end: Date, allDay: Bool = false) -> CalendarEvent {
-    CalendarEvent(title: title, start: start, end: end, isAllDay: allDay)
+private func event(_ title: String, _ start: Date, _ end: Date, allDay: Bool = false, color: CalendarColor? = nil) -> CalendarEvent {
+    CalendarEvent(title: title, start: start, end: end, isAllDay: allDay, color: color)
 }
 
 @MainActor
@@ -357,5 +357,27 @@ struct CalendarWidgetTests {
 
         #expect(source.requestCount == 1)
         #expect(observed.value == false)
+    }
+
+    // MARK: - Up Next presentation
+
+    @Test("The Next Event keeps the colour of its calendar")
+    func testNextEventKeepsCalendarColor() async {
+        let orange = CalendarColor(red: 1, green: 0.6, blue: 0)
+        let trip = event("Trip", at(3, 10), at(3, 11), color: orange)
+        #expect(await nextEvent(among: [trip], at: at(3, 9))?.color == orange)
+    }
+
+    @Test("Only an event starting on the following day counts as tomorrow")
+    func testIsTomorrow() async {
+        let clock = TestClock()
+        clock.now = at(3, 23)
+        let service = makeService(FixtureCalendarSource(), clock: clock)
+        await service.refresh()
+
+        #expect(service.isTomorrow(at(4, 0)) == true)
+        #expect(service.isTomorrow(at(3, 22)) == false)
+        #expect(service.isTomorrow(at(2, 22)) == false)
+        #expect(service.isTomorrow(at(5, 0)) == false)
     }
 }

@@ -72,6 +72,9 @@ public struct CalendarWidget: View {
                     .offset(y: -(iconSize / 2 + viewModel.config.labelDistance))
             }
         }
+        // The dock takes its width from its content: without this the widget would shrink into
+        // whatever width the dock already has instead of making it grow.
+        .fixedSize(horizontal: true, vertical: false)
         .frame(height: dockHeight, alignment: .center)
         .zIndex(isHovered ? 10 : 1)
         .onHover { hovering in
@@ -82,39 +85,62 @@ public struct CalendarWidget: View {
     }
 
     private func nextEventView(_ event: CalendarEvent) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(event.title)
-                .font(.system(size: titleFontSize, weight: .semibold))
-                .foregroundColor(theme.widgetTitleColor)
-                .lineLimit(1)
-                .truncationMode(.tail)
+        let accent = event.color.map { Color(red: $0.red, green: $0.green, blue: $0.blue) } ?? theme.widgetArtistColor
 
-            Text(timeLabel(for: event))
-                .font(.system(size: captionFontSize, weight: .medium))
-                .foregroundColor(theme.widgetArtistColor)
-                .lineLimit(1)
+        return VStack(alignment: .leading, spacing: 1) {
+            if service.isTomorrow(event.start) {
+                Text("DEMAIN")
+                    .font(.system(size: captionFontSize, weight: .semibold))
+                    .foregroundColor(theme.widgetArtistColor)
+                    .lineLimit(1)
+            }
+
+            HStack(spacing: 5) {
+                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                    .fill(accent)
+                    .frame(width: 3)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(event.title)
+                        .font(.system(size: titleFontSize, weight: .semibold))
+                        .foregroundColor(theme.isDark ? accent : theme.widgetTitleColor)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+
+                    Text(timeRange(of: event))
+                        .font(.system(size: captionFontSize, weight: .medium))
+                        .foregroundColor(theme.isDark ? accent.opacity(0.8) : theme.widgetArtistColor)
+                        .lineLimit(1)
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.vertical, 2)
+            .padding(.leading, 3)
+            .padding(.trailing, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(accent.opacity(0.18))
+            )
         }
-        .frame(minWidth: iconSize * 1.1, maxWidth: iconSize * 2.2, alignment: .leading)
+        .frame(minWidth: iconSize * 1.4, maxWidth: iconSize * 2.8, alignment: .leading)
     }
 
-    /// The weekday tells an event tomorrow morning apart from one today at the same time.
-    private func timeLabel(for event: CalendarEvent) -> String {
-        if service.isToday(event.start) {
-            return event.start.formatted(date: .omitted, time: .shortened)
-        }
-        return event.start.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+    private func timeRange(of event: CalendarEvent) -> String {
+        let start = event.start.formatted(date: .omitted, time: .shortened)
+        let end = event.end.formatted(date: .omitted, time: .shortened)
+        return "\(start) – \(end)"
     }
 
     private var dateView: some View {
-        VStack(spacing: 0) {
-            Text(service.state.today.formatted(.dateTime.weekday(.abbreviated)))
+        VStack(alignment: .leading, spacing: -1) {
+            Text(service.state.today.formatted(.dateTime.weekday(.wide)).uppercased())
                 .font(.system(size: captionFontSize, weight: .semibold))
-                .foregroundColor(theme.widgetArtistColor)
+                .foregroundColor(theme.calendarWeekdayColor)
                 .lineLimit(1)
                 .fixedSize()
 
             Text(service.state.today.formatted(.dateTime.day()))
-                .font(.system(size: dayNumberFontSize, weight: .medium, design: .rounded))
+                .font(.system(size: dayNumberFontSize, weight: .regular))
                 .foregroundColor(theme.widgetTitleColor)
                 .lineLimit(1)
                 .fixedSize()

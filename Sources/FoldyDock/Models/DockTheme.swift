@@ -162,6 +162,12 @@ public struct DockTheme: Equatable, Sendable {
         isDark ? Color.white.opacity(0.18) : Color.black.opacity(0.10)
     }
 
+    // MARK: - Calendar Widget
+
+    public var calendarWeekdayColor: Color {
+        Color(red: 1.0, green: 0.27, blue: 0.23)
+    }
+
     // MARK: - Popovers (Folder Popover & Applications Popover)
 
     public var popoverPrimaryText: Color {

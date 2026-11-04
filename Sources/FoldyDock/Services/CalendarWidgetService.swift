@@ -1,18 +1,33 @@
 import Foundation
 import Combine
 
+/// The colour of a calendar, as set in Calendar.
+public struct CalendarColor: Equatable, Sendable {
+    public let red: Double
+    public let green: Double
+    public let blue: Double
+
+    public init(red: Double, green: Double, blue: Double) {
+        self.red = red
+        self.green = green
+        self.blue = blue
+    }
+}
+
 /// A calendar event, reduced to what the CalendarWidget needs.
 public struct CalendarEvent: Equatable, Sendable {
     public let title: String
     public let start: Date
     public let end: Date
     public let isAllDay: Bool
+    public let color: CalendarColor?
 
-    public init(title: String, start: Date, end: Date, isAllDay: Bool) {
+    public init(title: String, start: Date, end: Date, isAllDay: Bool, color: CalendarColor?) {
         self.title = title
         self.start = start
         self.end = end
         self.isAllDay = isAllDay
+        self.color = color
     }
 }
 
@@ -103,9 +118,10 @@ public final class CalendarWidgetService: ObservableObject {
         await refresh()
     }
 
-    /// Whether a date falls on the day the widget shows.
-    public func isToday(_ date: Date) -> Bool {
-        calendar.isDate(date, inSameDayAs: state.today)
+    /// Whether a date falls on the day after the one the widget shows.
+    public func isTomorrow(_ date: Date) -> Bool {
+        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: state.today) else { return false }
+        return calendar.isDate(date, inSameDayAs: tomorrow)
     }
 
     private static func nextEvent(among events: [CalendarEvent], at date: Date, horizon: Date) -> CalendarEvent? {

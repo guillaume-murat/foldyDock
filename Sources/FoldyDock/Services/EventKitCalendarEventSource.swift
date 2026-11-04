@@ -1,3 +1,4 @@
+import AppKit
 import CoreFoundation
 import EventKit
 import Foundation
@@ -31,7 +32,13 @@ public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked 
         guard !calendars.isEmpty else { return [] }
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: calendars)
         return store.events(matching: predicate).map {
-            CalendarEvent(title: $0.title ?? "", start: $0.startDate, end: $0.endDate, isAllDay: $0.isAllDay)
+            CalendarEvent(
+                title: $0.title ?? "",
+                start: $0.startDate,
+                end: $0.endDate,
+                isAllDay: $0.isAllDay,
+                color: Self.color(of: $0.calendar)
+            )
         }
     }
 
@@ -42,6 +49,16 @@ public final class EventKitCalendarEventSource: CalendarEventSource, @unchecked 
             object: nil,
             queue: nil
         ) { _ in handler() }
+    }
+
+    private static func color(of calendar: EKCalendar?) -> CalendarColor? {
+        guard let cgColor = calendar?.cgColor,
+              let color = NSColor(cgColor: cgColor)?.usingColorSpace(.sRGB) else { return nil }
+        return CalendarColor(
+            red: Double(color.redComponent),
+            green: Double(color.greenComponent),
+            blue: Double(color.blueComponent)
+        )
     }
 
     /// A store created before access was granted keeps returning nothing, so it is replaced on the first
