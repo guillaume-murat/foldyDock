@@ -58,7 +58,7 @@ struct NowPlayingWidgetTests {
         let mockService = MockNowPlayingService()
         let viewModel = DockViewModel(nowPlayingService: mockService)
 
-        let track = MediaTrack(title: "Starboy", artist: "The Weeknd", artworkData: nil, pid: 1234)
+        let track = MediaTrack(title: "Starboy", artist: "The Weeknd", pid: 1234)
         mockService.emit(state: .playing(track))
         #expect(viewModel.nowPlayingState == .playing(track))
 
@@ -74,7 +74,7 @@ struct NowPlayingWidgetTests {
         let mockService = MockNowPlayingService()
         let viewModel = DockViewModel(nowPlayingService: mockService)
         viewModel.config.showNowPlayingWidget = true
-        let track = MediaTrack(title: "Starboy", artist: "The Weeknd", artworkData: nil, pid: 1234)
+        let track = MediaTrack(title: "Starboy", artist: "The Weeknd", pid: 1234)
 
         mockService.emit(state: .idle)
         #expect(viewModel.isNowPlayingWidgetVisible == false)

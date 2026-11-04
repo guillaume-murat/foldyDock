@@ -200,8 +200,6 @@ public final class MediaRemoteNowPlayingService: NowPlayingServiceProviding {
             ?? dict["title"] as? String
         let artist = dict["kMRMediaRemoteNowPlayingInfoArtist"] as? String
             ?? dict["artist"] as? String
-        let artworkData = dict["kMRMediaRemoteNowPlayingInfoArtworkData"] as? Data
-            ?? dict["artworkData"] as? Data
 
         let playbackRate = (dict["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? NSNumber)?.doubleValue
             ?? (dict["playbackRate"] as? NSNumber)?.doubleValue
@@ -214,7 +212,6 @@ public final class MediaRemoteNowPlayingService: NowPlayingServiceProviding {
             let track = MediaTrack(
                 title: title,
                 artist: resolvedArtist,
-                artworkData: artworkData,
                 pid: self.currentPID
             )
             self.subject.send(isPlaying ? .playing(track) : .paused(track))
@@ -222,7 +219,6 @@ public final class MediaRemoteNowPlayingService: NowPlayingServiceProviding {
             let track = MediaTrack(
                 title: "Playing Media",
                 artist: artist ?? "macOS Audio",
-                artworkData: artworkData,
                 pid: self.currentPID
             )
             self.subject.send(.playing(track))

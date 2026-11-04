@@ -32,7 +32,6 @@ public enum NowPlayingScriptParser {
             title: title,
             artist: resolvedArtist,
             album: album.isEmpty ? nil : album,
-            artworkData: nil,
             pid: (pid != nil && pid! > 0) ? pid : nil,
             bundleIdentifier: bundleId.isEmpty ? nil : bundleId
         )

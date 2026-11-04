@@ -55,8 +55,6 @@
   *Détection universelle de la musique compatible macOS 15.4+, incluant YouTube Music, Spotify et Apple Music.*
 - **Controls & Opener**: Play/Pause, Next/Previous controls, and 1-click app activation.  
   *Boutons Lecture/Pause, Suivant/Précédent, et clic pour ouvrir l'application en cours.*
-- **Adaptive Artwork**: Displays album cover or official app icon.  
-  *Affichage automatique de la pochette ou de l'icône de l'application source.*
 
 ### 2. 🔄 Window Cycling & Hover Picker / Rotation & Sélecteur de Fenêtres
 - **Hover Window Picker**: Hovering an application with 2+ open windows displays a frosted glass popover listing all window titles and states (active/minimized) for 1-click selection.  

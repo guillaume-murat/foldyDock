@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 
 public struct NowPlayingWidget: View {
     @ObservedObject var viewModel: DockViewModel
@@ -7,7 +6,6 @@ public struct NowPlayingWidget: View {
     public let dockHeight: CGFloat
 
     @State private var isHovered: Bool = false
-    @State private var cachedArtwork: NSImage?
 
     public init(viewModel: DockViewModel, iconSize: CGFloat, dockHeight: CGFloat) {
         self.viewModel = viewModel
@@ -19,8 +17,9 @@ public struct NowPlayingWidget: View {
         iconSize
     }
 
-    private var artworkSize: CGFloat {
-        iconSize * 0.70
+    /// Below this icon size, title and artist share a line so the controls still fit underneath.
+    private var usesTwoTextLines: Bool {
+        iconSize >= 48
     }
 
     private var titleFontSize: CGFloat {
@@ -78,6 +77,9 @@ public struct NowPlayingWidget: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
+        // The dock takes its width from its content: without this the widget would shrink into
+        // whatever width the dock already has instead of making it grow.
+        .fixedSize(horizontal: true, vertical: false)
         .frame(height: dockHeight, alignment: .center)
         .zIndex(isHovered ? 10 : 1)
         .onHover { hovering in
@@ -85,59 +87,19 @@ public struct NowPlayingWidget: View {
                 isHovered = hovering
             }
         }
-        .onChange(of: viewModel.nowPlayingState) { _, _ in
-            updateCachedArtwork()
-        }
-        .onAppear {
-            updateCachedArtwork()
-        }
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: viewModel.nowPlayingState.isPlaying)
-    }
-
-    private func updateCachedArtwork() {
-        if let data = viewModel.nowPlayingState.artworkData, let img = NSImage(data: data) {
-            cachedArtwork = img
-        } else if let bundleId = viewModel.nowPlayingState.bundleIdentifier,
-                  let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
-            cachedArtwork = NSWorkspace.shared.icon(forFile: appURL.path)
-        } else if let pid = viewModel.nowPlayingState.pid,
-                  let app = NSRunningApplication(processIdentifier: pid),
-                  let appURL = app.bundleURL {
-            cachedArtwork = NSWorkspace.shared.icon(forFile: appURL.path)
-        } else {
-            cachedArtwork = nil
-        }
     }
 
     // MARK: - Active View (Playing or Paused)
     private var activeView: some View {
-        HStack(spacing: 8) {
-            // Interactive source opener: clicking artwork + metadata activates the app
+        VStack(spacing: 1) {
+            // Interactive source opener: clicking the metadata activates the app
             Button(action: {
                 viewModel.activateNowPlayingSource()
             }) {
-                HStack(spacing: 8) {
-                    artworkView
-                        .frame(width: artworkSize, height: artworkSize)
-                        .clipShape(RoundedRectangle(cornerRadius: artworkSize * 0.24, style: .continuous))
-                        .shadow(color: Color.black.opacity(0.35), radius: 3, x: 0, y: 1.5)
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(viewModel.nowPlayingState.title ?? "Unknown Title")
-                            .font(.system(size: titleFontSize, weight: .semibold))
-                            .foregroundColor(theme.widgetTitleColor)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-
-                        Text(viewModel.nowPlayingState.artist ?? "Unknown Artist")
-                            .font(.system(size: artistFontSize, weight: .medium))
-                            .foregroundColor(theme.widgetArtistColor)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
-                    .frame(minWidth: iconSize * 1.1, maxWidth: iconSize * 2.2, alignment: .leading)
-                }
-                .contentShape(Rectangle())
+                metadataView
+                    .frame(minWidth: iconSize * 1.9, maxWidth: iconSize * 2.6)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -183,29 +145,35 @@ public struct NowPlayingWidget: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.trailing, 4)
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 8)
     }
 
-    // MARK: - Artwork View
     @ViewBuilder
-    private var artworkView: some View {
-        if let cachedArtwork {
-            Image(nsImage: cachedArtwork)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-        } else {
-            ZStack {
-                LinearGradient(
-                    colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.6)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                Image(systemName: "music.note")
-                    .font(.system(size: artworkSize * 0.45, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.9))
+    private var metadataView: some View {
+        let title = viewModel.nowPlayingState.title ?? "Unknown Title"
+        let artist = viewModel.nowPlayingState.artist ?? "Unknown Artist"
+
+        if usesTwoTextLines {
+            VStack(spacing: 0) {
+                Text(title)
+                    .font(.system(size: titleFontSize, weight: .semibold))
+                    .foregroundColor(theme.widgetTitleColor)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Text(artist)
+                    .font(.system(size: artistFontSize, weight: .medium))
+                    .foregroundColor(theme.widgetArtistColor)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
+        } else {
+            Text("\(title) · \(artist)")
+                .font(.system(size: artistFontSize, weight: .semibold))
+                .foregroundColor(theme.widgetTitleColor)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
     }
 }
